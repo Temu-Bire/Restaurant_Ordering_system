@@ -1,0 +1,232 @@
+// backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Enums ─────────────────────────
+
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE_MONEY
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+}
+
+// ───────────────────────── FR-01: Users ─────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String   @unique
+  phone     String?
+  password  String // bcrypt hash, never return it in API responses
+  role      Role     @default(CUSTOMER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders   Order[] @relation("CustomerOrders") // orders placed by this user
+  handled  Order[] @relation("StaffOrders") // orders handled by this staff member
+  payments Payment[] // payments recorded by this user
+
+  @@map("users")
+}
+
+// ───────────────────────── FR-02: Menu ─────────────────────────
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  foodItems FoodItem[]
+
+  @@map("categories")
+}
+
+model FoodItem {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category    Category     @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  recipeItems RecipeItem[]
+
+  @@index([categoryId])
+  @@map("food_items")
+}
+
+// ───────────────────────── FR-06: Tables ─────────────────────────
+// Named RestaurantTable to avoid clashing with the word "Table".
+
+model RestaurantTable {
+  id        String      @id @default(uuid())
+  number    Int         @unique
+  capacity  Int
+  status    TableStatus @default(AVAILABLE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  orders Order[]
+
+  @@map("tables")
+}
+
+// ───────────────────────── FR-03 / FR-04: Orders ─────────────────────────
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     Int         @unique @default(autoincrement()) // short number shown to customers/staff
+  type            OrderType
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2) // calculated on the server
+  notes           String?
+  deliveryAddress String? // required when type = DELIVERY (validate in DTO)
+  stockDeducted   Boolean     @default(false) // prevents deducting ingredients twice (FR-07)
+
+  customerId String
+  staffId    String? // staff who handled the order
+  tableId    String? // only for DINE_IN
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer User             @relation("CustomerOrders", fields: [customerId], references: [id])
+  staff    User?            @relation("StaffOrders", fields: [staffId], references: [id])
+  table    RestaurantTable? @relation(fields: [tableId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String
+  foodItemId String
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(10, 2) // price at the time of ordering (menu prices can change later)
+  subtotal   Decimal @db.Decimal(10, 2) // quantity * unitPrice
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  foodItem FoodItem @relation(fields: [foodItemId], references: [id])
+
+  @@index([orderId])
+  @@index([foodItemId])
+  @@map("order_items")
+}
+
+// ───────────────────────── FR-05: Payments ─────────────────────────
+
+model Payment {
+  id            String        @id @default(uuid())
+  receiptNumber String        @unique // e.g. RCP-20261104-0001
+  orderId       String
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod @default(CASH)
+  status        PaymentStatus @default(PENDING)
+  reference     String? // transaction reference for non-cash methods
+  recordedById  String? // staff who recorded it
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+
+  order      Order @relation(fields: [orderId], references: [id])
+  recordedBy User? @relation(fields: [recordedById], references: [id])
+
+  @@index([orderId])
+  @@index([paidAt])
+  @@map("payments")
+}
+
+// ───────────────────────── FR-07: Inventory ─────────────────────────
+
+model Ingredient {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  unit         String // kg, g, litre, piece ...
+  stockQty     Decimal  @db.Decimal(12, 3) @default(0)
+  minimumLevel Decimal  @db.Decimal(12, 3) @default(0) // alert when stockQty <= minimumLevel
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  recipeItems RecipeItem[]
+
+  @@map("ingredients")
+}
+
+// How much of one ingredient is used by ONE unit of a food item.
+model RecipeItem {
+  id           String  @id @default(uuid())
+  foodItemId   String
+  ingredientId String
+  quantityUsed Decimal @db.Decimal(12, 3)
+
+  foodItem   FoodItem   @relation(fields: [foodItemId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([foodItemId, ingredientId])
+  @@map("recipe_items")
+}
+
+// ───────────────────────── Restaurant settings (admin) ─────────────────────────
+// Simple key/value store: restaurant_name, tax_rate, delivery_fee, currency ...
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
