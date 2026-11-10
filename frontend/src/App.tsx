@@ -19,11 +19,17 @@ import StaffDashboardPage from "./pages/staff/StaffDashboardPage";
 import OrdersPage from "./pages/shared/OrdersPage";
 import TablesPage from "./pages/shared/TablesPage";
 
+import InventoryPage from "./pages/shared/InventoryPage";
+import PaymentsPage from "./pages/shared/PaymentsPage";
+
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
   { label: "Orders", to: "/staff/orders" },
   { label: "Tables", to: "/staff/tables" },
+  { label: "Inventory", to: "/staff/inventory" },
+  { label: "Payments", to: "/staff/payments" },
 ];
+
 const staffUser = { name: "Sara T.", role: "Waiter / Staff" };
 
 export default function App() {
@@ -53,6 +59,8 @@ export default function App() {
           <Route path="dashboard" element={<StaffDashboardPage />} />
           <Route path="orders" element={<OrdersPage role="staff" />} />
           <Route path="tables" element={<TablesPage role="staff" />} />
+          <Route path="inventory" element={<InventoryPage role="staff" />} />
+          <Route path="payments" element={<PaymentsPage role="staff" />} />
         </Route>
       </Routes>
     </BrowserRouter>
