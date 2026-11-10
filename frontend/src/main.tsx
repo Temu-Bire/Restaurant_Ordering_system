@@ -4,11 +4,15 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./index.css";
+import { CartProvider } from "./features/cart/CartContext";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+ <StrictMode>
     <ThemeProvider>
-      <App />
+      <CartProvider>
+        <App />
+      </CartProvider>
     </ThemeProvider>
   </StrictMode>
 );
+

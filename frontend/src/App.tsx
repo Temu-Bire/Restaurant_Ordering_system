@@ -15,6 +15,10 @@ import AuthLayout from "./components/layout/AuthLayout";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 
+import CustomerLayout from "./components/layout/CustomerLayout";
+import HomePage from "./pages/customer/HomePage";
+import MenuPage from "./pages/customer/MenuPage";
+
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
   { label: "Orders", to: "/staff/orders" },
@@ -112,7 +116,13 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         </Route>
+            <Route path="/customer" element={<CustomerLayout />}>
+  <Route index element={<Navigate to="home" replace />} />
+  <Route path="home" element={<HomePage />} />
+  <Route path="menu" element={<MenuPage />} />
+</Route>
         </Routes>
+    
     </BrowserRouter>
   );
 }
