@@ -1,14 +1,59 @@
 @import "tailwindcss";
 
-/* make dark: work with your existing data-theme attribute */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-@theme {
+:root {
+  --background: #f6f6f8;
+  --surface: #ffffff;
+  --surface-secondary: #f1f1f4;
+  --border: #e5e7eb;
+  --foreground: #111827;
+  --muted: #6b7280;
+}
+
+[data-theme="dark"] {
+  --background: #0f1216;
+  --surface: #14181e;
+  --surface-secondary: #1b2028;
+  --border: #262c36;
+  --foreground: #f3f4f6;
+  --muted: #9ca3af;
+}
+
+@theme inline {
   --font-sans: "Inter", Arial, sans-serif;
-  --color-primary: #F97316;
-  --color-success: #15803D;
-  --color-info: #1D5FD1;
-  --color-pending: #C2570C;
-  --color-danger: #E11D2E;
-  --color-muted: #6B7280;
+
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+
+  --color-primary: #f97316;
+  --color-primary-hover: #ea6a0c;
+  --color-success: #15803d;
+  --color-info: #1d5fd1;
+  --color-pending: #c2570c;
+  --color-danger: #e11d2e;
+}
+
+@layer base {
+  html {
+    font-size: 14px;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    @apply bg-background font-sans text-foreground transition-colors;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  button {
+    cursor: pointer;
+  }
 }
