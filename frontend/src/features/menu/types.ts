@@ -1,16 +1,11 @@
-export type Category =
-  | "pizza"
-  | "burger"
-  | "salad"
-  | "drinks"
-  | "desserts"
-  | "sides";
+export type Category = string;
 
 export interface FoodItem {
   id: string;
   name: string;
   price: number;
   category: Category;
+  description?: string;
   gradient: string; // placeholder for a photo, until real images exist
   available: boolean;
 }

@@ -14,6 +14,9 @@ export type BadgeVariant =
   | "ok"
   | "active"
   | "disabled"
+  | "customer"
+  | "staff"
+  | "admin"
   | "neutral";
 
 const styles: Record<BadgeVariant, string> = {
@@ -30,6 +33,9 @@ const styles: Record<BadgeVariant, string> = {
   active: "bg-success/15 text-success",
   disabled: "bg-danger/15 text-danger",
   neutral: "bg-muted/15 text-muted",
+  customer: "bg-info/15 text-info",
+  staff: "bg-pending/15 text-pending",
+  admin: "bg-primary/15 text-primary",
 };
 
 interface BadgeProps {

@@ -22,6 +22,10 @@ import TablesPage from "./pages/shared/TablesPage";
 import InventoryPage from "./pages/shared/InventoryPage";
 import PaymentsPage from "./pages/shared/PaymentsPage";
 
+import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
+import MenuManagementPage from "./pages/admin/MenuManagementPage";
+import ReportsPage from "./pages/admin/ReportsPage";
+
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
   { label: "Orders", to: "/staff/orders" },
@@ -29,6 +33,17 @@ const staffNav = [
   { label: "Inventory", to: "/staff/inventory" },
   { label: "Payments", to: "/staff/payments" },
 ];
+
+const adminNav = [
+  { label: "Dashboard", to: "/admin/dashboard" },
+  { label: "Orders", to: "/admin/orders" },
+  { label: "Menu", to: "/admin/menu" },
+  { label: "Tables", to: "/admin/tables" },
+  { label: "Inventory", to: "/admin/inventory" },
+  { label: "Payments", to: "/admin/payments" },
+  { label: "Reports", to: "/admin/reports" },
+];
+const adminUser = { name: "Admin", role: "Administrator" };
 
 const staffUser = { name: "Sara T.", role: "Waiter / Staff" };
 
@@ -61,6 +76,17 @@ export default function App() {
           <Route path="tables" element={<TablesPage role="staff" />} />
           <Route path="inventory" element={<InventoryPage role="staff" />} />
           <Route path="payments" element={<PaymentsPage role="staff" />} />
+        </Route>
+
+        <Route path="/admin" element={<DashboardLayout navItems={adminNav} user={adminUser} />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="orders" element={<OrdersPage role="admin" />} />
+            <Route path="menu" element={<MenuManagementPage />} />
+            <Route path="tables" element={<TablesPage role="admin" />} />
+            <Route path="inventory" element={<InventoryPage role="admin" />} />
+            <Route path="payments" element={<PaymentsPage role="admin" />} />
+            <Route path="reports" element={<ReportsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
