@@ -11,6 +11,10 @@ import StatCard from "./components/ui/StatCard";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import PageHeader from "./components/layout/PageHeader";
 
+import AuthLayout from "./components/layout/AuthLayout";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
   { label: "Orders", to: "/staff/orders" },
@@ -102,13 +106,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/staff/dashboard" replace />} />
-        <Route path="/staff" element={<DashboardLayout navItems={staffNav} user={user} />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="orders" element={<OrdersPage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        <Route element={<AuthLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         </Route>
-      </Routes>
+        </Routes>
     </BrowserRouter>
   );
 }
