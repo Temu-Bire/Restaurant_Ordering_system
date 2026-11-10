@@ -25,6 +25,8 @@ import PaymentsPage from "./pages/shared/PaymentsPage";
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
 import MenuManagementPage from "./pages/admin/MenuManagementPage";
 import ReportsPage from "./pages/admin/ReportsPage";
+import UsersPage from "./pages/admin/UsersPage";
+import SettingsPage from "./pages/admin/SettingsPage";
 
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
@@ -42,6 +44,8 @@ const adminNav = [
   { label: "Inventory", to: "/admin/inventory" },
   { label: "Payments", to: "/admin/payments" },
   { label: "Reports", to: "/admin/reports" },
+  { label: "Users", to: "/admin/users" },
+  { label: "Settings", to: "/admin/settings" },
 ];
 const adminUser = { name: "Admin", role: "Administrator" };
 
@@ -87,6 +91,8 @@ export default function App() {
             <Route path="inventory" element={<InventoryPage role="admin" />} />
             <Route path="payments" element={<PaymentsPage role="admin" />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
