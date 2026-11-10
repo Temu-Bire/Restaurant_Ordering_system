@@ -1,4 +1,14 @@
 @import "tailwindcss";
 
+/* make dark: work with your existing data-theme attribute */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-
+@theme {
+  --font-sans: "Inter", Arial, sans-serif;
+  --color-primary: #F97316;
+  --color-success: #15803D;
+  --color-info: #1D5FD1;
+  --color-pending: #C2570C;
+  --color-danger: #E11D2E;
+  --color-muted: #6B7280;
+}
