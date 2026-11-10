@@ -18,6 +18,11 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import CustomerLayout from "./components/layout/CustomerLayout";
 import HomePage from "./pages/customer/HomePage";
 import MenuPage from "./pages/customer/MenuPage";
+import CartPage from "./pages/customer/CartPage";
+import MyOrdersPage from "./pages/customer/MyOrdersPage";
+import OrderTrackingPage from "./pages/customer/OrderTrackingPage";
+import ReceiptPage from "./pages/customer/ReceiptPage";
+import ProfilePage from "./pages/customer/ProfilePage";
 
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
@@ -120,7 +125,13 @@ export default function App() {
   <Route index element={<Navigate to="home" replace />} />
   <Route path="home" element={<HomePage />} />
   <Route path="menu" element={<MenuPage />} />
+  <Route path="cart" element={<CartPage />} />
+<Route path="orders" element={<MyOrdersPage />} />
+<Route path="orders/:id/track" element={<OrderTrackingPage />} />
+<Route path="orders/:id/receipt" element={<ReceiptPage />} />
+<Route path="profile" element={<ProfilePage />} />
 </Route>
+
         </Routes>
     
     </BrowserRouter>
