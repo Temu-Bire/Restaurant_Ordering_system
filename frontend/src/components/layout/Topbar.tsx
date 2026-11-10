@@ -1,6 +1,9 @@
+import { useAuth } from "../../features/auth/useAuth";
 import ThemeSwitcher from "../ThemeSwitcher";
 
-export default function Topbar({ userInitials = "U" }: { userInitials?: string }) {
+export default function Topbar() {
+  const { user } = useAuth();
+
   return (
     <div className="flex items-center gap-3">
       <input
@@ -10,7 +13,7 @@ export default function Topbar({ userInitials = "U" }: { userInitials?: string }
       />
       <ThemeSwitcher />
       <div className="flex size-9 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-        {userInitials}
+        {user?.name.charAt(0) ?? "U"}
       </div>
     </div>
   );

@@ -12,10 +12,5 @@ export default function CustomerLayout() {
     { label: "Cart", to: "/customer/cart", badge: count },
   ];
 
-  return (
-    <DashboardLayout
-      navItems={navItems}
-      user={{ name: "John Doe", role: "Customer" }}
-    />
-  );
+  return <DashboardLayout navItems={navItems} />;
 }

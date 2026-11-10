@@ -5,14 +5,17 @@ import PageHeader from "../../components/layout/PageHeader";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
+import { useAuth } from "../../features/auth/useAuth";
+import { useLogout } from "../../features/auth/useLogout";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-
+  const { user } = useAuth();
+  const logout = useLogout();
   // TEMP values: later they come from AuthContext / the API
   const [info, setInfo] = useState({
-    fullName: "John Doe",
-    email: "john@email.com",
+    fullName: user?.name ?? "",
+    email: user?.email ?? "",
     phone: "+251 9XX XXX XXX",
     address: "Bole, Addis Ababa",
   });
@@ -69,9 +72,9 @@ export default function ProfilePage() {
               <Button type="submit" variant="outline">
                 Update Password
               </Button>
-              <Button type="button" variant="danger" onClick={() => navigate("/login")}>
-                Log out
-              </Button>
+              <Button type="button" variant="danger" onClick={logout}>
+                 Log out
+            </Button>
             </div>
           </form>
         </Card>

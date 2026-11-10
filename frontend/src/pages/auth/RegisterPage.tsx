@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import { useAuth } from "../../features/auth/useAuth";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
+
 
 interface Form {
   fullName: string;
@@ -14,6 +15,9 @@ interface Form {
 const empty: Form = { fullName: "", phone: "", email: "", password: "" };
 
 export default function RegisterPage() {
+  const { register } = useAuth();
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const [form, setForm] = useState<Form>(empty);
   const [errors, setErrors] = useState<Partial<Form>>({});
@@ -22,21 +26,34 @@ export default function RegisterPage() {
     (field: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e: FormEvent) {
+  e.preventDefault();
 
-    const next: Partial<Form> = {};
-    if (!form.fullName.trim()) next.fullName = "Full name is required";
-    if (!form.phone.trim()) next.phone = "Phone is required";
-    if (!form.email.trim()) next.email = "Email is required";
-    if (form.password.length < 8)
-      next.password = "Password must be at least 8 characters";
-    setErrors(next);
-    if (Object.keys(next).length > 0) return;
+  const next: Partial<Form> = {};
+  if (!form.fullName.trim()) next.fullName = "Full name is required";
+  if (!form.phone.trim()) next.phone = "Phone is required";
+  if (!form.email.trim()) next.email = "Email is required";
+  if (form.password.length < 8)
+    next.password = "Password must be at least 8 characters";
+  setErrors(next);
+  if (Object.keys(next).length > 0) return;
 
-    // TEMP: no backend yet. Later this calls authApi.register().
-    navigate("/login");
+  setFormError("");
+  setSubmitting(true);
+
+  try {
+    await register({
+      name: form.fullName.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      password: form.password,
+    });
+    navigate("/login", { state: { registered: true } });
+  } catch (err) {
+    setFormError(err instanceof Error ? err.message : "Something went wrong");
+    setSubmitting(false);
   }
+}
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -81,9 +98,15 @@ export default function RegisterPage() {
         error={errors.password}
       />
 
-      <Button type="submit" fullWidth>
-        Register
-      </Button>
+      {formError && (
+        <p role="alert" className="text-[13px] text-danger">
+            {formError}
+        </p>
+        )}
+
+        <Button type="submit" fullWidth disabled={submitting}>
+        {submitting ? "Creating account..." : "Register"}
+        </Button>
 
       <p className="text-center text-[13px] text-muted">
         Already have an account?{" "}
