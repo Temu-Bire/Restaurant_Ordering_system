@@ -46,3 +46,17 @@ export const orderTypeOptions = (
 export const paymentOptions = (
   Object.keys(PAYMENT_LABEL) as PaymentMethod[]
 ).map((value) => ({ value, label: PAYMENT_LABEL[value] }));
+
+export const statusOptions = (
+  [
+    "pending",
+    "confirmed",
+    "preparing",
+    "ready",
+    "completed",
+    "cancelled",
+  ] as OrderStatus[]
+).map((value) => ({
+  value,
+  label: value.charAt(0).toUpperCase() + value.slice(1),
+}));
