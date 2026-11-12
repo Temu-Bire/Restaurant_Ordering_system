@@ -64,7 +64,7 @@ export default function ReceiptPage() {
           </span>
         </div>
 
-        <Button fullWidth className="mt-5" onClick={() => window.print()}>
+        <Button fullWidth className="mt-5 print:hidden" onClick={() => window.print()}>
           Download / Print Receipt
         </Button>
       </Card>

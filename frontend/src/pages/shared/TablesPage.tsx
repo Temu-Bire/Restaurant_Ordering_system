@@ -11,6 +11,7 @@ import TableTile from "../../features/tables/components/TableTile";
 import type { RestaurantTable, TableStatus } from "../../features/tables/types";
 import { allOrders } from "../../mocks/allOrders";
 import { tables as initialTables } from "../../mocks/tables";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 type Filter = "all" | TableStatus;
 
@@ -84,11 +85,15 @@ export default function TablesPage({ role }: { role: "staff" | "admin" }) {
     }
   }
 
-  function deleteTable(table: RestaurantTable) {
-    if (window.confirm(`Delete table ${table.name}?`)) {
-      setList((prev) => prev.filter((t) => t.id !== table.id));
-    }
-  }
+const [toDelete, setToDelete] = useState<RestaurantTable | null>(null);
+
+const deleteTable = (table: RestaurantTable) => setToDelete(table); // opens the dialog
+
+function confirmDelete() {
+  if (!toDelete) return;
+  setList((prev) => prev.filter((t) => t.id !== toDelete.id));
+  setToDelete(null);
+}
 
   function assign() {
     const table = list.find((t) => t.id === tableId);
@@ -164,6 +169,14 @@ export default function TablesPage({ role }: { role: "staff" | "admin" }) {
           onSave={saveTable}
         />
       )}
+      {toDelete && (
+      <ConfirmDialog
+        title="Delete table"
+        message={`Delete table ${toDelete.name}?`}
+        onConfirm={confirmDelete}
+        onCancel={() => setToDelete(null)}
+      />
+    )}
     </>
   );
 }

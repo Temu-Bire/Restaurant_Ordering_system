@@ -28,7 +28,7 @@ export default function ReportsPage() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <FilterTabs value={period} onChange={setPeriod} tabs={reportTabs} />
         {/* The print dialog has a "Save as PDF" option */}
-        <Button variant="secondary" onClick={() => window.print()}>
+        <Button variant="secondary" className="print:hidden" onClick={() => window.print()}>
           Export PDF
         </Button>
       </div>

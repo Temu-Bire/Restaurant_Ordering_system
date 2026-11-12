@@ -11,6 +11,7 @@ import UserFormModal, {
 } from "../../features/users/components/UserFormModal";
 import { users as initialUsers } from "../../mocks/users";
 import { ROLE_LABEL, type Role, type User } from "../../types/user";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 type Filter = "all" | Role;
 
@@ -19,7 +20,6 @@ export default function UsersPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<User | "new" | null>(null);
 
-  const visible = list.filter((u) => filter === "all" || u.role === filter);
 
   const takenEmails = list
     .filter((u) => editing === "new" || u.id !== editing?.id)
@@ -38,12 +38,25 @@ export default function UsersPage() {
       setList((prev) => [...prev, { id: crypto.randomUUID(), ...fields }]);
     }
   }
+    const [search, setSearch] = useState("");
+    const [toDelete, setToDelete] = useState<User | null>(null);
 
-  function deleteUser(user: User) {
-    if (window.confirm(`Delete ${user.name}? This can't be undone.`)) {
-      setList((prev) => prev.filter((u) => u.id !== user.id));
+    const q = search.trim().toLowerCase();
+    const visible = list.filter(
+      (u) =>
+        (filter === "all" || u.role === filter) &&
+        (u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+    );
+
+    const deleteUser = (user: User) => setToDelete(user); // opens the dialog
+
+    function confirmDelete() {
+      if (!toDelete) return;
+      setList((prev) => prev.filter((u) => u.id !== toDelete.id));
+      setToDelete(null);
     }
-  }
+
+  
 
   const columns: Column<User>[] = [
     { header: "Name", cell: (u) => <span className="font-medium">{u.name}</span> },
@@ -91,6 +104,7 @@ export default function UsersPage() {
       <PageHeader
         title="Users"
         description="Manage customers, staff and administrators"
+        search={{ value: search, onChange: setSearch }}
       />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -123,6 +137,15 @@ export default function UsersPage() {
           takenEmails={takenEmails}
           onClose={() => setEditing(null)}
           onSave={saveUser}
+        />
+      )}
+
+      {toDelete && (
+        <ConfirmDialog
+          title="Delete user"
+          message={`Delete ${toDelete.name}? This can't be undone.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setToDelete(null)}
         />
       )}
     </>

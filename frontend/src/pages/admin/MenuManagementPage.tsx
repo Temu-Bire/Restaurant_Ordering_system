@@ -15,6 +15,7 @@ import { CATEGORIES, type FoodItem } from "../../features/menu/types";
 import { cn } from "../../lib/cn";
 import { menuItems } from "../../mocks/menu";
 import { formatCurrency } from "../../utils/formatCurrency";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 /* ---------- Add category modal ---------- */
 interface CategoryModalProps {
@@ -38,6 +39,8 @@ function CategoryModal({ existing, onClose, onAdd }: CategoryModalProps) {
     onAdd(label);
     onClose();
   }
+
+  
 
   return (
     <Modal open onClose={onClose} title="Add Category">
@@ -69,7 +72,6 @@ export default function MenuManagementPage() {
   const [editing, setEditing] = useState<FoodItem | "new" | null>(null);
   const [addingCategory, setAddingCategory] = useState(false);
 
-  const visible = items.filter((f) => filter === "all" || f.category === filter);
   const categoryLabel = (value: string) =>
     categories.find((c) => c.value === value)?.label ?? value;
 
@@ -94,11 +96,23 @@ export default function MenuManagementPage() {
     }
   }
 
-  function deleteFood(food: FoodItem) {
-    if (window.confirm(`Delete "${food.name}" from the menu?`)) {
-      setItems((prev) => prev.filter((f) => f.id !== food.id));
-    }
-  }
+  const [search, setSearch] = useState("");
+const [toDelete, setToDelete] = useState<FoodItem | null>(null);
+
+const q = search.trim().toLowerCase();
+const visible = items.filter(
+  (f) =>
+    (filter === "all" || f.category === filter) &&
+    f.name.toLowerCase().includes(q)
+);
+
+const deleteFood = (food: FoodItem) => setToDelete(food); // opens the dialog
+
+function confirmDelete() {
+  if (!toDelete) return;
+  setItems((prev) => prev.filter((f) => f.id !== toDelete.id));
+  setToDelete(null);
+}
 
   function addCategory(label: string) {
     setCategories((prev) => [
@@ -156,6 +170,7 @@ export default function MenuManagementPage() {
       <PageHeader
         title="Menu Management"
         description="Add, update and delete food items"
+        search={{ value: search, onChange: setSearch }}
       />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -198,6 +213,14 @@ export default function MenuManagementPage() {
           onAdd={addCategory}
         />
       )}
+      {toDelete && (
+    <ConfirmDialog
+      title="Delete food item"
+      message={`Delete "${toDelete.name}" from the menu?`}
+      onConfirm={confirmDelete}
+      onCancel={() => setToDelete(null)}
+    />
+  )}
     </>
   );
 }

@@ -31,6 +31,7 @@ import TablesPage from "./pages/shared/TablesPage";
 import InventoryPage from "./pages/shared/InventoryPage";
 import PaymentsPage from "./pages/shared/PaymentsPage";
 
+import NotFoundPage from "./pages/NotFoundPage";
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
   { label: "Orders", to: "/staff/orders" },
@@ -64,7 +65,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
           </Route>
         </Route>
-
+        <Route path="*" element={<NotFoundPage />} />
         {/* Customer area */}
         <Route element={<RoleRoute role="customer" />}>
           <Route path="/customer" element={<CustomerLayout />}>

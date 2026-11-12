@@ -23,10 +23,17 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
   const [list, setList] = useState<Order[]>(allOrders);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Order | null>(null);
+  const [search, setSearch] = useState("");
 
   const count = (s: OrderStatus) => list.filter((o) => o.status === s).length;
-  const visible = list.filter((o) => filter === "all" || o.status === filter);
-
+const q = search.trim().replace(/^#/, "").toLowerCase();
+const visible = list.filter(
+  (o) =>
+    (filter === "all" || o.status === filter) &&
+    (o.id.toLowerCase().includes(q) ||
+      (o.table ?? "").toLowerCase().includes(q) ||
+      ORDER_TYPE_LABEL[o.type].toLowerCase().includes(q))
+);
   // TEMP: local update. Later this calls ordersApi.updateStatus()
   const updateStatus = (id: string, status: OrderStatus) =>
     setList((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
@@ -62,6 +69,7 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
       <PageHeader
         title="Orders"
         description={role === "admin" ? "All orders and history" : "Incoming orders"}
+        search={{ value: search, onChange: setSearch }}
       />
 
       <div className="mb-4">

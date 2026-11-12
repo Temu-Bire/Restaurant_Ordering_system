@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import FilterTabs from "../../components/ui/FilterTabs";
@@ -20,13 +21,22 @@ export default function MenuPage() {
     ? (raw as Category)
     : "all";
 
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+
   const visible = menuItems.filter(
-    (f) => filter === "all" || f.category === filter
+    (f) =>
+      (filter === "all" || f.category === filter) &&
+      f.name.toLowerCase().includes(q)
   );
 
   return (
     <>
-      <PageHeader title="Our Menu" description="Choose from our categories" />
+      <PageHeader
+        title="Our Menu"
+        description="Choose from our categories"
+        search={{ value: search, onChange: setSearch }}
+      />
 
       <div className="mb-5">
         <FilterTabs
@@ -40,7 +50,12 @@ export default function MenuPage() {
         {visible.map((food) => (
           <FoodCard key={food.id} food={food} onAdd={addItem} />
         ))}
+
+         {visible.length === 0 && (
+          <p className="py-10 text-center text-muted">No dishes match your search.</p>
+        )}
       </div>
+     
     </>
   );
 }

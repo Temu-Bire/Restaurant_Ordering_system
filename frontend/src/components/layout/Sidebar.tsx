@@ -15,7 +15,7 @@ interface SidebarProps {
 
 export default function Sidebar({ items, user, onLogout }: SidebarProps) {
   return (
-    <aside className="flex w-full shrink-0 flex-col border-b border-border bg-surface p-4 md:sticky md:top-0 md:h-screen md:w-60 md:border-b-0 md:border-r">
+    <aside className="flex w-full shrink-0 flex-col border-b border-border bg-surface p-4 md:sticky md:top-0 md:h-screen md:w-60 md:border-b-0 md:border-r print:hidden">
       <div className="mb-4 flex items-center gap-2.5 px-2 md:mb-8">
         <div className="flex size-9 items-center justify-center rounded-lg bg-primary font-bold text-white">
           R

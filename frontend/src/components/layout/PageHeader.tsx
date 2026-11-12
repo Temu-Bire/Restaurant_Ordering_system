@@ -1,11 +1,16 @@
-import Topbar from "./Topbar";
+import Topbar, { type SearchProps } from "./Topbar";
 
 interface PageHeaderProps {
   title: string;
   description?: string;
+  search?: SearchProps;
 }
 
-export default function PageHeader({ title, description }: PageHeaderProps) {
+export default function PageHeader({
+  title,
+  description,
+  search,
+}: PageHeaderProps) {
   return (
     <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div>
@@ -15,7 +20,7 @@ export default function PageHeader({ title, description }: PageHeaderProps) {
         )}
       </div>
 
-      <Topbar />
+      <Topbar search={search} />
     </header>
   );
 }

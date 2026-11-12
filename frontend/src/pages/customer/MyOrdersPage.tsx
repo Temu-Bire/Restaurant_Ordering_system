@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import PageHeader from "../../components/layout/PageHeader";
@@ -46,11 +47,30 @@ const columns: Column<Order>[] = [
 ];
 
 export default function MyOrdersPage() {
+  const [search, setSearch] = useState("");
+  const q = search.trim().replace(/^#/, "").toLowerCase();
+
+  const visible = orders.filter(
+    (o) =>
+      o.id.toLowerCase().includes(q) ||
+      ORDER_TYPE_LABEL[o.type].toLowerCase().includes(q) ||
+      o.status.includes(q)
+  );
+
   return (
     <>
-      <PageHeader title="My Orders" description="Order history" />
+      <PageHeader
+        title="My Orders"
+        description="Order history"
+        search={{ value: search, onChange: setSearch }}
+      />
       <Card>
-        <DataTable columns={columns} data={orders} getRowKey={(o) => o.id} />
+        <DataTable
+          columns={columns}
+          data={visible}
+          getRowKey={(o) => o.id}
+          emptyMessage="No orders match your search."
+        />
       </Card>
     </>
   );
