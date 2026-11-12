@@ -31,6 +31,7 @@ import TablesPage from "./pages/shared/TablesPage";
 import InventoryPage from "./pages/shared/InventoryPage";
 import PaymentsPage from "./pages/shared/PaymentsPage";
 
+import LandingPage from "./pages/LandingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 const staffNav = [
   { label: "Dashboard", to: "/staff/dashboard" },
@@ -56,8 +57,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-
+        <Route path="/" element={<LandingPage />} />
         {/* Public: skipped when already logged in */}
         <Route element={<GuestRoute />}>
           <Route element={<AuthLayout />}>
