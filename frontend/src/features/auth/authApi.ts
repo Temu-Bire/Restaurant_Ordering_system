@@ -1,10 +1,6 @@
-import { users } from "../../mocks/users";
-import type { User } from "../../types/user";
-
-export interface Session {
-  user: User;
-  token: string;
-}
+import { api } from "../../lib/apiClient";
+import type { Session } from "../../lib/session";
+import type { Role, User } from "../../types/user";
 
 export interface RegisterInput {
   name: string;
@@ -13,46 +9,65 @@ export interface RegisterInput {
   password: string;
 }
 
-const DEMO_PASSWORD = "password123";
+/* ---- Shape the NestJS backend returns. Adjust here if yours differs ---- */
+interface ApiUser {
+  id: string | number;
+  fullName?: string;
+  name?: string;
+  email: string;
+  role: string;
+  isActive?: boolean;
+}
 
-// In-memory only: accounts created through Register are lost on refresh
-const accounts = users.map((user) => ({ user, password: DEMO_PASSWORD }));
+interface LoginResponse {
+  accessToken: string;
+  user: ApiUser;
+}
 
-const wait = (ms = 400) => new Promise<void>((r) => setTimeout(r, ms));
-const sameEmail = (a: string, b: string) =>
-  a.trim().toLowerCase() === b.trim().toLowerCase();
+function toUser(u: ApiUser): User {
+  const role = u.role.toLowerCase();
+
+  if (!["customer", "staff", "admin"].includes(role)) {
+    throw new Error(`Unknown role from server: ${u.role}`);
+  }
+
+  return {
+    id: String(u.id),
+    name: u.fullName ?? u.name ?? u.email,
+    email: u.email,
+    role: role as Role,
+    active: u.isActive ?? true,
+  };
+}
 
 export async function login(email: string, password: string): Promise<Session> {
-  await wait();
+  const res = await api.post<LoginResponse>(
+    "/auth/login",
+    { email: email.trim(), password },
+    { auth: false }
+  );
 
-  const account = accounts.find((a) => sameEmail(a.user.email, email));
-
-  // Same message for unknown email and wrong password, so accounts can't be probed
-  if (!account || account.password !== password) {
-    throw new Error("Invalid email or password");
-  }
-  if (!account.user.active) {
-    throw new Error("This account is disabled. Please contact the restaurant.");
-  }
-
-  return { user: account.user, token: "mock-token" };
+  return { token: res.accessToken, user: toUser(res.user) };
 }
 
 export async function register(input: RegisterInput): Promise<void> {
-  await wait();
-
-  if (accounts.some((a) => sameEmail(a.user.email, input.email))) {
-    throw new Error("An account with this email already exists");
-  }
-
-  accounts.push({
-    user: {
-      id: crypto.randomUUID(),
-      name: input.name,
-      email: input.email.trim(),
-      role: "customer", // public sign-up is always a customer
-      active: true,
+  await api.post(
+    "/auth/register",
+    {
+      fullName: input.name,
+      phone: input.phone,
+      email: input.email,
+      password: input.password,
     },
-    password: input.password,
-  });
+    { auth: false }
+  );
+}
+
+// Best effort: the user is logged out locally even if this call fails
+export async function logout(): Promise<void> {
+  try {
+    await api.post("/auth/logout");
+  } catch {
+    /* ignore */
+  }
 }
