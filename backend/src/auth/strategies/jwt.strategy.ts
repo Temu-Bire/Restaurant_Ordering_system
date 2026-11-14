@@ -2,26 +2,29 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { toPublicUser } from '../../users/public-user.js';
 import { UsersService } from '../../users/users.service.js';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     config: ConfigService,
-    private readonly usersService: UsersService,
+    private readonly users: UsersService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.getOrThrow<string>('jwt.secret'),
+      secretOrKey: config.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
-  // Runs after the token signature is verified.
-  // The returned object becomes req.user
-  async validate(payload: { sub: string; role: string }) {
-    const user = await this.usersService.findById(payload.sub);
-    if (!user) throw new UnauthorizedException();
-    return user; // { id, fullName, email, role, createdAt }
+  // Runs only after the signature and expiry are valid. The return value
+  // becomes request.user (and what @CurrentUser() reads)
+  async validate(payload: { sub: string }) {
+    const user = await this.users.findById(payload.sub);
+
+    if (!user || !user.isActive) throw new UnauthorizedException();
+
+    return toPublicUser(user);
   }
 }

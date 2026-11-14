@@ -1,48 +1,60 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import { Role } from '@prisma/client';
+import { compare, hash, hashSync } from 'bcryptjs';
+import { toPublicUser } from '../users/public-user.js';
 import { UsersService } from '../users/users.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 
+// Compared against when the email doesn't exist, so a wrong email and a wrong
+// password take the same time and can't be told apart
+const DUMMY_HASH = hashSync('not-a-real-password', 10);
+
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
+    private readonly users: UsersService,
+    private readonly jwt: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
-    const hashed = await bcrypt.hash(dto.password, 10);
-
-    // role is not passed, so the database default (CUSTOMER) is used
-    return this.usersService.create({
+    const user = await this.users.create({
       fullName: dto.fullName,
+      phone: dto.phone,
       email: dto.email,
-      password: hashed,
+      password: await hash(dto.password, 10),
+      role: Role.CUSTOMER, // public sign-up is ALWAYS a customer
     });
+
+    return toPublicUser(user);
   }
 
   async login(dto: LoginDto) {
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.users.findByEmail(dto.email);
+    const passwordOk = await compare(dto.password, user?.password ?? DUMMY_HASH);
 
-    // Same message for unknown email and wrong password (criterion 7)
-    const invalid = new UnauthorizedException('Invalid email or password');
-    if (!user) throw invalid;
+    // Same message for unknown email and wrong password
+    if (!user || !passwordOk) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
 
-    const matches = await bcrypt.compare(dto.password, user.password);
-    if (!matches) throw invalid;
+    // Checked after the password, so a disabled account isn't revealed to guessers
+    if (!user.isActive) {
+      throw new ForbiddenException(
+        'This account is disabled. Please contact the restaurant.',
+      );
+    }
 
-    const payload = { sub: user.id, role: user.role };
+    const accessToken = await this.jwt.signAsync({
+      sub: user.id,
+      role: user.role,
+    });
 
-    return {
-      accessToken: await this.jwtService.signAsync(payload),
-      user: {
-        id: user.id,
-        name: user.fullName,
-        email: user.email,
-        role: user.role,
-      },
-    };
+    return { accessToken, user: toPublicUser(user) };
   }
 }

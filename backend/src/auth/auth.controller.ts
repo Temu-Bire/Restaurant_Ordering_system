@@ -1,36 +1,42 @@
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import { Public } from '../common/decorators/public.decorator.js';
+import type { PublicUser } from '../users/public-user.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
-import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly auth: AuthService) {}
 
+  @Public()
   @Post('register')
   register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+    return this.auth.register(dto);
   }
 
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('login')
-  @HttpCode(200)
   login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+    return this.auth.login(dto);
   }
 
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  me(@CurrentUser() user: unknown) {
-    return user;
-  }
-
-  // Stateless JWT: the frontend deletes the token. This just confirms it.
+  // JWTs are stateless: the real "logout" is the client deleting the token.
+  // This endpoint exists so the frontend has one place to call.
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Post('logout')
-  @HttpCode(200)
-  @UseGuards(JwtAuthGuard)
   logout() {
-    return { message: 'Logged out successfully' };
+    return;
+  }
+
+  @ApiBearerAuth()
+  @Get('me')
+  me(@CurrentUser() user: PublicUser) {
+    return user;
   }
 }

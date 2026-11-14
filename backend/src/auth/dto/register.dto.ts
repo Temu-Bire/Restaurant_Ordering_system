@@ -1,18 +1,35 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+
+const clean = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
 
 export class RegisterDto {
+  @Transform(clean)
   @IsString()
-  @IsNotEmpty({ message: 'Full name is required' })
+  @IsNotEmpty()
+  @MaxLength(100)
   fullName: string;
+
+  @Transform(clean)
+  @Matches(/^\+?[0-9\s-]{7,20}$/, { message: 'phone must be a valid phone number' })
+  phone: string;
 
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
-  @IsEmail({}, { message: 'Enter a valid email' })
+  @IsEmail()
   email: string;
 
   @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @MinLength(8)
+  @MaxLength(72)
   password: string;
 }
