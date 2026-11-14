@@ -5,16 +5,9 @@ import App from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { CartProvider } from "./features/cart/CartContext";
-
 import "./index.css";
 
-const rootElement = document.getElementById("root");
-
-if (!rootElement) {
-  throw new Error("Root element not found. Check index.html.");
-}
-
-createRoot(rootElement).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider>
       <AuthProvider>
