@@ -1,52 +1,67 @@
-import {PrismaClient, Role, } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient, Role } from '@prisma/client';
+import { hash } from 'bcryptjs';
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error('DATABASE_URL is not set');
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
 });
-const prisma = new PrismaClient({ adapter });
+
+const users = [
+  { fullName: 'John Doe', email: 'john@email.com', role: Role.CUSTOMER },
+  { fullName: 'Sara Tesfaye', email: 'sara@restro.com', role: Role.STAFF },
+  { fullName: 'Admin', email: 'admin@restro.com', role: Role.ADMIN },
+];
+
+const categories = ['Pizza', 'Burger', 'Salad', 'Drinks', 'Desserts', 'Sides'];
+
+const foods = [
+  { name: 'Margherita Pizza', category: 'Pizza', price: 12.99, description: 'Fresh pizza with tomato and cheese' },
+  { name: 'Pepperoni Pizza', category: 'Pizza', price: 14.99, description: 'Classic pepperoni on tomato and cheese' },
+  { name: 'Chicken Burger', category: 'Burger', price: 8.99, description: 'Grilled chicken, lettuce and sauce' },
+  { name: 'Caesar Salad', category: 'Salad', price: 7.99, description: 'Crisp lettuce with Caesar dressing' },
+  { name: 'French Fries', category: 'Sides', price: 3.99, description: 'Golden and crispy' },
+  { name: 'Iced Coffee', category: 'Drinks', price: 3.99, description: 'Cold brewed coffee over ice' },
+  { name: 'Chocolate Cake', category: 'Desserts', price: 5.99, description: 'Rich chocolate layer cake', isAvailable: false },
+  { name: 'Orange Juice', category: 'Drinks', price: 3.49, description: 'Freshly squeezed' },
+];
 
 async function main() {
-    const password= await bcrypt.hash('admin123@', 10);
+  const password = await hash('password123', 10);
+
+  for (const user of users) {
     await prisma.user.upsert({
-        where: { email: 'admin@restaurant.com' },
-        update: {},
-        create:{
-            fullName: 'System Admin',
-            email: 'admin@restaurant.com',
-            password: password,
-            role: Role.ADMIN        
-        }
+      where: { email: user.email },
+      update: {},
+      create: { ...user, password },
     });
-    const staffPassword= await bcrypt.hash('staff123@', 10);
-    await prisma.user.upsert({
-        where: { email: 'staff@restaurant.com' },
-        update: {},
-        create:{
-            fullName: 'Staff User',
-            email: 'staff@restaurant.com',
-            password: staffPassword,
-            role: Role.STAFF
-        }
+  }
+
+  const categoryIds = new Map<string, string>();
+  for (const name of categories) {
+    const category = await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { name },
     });
-    const customerPassword= await bcrypt.hash('customer123@', 10);
-    await prisma.user.upsert({
-        where: { email: 'customer@restaurant.com' },
-        update: {},
-        create:{
-            fullName: 'Customer User',
-            email: 'customer@restaurant.com',
-            password: customerPassword,
-            role: Role.CUSTOMER
-        }
+    categoryIds.set(name, category.id);
+  }
+
+  for (const { category, ...food } of foods) {
+    await prisma.food.upsert({
+      where: { name: food.name },
+      update: {},
+      create: { ...food, categoryId: categoryIds.get(category)! },
     });
+  }
 }
 
 main()
-    .catch((e) => {
-        console.error(e);
-        process.exit(1);
-    }).finally(() => {
-        prisma.$disconnect();
-    });
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());

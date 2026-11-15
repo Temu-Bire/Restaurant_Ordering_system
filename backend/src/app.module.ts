@@ -6,6 +6,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UsersModule } from './users/users.module.js';
+import { MenuModule } from './menu/menu.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { UsersModule } from './users/users.module.js';
     PrismaModule,
     UsersModule,
     AuthModule,
+    MenuModule
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
