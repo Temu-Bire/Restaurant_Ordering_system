@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Badge from "../../components/ui/Badge";
@@ -9,34 +9,52 @@ import FilterTabs from "../../components/ui/FilterTabs";
 import UserFormModal, {
   type UserFormData,
 } from "../../features/users/components/UserFormModal";
-import { users as initialUsers } from "../../mocks/users";
+import * as usersApi from "../../features/users/usersApi";
 import { ROLE_LABEL, type Role, type User } from "../../types/user";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 type Filter = "all" | Role;
 
 export default function UsersPage() {
-  const [list, setList] = useState<User[]>(initialUsers);
+  const [list, setList] = useState<User[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<User | "new" | null>(null);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    usersApi
+      .listUsers()
+      .then((users) => {
+        if (active) setList(users);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setLoadError(error instanceof Error ? error.message : "Could not load users");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
 
   const takenEmails = list
     .filter((u) => editing === "new" || u.id !== editing?.id)
     .map((u) => u.email.toLowerCase());
 
-  // TEMP: local state. Later these call usersApi
-  function saveUser(data: UserFormData) {
-    const { password, ...fields } = data;
-    void password; // the real API hashes and stores this
-
+  async function saveUser(data: UserFormData) {
     if (editing && editing !== "new") {
-      setList((prev) =>
-        prev.map((u) => (u.id === editing.id ? { ...u, ...fields } : u))
-      );
-    } else {
-      setList((prev) => [...prev, { id: crypto.randomUUID(), ...fields }]);
+      const saved = await usersApi.updateUser(editing.id, data);
+      setList((prev) => prev.map((u) => (u.id === saved.id ? saved : u)));
+      return;
     }
+
+    const created = await usersApi.createUser({
+      ...data,
+      password: data.password ?? "",
+    });
+    setList((prev) => [created, ...prev]);
   }
     const [search, setSearch] = useState("");
     const [toDelete, setToDelete] = useState<User | null>(null);
@@ -50,10 +68,17 @@ export default function UsersPage() {
 
     const deleteUser = (user: User) => setToDelete(user); // opens the dialog
 
-    function confirmDelete() {
+    async function confirmDelete() {
       if (!toDelete) return;
-      setList((prev) => prev.filter((u) => u.id !== toDelete.id));
-      setToDelete(null);
+      try {
+        await usersApi.deleteUser(toDelete.id);
+        setList((prev) => prev.filter((u) => u.id !== toDelete.id));
+        setToDelete(null);
+        setLoadError("");
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : "Could not delete this user");
+        setToDelete(null);
+      }
     }
 
   
@@ -106,6 +131,12 @@ export default function UsersPage() {
         description="Manage customers, staff and administrators"
         search={{ value: search, onChange: setSearch }}
       />
+
+      {loadError && (
+        <p className="mb-4 text-[13px] text-danger" role="alert">
+          {loadError}
+        </p>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <FilterTabs

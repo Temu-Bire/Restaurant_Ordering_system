@@ -18,7 +18,7 @@ interface UserFormModalProps {
   user: User | null; // null = adding a new user
   takenEmails: string[]; // lowercase emails of the other users
   onClose: () => void;
-  onSave: (data: UserFormData) => void;
+  onSave: (data: UserFormData) => void | Promise<void>;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,6 +36,7 @@ export default function UserFormModal({
     user && !user.active ? "disabled" : "active"
   );
   const [password, setPassword] = useState("");
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
@@ -44,7 +45,7 @@ export default function UserFormModal({
 
   const locked = user?.role === "admin";
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
 
     const next: typeof errors = {};
@@ -63,14 +64,23 @@ export default function UserFormModal({
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    onSave({
-      name: name.trim(),
-      email: email.trim(),
-      role,
-      active: status === "active",
-      password: user ? undefined : password,
-    });
-    onClose();
+    setSaving(true);
+    try {
+      await onSave({
+        name: name.trim(),
+        email: email.trim(),
+        role,
+        active: status === "active",
+        password: user ? undefined : password,
+      });
+      onClose();
+    } catch (error) {
+      setErrors({
+        email: error instanceof Error ? error.message : "Could not save this user",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -136,7 +146,9 @@ export default function UserFormModal({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit">Save User</Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saving..." : "Save User"}
+          </Button>
         </div>
       </form>
     </Modal>

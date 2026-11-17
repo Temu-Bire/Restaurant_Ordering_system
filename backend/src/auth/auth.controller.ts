@@ -1,7 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
+import { ChangePasswordDto } from '../users/dto/change-password.dto.js';
+import { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
 import type { PublicUser } from '../users/public-user.js';
 import { AuthService } from './auth.service.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -38,5 +40,18 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: PublicUser) {
     return user;
+  }
+
+  @ApiBearerAuth()
+  @Patch('me')
+  updateProfile(@CurrentUser() user: PublicUser, @Body() dto: UpdateProfileDto) {
+    return this.auth.updateProfile(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('password')
+  changePassword(@CurrentUser() user: PublicUser, @Body() dto: ChangePasswordDto) {
+    return this.auth.changePassword(user.id, dto);
   }
 }

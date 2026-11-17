@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useEffect, useState, type ReactNode } from "react";
 
 import {
   clearSession,
@@ -16,6 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => void;
+  replaceUser: (user: User) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -43,6 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }
 
+  const replaceUser = useCallback((user: User) => {
+    setSession((current) => {
+      if (!current) return current;
+      const next = { ...current, user };
+      saveSession(next);
+      return next;
+    });
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -50,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register: authApi.register,
         logout,
+        replaceUser,
       }}
     >
       {children}

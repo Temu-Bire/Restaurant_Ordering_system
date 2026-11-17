@@ -8,6 +8,8 @@ import { Role } from '@prisma/client';
 import { compare, hash, hashSync } from 'bcryptjs';
 import { toPublicUser } from '../users/public-user.js';
 import { UsersService } from '../users/users.service.js';
+import { ChangePasswordDto } from '../users/dto/change-password.dto.js';
+import { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 
@@ -56,5 +58,13 @@ export class AuthService {
     });
 
     return { accessToken, user: toPublicUser(user) };
+  }
+
+  updateProfile(userId: string, dto: UpdateProfileDto) {
+    return this.users.updateProfile(userId, dto);
+  }
+
+  changePassword(userId: string, dto: ChangePasswordDto) {
+    return this.users.changePassword(userId, dto);
   }
 }

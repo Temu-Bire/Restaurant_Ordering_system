@@ -5,6 +5,7 @@ export interface PublicUser {
   fullName: string;
   email: string;
   phone: string | null;
+  address: string | null;
   role: Role;
   isActive: boolean;
 }
@@ -14,6 +15,7 @@ export const toPublicUser = (user: User): PublicUser => ({
   fullName: user.fullName,
   email: user.email,
   phone: user.phone,
+  address: user.address,
   role: user.role,
   isActive: user.isActive,
 });

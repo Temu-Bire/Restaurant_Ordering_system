@@ -24,7 +24,7 @@ interface LoginResponse {
   user: ApiUser;
 }
 
-function toUser(u: ApiUser): User {
+export function toUser(u: ApiUser): User {
   const role = u.role.toLowerCase();
 
   if (!["customer", "staff", "admin"].includes(role)) {
