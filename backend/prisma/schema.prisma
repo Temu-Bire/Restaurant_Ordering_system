@@ -18,17 +18,18 @@ enum Role {
 // ───────────────────────── FR-01: Users ─────────────────────────
 
 model User {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   fullName  String
-  email     String   @unique
+  email     String    @unique
   phone     String?
+  address   String?
   password  String // bcrypt hash, never return it in API responses
-  role      Role     @default(CUSTOMER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-
+  role      Role      @default(CUSTOMER)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  orders    Order[]
+  payments  Payment[]
 }
 
 // ───────────────────────── FR-02: Menu ─────────────────────────
@@ -48,11 +49,150 @@ model Food {
   imagePath   String? // relative path like /uploads/menu/abc.jpg
   isAvailable Boolean  @default(true)
   categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  orderItems  OrderItem[]
+  recipes     RecipeLine[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@index([categoryId])
 }
+
+// ───────────────────────── FR-03: Orders ─────────────────────────
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  DELIVERY
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MOBILE
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  number        Int         @unique @default(autoincrement())
+  customerId    String
+  customer      User        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  type          OrderType
+  status        OrderStatus @default(PENDING)
+  tableId       String?
+  table         RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  tableLabel    String?
+  subtotal      Decimal     @db.Decimal(10, 2)
+  deliveryFee   Decimal     @default(0) @db.Decimal(10, 2)
+  tax           Decimal     @default(0) @db.Decimal(10, 2)
+  total         Decimal     @db.Decimal(10, 2)
+  stockAdjusted Boolean     @default(true)
+  items         OrderItem[]
+  payment       Payment?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  foodId    String
+  food      Food    @relation(fields: [foodId], references: [id], onDelete: Restrict)
+  name      String
+  unitPrice Decimal @db.Decimal(10, 2)
+  quantity  Int
+
+  @@index([orderId])
+  @@index([foodId])
+}
+
+// ───────────────────────── FR-04: Payments ─────────────────────────
+
+model Payment {
+  id           String        @id @default(uuid())
+  receipt      String?       @unique
+  orderId      String        @unique
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount       Decimal       @db.Decimal(10, 2)
+  method       PaymentMethod
+  paid         Boolean       @default(false)
+  recordedById String?
+  recordedBy   User?         @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// ───────────────────────── FR-05: Inventory ─────────────────────────
+
+model Ingredient {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  stock     Decimal      @db.Decimal(10, 3)
+  minimum   Decimal      @db.Decimal(10, 3)
+  recipes   RecipeLine[]
+  updatedAt DateTime     @updatedAt
+}
+
+model RecipeLine {
+  id           String     @id @default(uuid())
+  foodId       String
+  food         Food       @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  quantity     Decimal    @db.Decimal(10, 3)
+
+  @@unique([foodId, ingredientId])
+}
+
 // ───────────────────────── FR-06: Tables ─────────────────────────
 // Named RestaurantTable to avoid clashing with the word "Table".
+
+enum TableStatus {
+  FREE
+  OCCUPIED
+  RESERVED
+}
+
+model RestaurantTable {
+  id        String      @id @default(uuid())
+  name      String      @unique
+  seats     Int
+  status    TableStatus @default(FREE)
+  orders    Order[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+// ───────────────────────── FR-07: Settings ─────────────────────────
+
+model Settings {
+  id               String  @id @default("default")
+  name             String  @default("RestroGo")
+  phone            String  @default("+251 11 XXX XXXX")
+  address          String  @default("Bole, Addis Ababa")
+  currency         String  @default("USD")
+  taxRate          Decimal @default(5) @db.Decimal(5, 2)
+  dineInEnabled    Boolean @default(true)
+  takeawayEnabled  Boolean @default(true)
+  deliveryEnabled  Boolean @default(true)
+  deliveryFee      Decimal @default(2) @db.Decimal(10, 2)
+  cashEnabled      Boolean @default(true)
+  cardEnabled      Boolean @default(false)
+  mobileEnabled    Boolean @default(false)
+  lowStockMinimum  Decimal @default(5) @db.Decimal(10, 3)
+  updatedAt        DateTime @updatedAt
+}
