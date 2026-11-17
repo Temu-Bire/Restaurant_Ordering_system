@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Badge from "../../components/ui/Badge";
@@ -11,19 +11,26 @@ import RecordPaymentForm, {
 } from "../../features/payments/components/PaymentForm";
 import type { Payment } from "../../features/payments/types";
 import { PAYMENT_LABEL, type PaymentMethod } from "../../features/orders/types";
-import { allOrders } from "../../mocks/allOrders";
-import { payments as initialPayments } from "../../mocks/payments";
+import { listPayments, recordPayment } from "../../features/payments/paymentsApi";
+import { listOrders } from "../../features/orders/ordersApi";
+import type { Order } from "../../features/orders/types";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatTimeAgo } from "../../utils/formatTimeAgo";
 
 export default function PaymentsPage({ role }: { role: "staff" | "admin" }) {
-  const [list, setList] = useState<Payment[]>(initialPayments);
+  const [list, setList] = useState<Payment[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [prefillId, setPrefillId] = useState<string | undefined>();
-  const [formKey, setFormKey] = useState(0); // remounts the form after each save
+  const [formKey, setFormKey] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
 
+  useEffect(() => {
+    listPayments().then(setList).catch(console.error);
+    listOrders().then(setOrders).catch(console.error);
+  }, []);
+
   // Orders that still need a paid payment
-  const payable = allOrders.filter(
+  const payable = orders.filter(
     (o) =>
       o.status !== "cancelled" && !list.some((p) => p.orderId === o.id && p.paid)
   );
@@ -33,31 +40,14 @@ export default function PaymentsPage({ role }: { role: "staff" | "admin" }) {
       .filter((p) => p.paid && p.method === method)
       .reduce((sum, p) => sum + p.amount, 0);
 
-  // TEMP: local update. Later this calls paymentsApi.record()
-  function record(input: PaymentInput) {
-    setList((prev) => {
-      const existing = prev.find((p) => p.orderId === input.orderId);
-      const lastNumber = Math.max(
-        0,
-        ...prev.map((p) => (p.receipt ? Number(p.receipt.slice(2)) : 0))
-      );
-
-      const entry: Payment = {
-        id: existing?.id ?? crypto.randomUUID(),
-        receipt: input.paid
-          ? existing?.receipt ?? `R-${lastNumber + 1}`
-          : existing?.receipt ?? null,
-        orderId: input.orderId,
-        amount: input.amount,
-        method: input.method,
-        paid: input.paid,
-        date: new Date().toISOString(),
-      };
-
-      return existing
-        ? prev.map((p) => (p.orderId === input.orderId ? entry : p))
-        : [entry, ...prev];
-    });
+  async function record(input: PaymentInput) {
+    try {
+      await recordPayment(input);
+      const updated = await listPayments();
+      setList(updated);
+    } catch (err) {
+      console.error(err);
+    }
 
     setPrefillId(undefined);
     setFormKey((k) => k + 1);
@@ -87,7 +77,6 @@ export default function PaymentsPage({ role }: { role: "staff" | "admin" }) {
       className: "text-right",
       cell: (p) =>
         p.paid ? (
-          // TEMP: prints the whole page. Later this opens the receipt view
           <button onClick={() => window.print()} className="font-semibold text-primary">
             Print
           </button>

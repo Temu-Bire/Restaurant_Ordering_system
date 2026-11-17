@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Badge from "../../components/ui/Badge";
@@ -8,19 +8,58 @@ import DataTable, { type Column } from "../../components/ui/DataTable";
 import RecipeEditor from "../../features/inventory/components/RecipeEditor";
 import StockBar from "../../features/inventory/components/StockBar";
 import StockModal from "../../features/inventory/components/StockModal";
-import { isLow, type Ingredient } from "../../features/inventory/types";
-import { ingredients, recipes } from "../../mocks/inventory";
-import { menuItems } from "../../mocks/menu";
+import { isLow, type Ingredient, type RecipeLine } from "../../features/inventory/types";
+import { listIngredients, updateStock, listRecipes, saveRecipe } from "../../features/inventory/inventoryApi";
+import { listFoods } from "../../features/menu/menuApi";
+import type { FoodItem } from "../../features/menu/types";
 
 export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
-  const [items, setItems] = useState<Ingredient[]>(ingredients);
+  const [items, setItems] = useState<Ingredient[]>([]);
+  const [recipes, setRecipes] = useState<Record<string, RecipeLine[]>>({});
+  const [foods, setFoods] = useState<FoodItem[]>([]);
   const [modalId, setModalId] = useState<string | null>(null);
+
+  useEffect(() => {
+    listIngredients().then(setItems).catch(console.error);
+    listRecipes().then(setRecipes).catch(console.error);
+    if (role === "admin") {
+      listFoods()
+        .then((apifoods) =>
+          setFoods(
+            apifoods.map((f) => ({
+              id: f.id,
+              name: f.name,
+              price: f.price,
+              category: f.category.name.toLowerCase(),
+              description: f.description,
+              gradient: "from-orange-400 to-orange-600",
+              available: f.isAvailable,
+            }))
+          )
+        )
+        .catch(console.error);
+    }
+  }, [role]);
 
   const low = items.filter(isLow);
 
-  // TEMP: local update. Later this calls inventoryApi.updateStock()
-  const saveStock = (id: string, stock: number) =>
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, stock } : i)));
+  async function saveStock(id: string, stock: number) {
+    try {
+      const updated = await updateStock(id, stock);
+      setItems((prev) => prev.map((i) => (i.id === id ? updated : i)));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function handleSaveRecipe(foodId: string, lines: RecipeLine[]) {
+    try {
+      await saveRecipe(foodId, lines);
+      setRecipes((prev) => ({ ...prev, [foodId]: lines }));
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   const columns: Column<Ingredient>[] = [
     { header: "Ingredient", cell: (i) => i.name },
@@ -88,9 +127,10 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
         <div className="grid items-start gap-5 lg:grid-cols-[1fr_340px]">
           {table}
           <RecipeEditor
-            foods={menuItems}
+            foods={foods}
             ingredients={items}
             initialRecipes={recipes}
+            onSave={handleSaveRecipe}
           />
         </div>
       ) : (

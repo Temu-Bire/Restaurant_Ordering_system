@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Badge from "../../components/ui/Badge";
@@ -13,30 +13,44 @@ import {
   type Order,
   type OrderStatus,
 } from "../../features/orders/types";
-import { allOrders } from "../../mocks/allOrders";
+import { listOrders, updateOrderStatus } from "../../features/orders/ordersApi";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatTimeAgo } from "../../utils/formatTimeAgo";
 
 type Filter = "all" | OrderStatus;
 
 export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
-  const [list, setList] = useState<Order[]>(allOrders);
+  const [list, setList] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Order | null>(null);
   const [search, setSearch] = useState("");
 
+  useEffect(() => {
+    listOrders()
+      .then(setList)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   const count = (s: OrderStatus) => list.filter((o) => o.status === s).length;
-const q = search.trim().replace(/^#/, "").toLowerCase();
-const visible = list.filter(
-  (o) =>
-    (filter === "all" || o.status === filter) &&
-    (o.id.toLowerCase().includes(q) ||
-      (o.table ?? "").toLowerCase().includes(q) ||
-      ORDER_TYPE_LABEL[o.type].toLowerCase().includes(q))
-);
-  // TEMP: local update. Later this calls ordersApi.updateStatus()
-  const updateStatus = (id: string, status: OrderStatus) =>
-    setList((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+  const q = search.trim().replace(/^#/, "").toLowerCase();
+  const visible = list.filter(
+    (o) =>
+      (filter === "all" || o.status === filter) &&
+      (o.id.toLowerCase().includes(q) ||
+        (o.table ?? "").toLowerCase().includes(q) ||
+        ORDER_TYPE_LABEL[o.type].toLowerCase().includes(q))
+  );
+
+  async function updateStatus(id: string, status: OrderStatus) {
+    try {
+      const updated = await updateOrderStatus(id, status);
+      setList((prev) => prev.map((o) => (o.id === id ? updated : o)));
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   const adminColumns: Column<Order>[] = [
     { header: "Order", cell: (o) => `#${o.id}` },
@@ -63,6 +77,8 @@ const visible = list.filter(
       ),
     },
   ];
+
+  if (loading) return <p className="py-10 text-center text-muted">Loading...</p>;
 
   return (
     <>

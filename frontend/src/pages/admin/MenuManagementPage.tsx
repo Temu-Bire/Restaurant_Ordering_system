@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Badge from "../../components/ui/Badge";
@@ -11,11 +11,33 @@ import Modal from "../../components/ui/Modal";
 import FoodFormModal, {
   type FoodFormData,
 } from "../../features/menu/components/FoodForm";
-import { CATEGORIES, type FoodItem } from "../../features/menu/types";
+import type { FoodItem } from "../../features/menu/types";
 import { cn } from "../../lib/cn";
-import { menuItems } from "../../mocks/menu";
+import {
+  listFoods,
+  listCategories,
+  createFood,
+  updateFood,
+  deleteFood as apideleteFood,
+  createCategory,
+  uploadFoodImage,
+  type ApiCategory,
+  type ApiFood,
+} from "../../features/menu/menuApi";
 import { formatCurrency } from "../../utils/formatCurrency";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
+
+function apiFoodToFoodItem(f: ApiFood): FoodItem {
+  return {
+    id: f.id,
+    name: f.name,
+    price: f.price,
+    category: f.category.name.toLowerCase(),
+    description: f.description,
+    gradient: "from-orange-400 to-orange-600",
+    available: f.isAvailable,
+  };
+}
 
 /* ---------- Add category modal ---------- */
 interface CategoryModalProps {
@@ -39,8 +61,6 @@ function CategoryModal({ existing, onClose, onAdd }: CategoryModalProps) {
     onAdd(label);
     onClose();
   }
-
-  
 
   return (
     <Modal open onClose={onClose} title="Add Category">
@@ -66,59 +86,102 @@ function CategoryModal({ existing, onClose, onAdd }: CategoryModalProps) {
 
 /* ---------- Page ---------- */
 export default function MenuManagementPage() {
-  const [items, setItems] = useState<FoodItem[]>(menuItems);
-  const [categories, setCategories] = useState(CATEGORIES);
+  const [items, setItems] = useState<FoodItem[]>([]);
+  const [apiCategories, setApiCategories] = useState<ApiCategory[]>([]);
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState<FoodItem | "new" | null>(null);
   const [addingCategory, setAddingCategory] = useState(false);
+  const [search, setSearch] = useState("");
+  const [toDelete, setToDelete] = useState<FoodItem | null>(null);
+
+  useEffect(() => {
+    listFoods()
+      .then((foods) => setItems(foods.map(apiFoodToFoodItem)))
+      .catch(console.error);
+    listCategories().then(setApiCategories).catch(console.error);
+  }, []);
+
+  const categories = apiCategories.map((c) => ({
+    value: c.name.toLowerCase().replace(/\s+/g, "-"),
+    label: c.name,
+  }));
 
   const categoryLabel = (value: string) =>
     categories.find((c) => c.value === value)?.label ?? value;
 
-  // TEMP: local state. Later these call menuApi (and upload the image)
-  function saveFood(data: FoodFormData) {
+  async function saveFood(data: FoodFormData) {
     const { image, ...fields } = data;
-    void image;
+    // find the categoryId from apiCategories by matching the label
+    const matchedCat = apiCategories.find(
+      (c) =>
+        c.name.toLowerCase() === fields.category.toLowerCase() ||
+        c.name.toLowerCase().replace(/\s+/g, "-") === fields.category.toLowerCase()
+    );
+    const categoryId = matchedCat?.id ?? apiCategories[0]?.id ?? "";
 
-    if (editing && editing !== "new") {
-      setItems((prev) =>
-        prev.map((f) => (f.id === editing.id ? { ...f, ...fields } : f))
-      );
-    } else {
-      setItems((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          gradient: "from-orange-400 to-orange-600",
-          ...fields,
-        },
-      ]);
+    try {
+      if (editing && editing !== "new") {
+        const updated = await updateFood(editing.id, {
+          name: fields.name,
+          description: fields.description,
+          price: fields.price,
+          categoryId,
+          isAvailable: fields.available,
+        });
+        setItems((prev) =>
+          prev.map((f) => (f.id === editing.id ? apiFoodToFoodItem(updated) : f))
+        );
+      } else {
+        const created = await createFood({
+          name: fields.name,
+          description: fields.description,
+          price: fields.price,
+          categoryId,
+          isAvailable: fields.available,
+        });
+        setItems((prev) => [...prev, apiFoodToFoodItem(created)]);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+
+    if (image && editing && editing !== "new") {
+      // upload image separately
+      try {
+        await uploadFoodImage(editing.id, image);
+      } catch (err) {
+        console.error("Image upload failed:", err);
+      }
     }
   }
 
-  const [search, setSearch] = useState("");
-const [toDelete, setToDelete] = useState<FoodItem | null>(null);
+  const q = search.trim().toLowerCase();
+  const visible = items.filter(
+    (f) =>
+      (filter === "all" || f.category === filter) &&
+      f.name.toLowerCase().includes(q)
+  );
 
-const q = search.trim().toLowerCase();
-const visible = items.filter(
-  (f) =>
-    (filter === "all" || f.category === filter) &&
-    f.name.toLowerCase().includes(q)
-);
+  const deleteFoodItem = (food: FoodItem) => setToDelete(food);
 
-const deleteFood = (food: FoodItem) => setToDelete(food); // opens the dialog
+  async function confirmDelete() {
+    if (!toDelete) return;
+    try {
+      await apideleteFood(toDelete.id);
+      setItems((prev) => prev.filter((f) => f.id !== toDelete.id));
+    } catch (err) {
+      console.error(err);
+    }
+    setToDelete(null);
+  }
 
-function confirmDelete() {
-  if (!toDelete) return;
-  setItems((prev) => prev.filter((f) => f.id !== toDelete.id));
-  setToDelete(null);
-}
-
-  function addCategory(label: string) {
-    setCategories((prev) => [
-      ...prev,
-      { value: label.toLowerCase().replace(/\s+/g, "-"), label },
-    ]);
+  async function addCategory(label: string) {
+    try {
+      const created = await createCategory(label);
+      setApiCategories((prev) => [...prev, created]);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   const columns: Column<FoodItem>[] = [
@@ -154,7 +217,7 @@ function confirmDelete() {
             ✎
           </button>
           <button
-            onClick={() => deleteFood(f)}
+            onClick={() => deleteFoodItem(f)}
             aria-label={`Delete ${f.name}`}
             className="hover:text-danger"
           >
@@ -214,13 +277,13 @@ function confirmDelete() {
         />
       )}
       {toDelete && (
-    <ConfirmDialog
-      title="Delete food item"
-      message={`Delete "${toDelete.name}" from the menu?`}
-      onConfirm={confirmDelete}
-      onCancel={() => setToDelete(null)}
-    />
-  )}
+        <ConfirmDialog
+          title="Delete food item"
+          message={`Delete "${toDelete.name}" from the menu?`}
+          onConfirm={confirmDelete}
+          onCancel={() => setToDelete(null)}
+        />
+      )}
     </>
   );
 }

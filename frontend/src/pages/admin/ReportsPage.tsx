@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import BarChart from "../../components/charts/BarChart";
 import PageHeader from "../../components/layout/PageHeader";
@@ -6,18 +6,27 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import FilterTabs from "../../components/ui/FilterTabs";
 import StatCard from "../../components/ui/StatCard";
-import {
-  reports,
-  reportTabs,
-  totalRevenue,
-  type Period,
-} from "../../mocks/reports";
+import { getReport, type Period, type ReportData } from "../../features/reports/reportsApi";
 import { formatCurrency, formatCurrencyWhole } from "../../utils/formatCurrency";
+
+const reportTabs: { value: Period; label: string }[] = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
+
+const totalRevenue = (r: ReportData) => r.values.reduce((sum, v) => sum + v, 0);
 
 export default function ReportsPage() {
   const [period, setPeriod] = useState<Period>("daily");
+  const [report, setReport] = useState<ReportData | null>(null);
 
-  const report = reports[period];
+  useEffect(() => {
+    getReport(period).then(setReport).catch(console.error);
+  }, [period]);
+
+  if (!report) return <p className="py-10 text-center text-muted">Loading...</p>;
+
   const revenue = totalRevenue(report);
   const maxSold = Math.max(...report.popular.map((p) => p.sold), 1);
 

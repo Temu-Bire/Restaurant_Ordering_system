@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import AreaChart from "../../components/charts/AreaChart";
@@ -6,25 +6,29 @@ import PageHeader from "../../components/layout/PageHeader";
 import Card from "../../components/ui/Card";
 import Select from "../../components/ui/Select";
 import StatCard from "../../components/ui/StatCard";
-import { isLow } from "../../features/inventory/types";
-import { allOrders } from "../../mocks/allOrders";
-import { ingredients } from "../../mocks/inventory";
-import {
-  CUSTOMER_COUNT,
-  POPULAR_ITEM_COUNT,
-  periodOptions,
-  reports,
-  totalRevenue,
-  type Period,
-} from "../../mocks/reports";
+import { getAdminDashboard, type AdminDashboardData, type Period } from "../../features/reports/reportsApi";
 import { formatCurrencyWhole } from "../../utils/formatCurrency";
+
+const periodOptions: { value: Period; label: string }[] = [
+  { value: "daily", label: "This Week" },
+  { value: "weekly", label: "This Month" },
+  { value: "monthly", label: "Last 6 Months" },
+];
+
+const totalRevenue = (values: number[]) => values.reduce((sum, v) => sum + v, 0);
 
 export default function AdminDashboardPage() {
   const [period, setPeriod] = useState<Period>("weekly");
+  const [data, setData] = useState<AdminDashboardData | null>(null);
 
-  const report = reports[period];
-  const lowStock = ingredients.filter(isLow);
-  const pending = allOrders.filter((o) => o.status === "pending").length;
+  useEffect(() => {
+    getAdminDashboard(period).then(setData).catch(console.error);
+  }, [period]);
+
+  if (!data) return <p className="py-10 text-center text-muted">Loading...</p>;
+
+  const report = data.report;
+  const revenue = totalRevenue(report.values);
 
   return (
     <>
@@ -47,7 +51,7 @@ export default function AdminDashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Revenue"
-          value={formatCurrencyWhole(totalRevenue(report))}
+          value={formatCurrencyWhole(revenue)}
           icon="💰"
           tone="primary"
           trend={{ value: `${report.revenueTrend}%`, positive: true }}
@@ -61,13 +65,13 @@ export default function AdminDashboardPage() {
         />
         <StatCard
           label="Popular Items"
-          value={POPULAR_ITEM_COUNT}
+          value={data.popularItems}
           icon="⭐"
           tone="success"
         />
         <StatCard
           label="Customers"
-          value={CUSTOMER_COUNT.toLocaleString("en-US")}
+          value={data.customers.toLocaleString("en-US")}
           icon="👥"
           tone="purple"
         />
@@ -100,11 +104,11 @@ export default function AdminDashboardPage() {
               </Link>
             }
           >
-            {lowStock.length === 0 ? (
+            {data.lowStock.length === 0 ? (
               <p className="text-[13px] text-muted">All stock levels are fine.</p>
             ) : (
               <ul className="space-y-3">
-                {lowStock.map((item) => (
+                {data.lowStock.map((item) => (
                   <li key={item.id} className="flex items-center gap-3">
                     <span className="size-8 shrink-0 rounded-full bg-danger" />
                     <span className="flex-1 text-[13px]">{item.name}</span>
@@ -118,7 +122,7 @@ export default function AdminDashboardPage() {
           </Card>
 
           <Card title="Pending Orders">
-            <p className="text-3xl font-bold">{pending}</p>
+            <p className="text-3xl font-bold">{data.pendingOrders}</p>
           </Card>
         </div>
       </div>

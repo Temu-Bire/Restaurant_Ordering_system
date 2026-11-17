@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Button from "../../components/ui/Button";
@@ -12,23 +12,20 @@ import {
   type OrderType,
   type PaymentMethod,
 } from "../../features/orders/types";
-import {
-  operations as defaultOperations,
-  restaurantInfo as defaultInfo,
-} from "../../mocks/settings";
+import { getSettings, updateSettings, type Settings } from "../../features/settings/settingsApi";
 
 function toggle<T>(list: T[], item: T): T[] {
   return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
 }
 
 /* ---------- Restaurant info ---------- */
-function RestaurantInfoForm() {
+function RestaurantInfoForm({ initial, onSave }: { initial: Settings; onSave: (p: Partial<Settings>) => Promise<void> }) {
   const [form, setForm] = useState({
-    name: defaultInfo.name,
-    phone: defaultInfo.phone,
-    address: defaultInfo.address,
-    currency: defaultInfo.currency,
-    taxRate: String(defaultInfo.taxRate),
+    name: initial.name,
+    phone: initial.phone,
+    address: initial.address,
+    currency: initial.currency,
+    taxRate: String(initial.taxRate),
   });
   const [errors, setErrors] = useState<{
     name?: string;
@@ -44,7 +41,7 @@ function RestaurantInfoForm() {
       setSaved(false);
     };
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
 
     const tax = Number(form.taxRate);
@@ -57,7 +54,7 @@ function RestaurantInfoForm() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    // TEMP: later calls settingsApi.save()
+    await onSave({ name: form.name, phone: form.phone, address: form.address, currency: form.currency, taxRate: tax });
     setSaved(true);
   }
 
@@ -102,11 +99,11 @@ function RestaurantInfoForm() {
 }
 
 /* ---------- Operations ---------- */
-function OperationsForm() {
-  const [orderTypes, setOrderTypes] = useState<OrderType[]>(defaultOperations.orderTypes);
-  const [methods, setMethods] = useState<PaymentMethod[]>(defaultOperations.paymentMethods);
-  const [fee, setFee] = useState(String(defaultOperations.deliveryFee));
-  const [minimum, setMinimum] = useState(String(defaultOperations.lowStockMinimum));
+function OperationsForm({ initial, onSave }: { initial: Settings; onSave: (p: Partial<Settings>) => Promise<void> }) {
+  const [orderTypes, setOrderTypes] = useState<OrderType[]>(initial.orderTypes);
+  const [methods, setMethods] = useState<PaymentMethod[]>(initial.paymentMethods);
+  const [fee, setFee] = useState(String(initial.deliveryFee));
+  const [minimum, setMinimum] = useState(String(initial.lowStockMinimum));
   const [errors, setErrors] = useState<{
     orderTypes?: string;
     fee?: string;
@@ -114,7 +111,7 @@ function OperationsForm() {
   }>({});
   const [saved, setSaved] = useState(false);
 
-  function submit(e: FormEvent) {
+  async function submit(e: FormEvent) {
     e.preventDefault();
 
     const feeValue = Number(fee);
@@ -130,7 +127,7 @@ function OperationsForm() {
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    // TEMP: later calls settingsApi.save()
+    await onSave({ orderTypes, paymentMethods: methods, deliveryFee: feeValue, lowStockMinimum: minValue });
     setSaved(true);
   }
 
@@ -216,12 +213,25 @@ function OperationsForm() {
 
 /* ---------- Page ---------- */
 export default function SettingsPage() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+
+  useEffect(() => {
+    getSettings().then(setSettings).catch(console.error);
+  }, []);
+
+  if (!settings) return <p className="py-10 text-center text-muted">Loading...</p>;
+
+  async function save(partial: Partial<Settings>) {
+    const updated = await updateSettings(partial);
+    setSettings(updated);
+  }
+
   return (
     <>
       <PageHeader title="Settings" description="Restaurant settings" />
       <div className="grid items-start gap-5 lg:grid-cols-2">
-        <RestaurantInfoForm />
-        <OperationsForm />
+        <RestaurantInfoForm initial={settings} onSave={save} />
+        <OperationsForm initial={settings} onSave={save} />
       </div>
     </>
   );

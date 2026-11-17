@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Button from "../../components/ui/Button";
@@ -9,15 +9,21 @@ import Modal from "../../components/ui/Modal";
 import Select from "../../components/ui/Select";
 import TableTile from "../../features/tables/components/TableTile";
 import type { RestaurantTable, TableStatus } from "../../features/tables/types";
-import { allOrders } from "../../mocks/allOrders";
-import { tables as initialTables } from "../../mocks/tables";
+import {
+  listTables,
+  createTable,
+  updateTable as apiUpdateTable,
+  deleteTable as apiDeleteTable,
+} from "../../features/tables/tablesApi";
+import { listOrders, assignTable } from "../../features/orders/ordersApi";
+import type { Order } from "../../features/orders/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 type Filter = "all" | TableStatus;
 
 /* ---------- Add / Edit modal ---------- */
 interface TableFormProps {
-  table: RestaurantTable | null; // null = adding a new table
+  table: RestaurantTable | null;
   onClose: () => void;
   onSave: (name: string, seats: number) => void;
 }
@@ -55,7 +61,8 @@ function TableFormModal({ table, onClose, onSave }: TableFormProps) {
 
 /* ---------- Page ---------- */
 export default function TablesPage({ role }: { role: "staff" | "admin" }) {
-  const [list, setList] = useState<RestaurantTable[]>(initialTables);
+  const [list, setList] = useState<RestaurantTable[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<RestaurantTable | "new" | null>(null);
 
@@ -63,11 +70,18 @@ export default function TablesPage({ role }: { role: "staff" | "admin" }) {
   const [tableId, setTableId] = useState("");
   const [notice, setNotice] = useState("");
 
+  const [toDelete, setToDelete] = useState<RestaurantTable | null>(null);
+
+  useEffect(() => {
+    listTables().then(setList).catch(console.error);
+    listOrders().then(setOrders).catch(console.error);
+  }, []);
+
   const visible = list.filter((t) => filter === "all" || t.status === filter);
 
   const orderOptions = [
     { value: "", label: "Select order" },
-    ...allOrders
+    ...orders
       .filter((o) => o.type === "dine-in" && !["completed", "cancelled"].includes(o.status))
       .map((o) => ({ value: o.id, label: `Order #${o.id}` })),
   ];
@@ -76,29 +90,42 @@ export default function TablesPage({ role }: { role: "staff" | "admin" }) {
     ...list.filter((t) => t.status === "free").map((t) => ({ value: t.id, label: `Table ${t.name}` })),
   ];
 
-  // TEMP: local state. Later these call tablesApi
-  function saveTable(name: string, seats: number) {
-    if (editing && editing !== "new") {
-      setList((prev) => prev.map((t) => (t.id === editing.id ? { ...t, name, seats } : t)));
-    } else {
-      setList((prev) => [...prev, { id: crypto.randomUUID(), name, seats, status: "free" }]);
+  async function saveTable(name: string, seats: number) {
+    try {
+      if (editing && editing !== "new") {
+        const updated = await apiUpdateTable(editing.id, name, seats);
+        setList((prev) => prev.map((t) => (t.id === editing.id ? updated : t)));
+      } else {
+        const created = await createTable(name, seats);
+        setList((prev) => [...prev, created]);
+      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
-const [toDelete, setToDelete] = useState<RestaurantTable | null>(null);
+  const deleteTable = (table: RestaurantTable) => setToDelete(table);
 
-const deleteTable = (table: RestaurantTable) => setToDelete(table); // opens the dialog
+  async function confirmDelete() {
+    if (!toDelete) return;
+    try {
+      await apiDeleteTable(toDelete.id);
+      setList((prev) => prev.filter((t) => t.id !== toDelete.id));
+    } catch (err) {
+      console.error(err);
+    }
+    setToDelete(null);
+  }
 
-function confirmDelete() {
-  if (!toDelete) return;
-  setList((prev) => prev.filter((t) => t.id !== toDelete.id));
-  setToDelete(null);
-}
-
-  function assign() {
+  async function assign() {
     const table = list.find((t) => t.id === tableId);
-    setList((prev) => prev.map((t) => (t.id === tableId ? { ...t, status: "occupied" } : t)));
-    setNotice(`Order #${orderId} assigned to table ${table?.name}.`);
+    try {
+      await assignTable(orderId, tableId);
+      setList((prev) => prev.map((t) => (t.id === tableId ? { ...t, status: "occupied" as TableStatus } : t)));
+      setNotice(`Order #${orderId} assigned to table ${table?.name}.`);
+    } catch (err) {
+      console.error(err);
+    }
     setOrderId("");
     setTableId("");
   }
@@ -170,13 +197,13 @@ function confirmDelete() {
         />
       )}
       {toDelete && (
-      <ConfirmDialog
-        title="Delete table"
-        message={`Delete table ${toDelete.name}?`}
-        onConfirm={confirmDelete}
-        onCancel={() => setToDelete(null)}
-      />
-    )}
+        <ConfirmDialog
+          title="Delete table"
+          message={`Delete table ${toDelete.name}?`}
+          onConfirm={confirmDelete}
+          onCancel={() => setToDelete(null)}
+        />
+      )}
     </>
   );
 }
