@@ -1,16 +1,40 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import { PAYMENT_LABEL } from "../../features/orders/types";
-import { orders } from "../../mocks/orders";
+import { PAYMENT_LABEL, type Order } from "../../features/orders/types";
+import { getOrder } from "../../features/orders/ordersApi";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDate } from "../../utils/formatDate";
 
 export default function ReceiptPage() {
   const { id } = useParams();
-  const order = orders.find((o) => o.id === id);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    getOrder(id)
+      .then(setOrder)
+      .catch((err) => console.error("Failed to load order receipt", err))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="Receipt" />
+        <Card className="mx-auto max-w-md py-12 text-center text-muted">
+          Loading receipt...
+        </Card>
+      </>
+    );
+  }
 
   if (!order) {
     return (

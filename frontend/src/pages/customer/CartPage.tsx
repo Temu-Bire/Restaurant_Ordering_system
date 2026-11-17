@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import PageHeader from "../../components/layout/PageHeader";
@@ -7,6 +7,8 @@ import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import OptionPicker from "../../components/ui/OptionPicker";
 import { useCart } from "../../features/cart/useCart";
+import { createOrder } from "../../features/orders/ordersApi";
+import { getSettings } from "../../features/settings/settingsApi";
 import {
   orderTypeOptions,
   paymentOptions,
@@ -15,8 +17,6 @@ import {
 } from "../../features/orders/types";
 import { cn } from "../../lib/cn";
 import { formatCurrency } from "../../utils/formatCurrency";
-
-const DELIVERY_FEE = 2; // later comes from Admin Settings
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -27,19 +27,48 @@ export default function CartPage() {
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [table, setTable] = useState("");
   const [tableError, setTableError] = useState("");
+  const [deliveryFee, setDeliveryFee] = useState(2);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const deliveryFee = orderType === "delivery" ? DELIVERY_FEE : 0;
-  const total = subtotal + deliveryFee;
+  useEffect(() => {
+    getSettings()
+      .then((settings) => {
+        if (typeof settings.deliveryFee === "number") {
+          setDeliveryFee(settings.deliveryFee);
+        }
+      })
+      .catch((err) => console.error("Failed to load settings in cart", err));
+  }, []);
 
-  function placeOrder() {
+  const fee = orderType === "delivery" ? deliveryFee : 0;
+  const total = subtotal + fee;
+
+  async function placeOrder() {
     if (orderType === "dine-in" && !table.trim()) {
       setTableError("Table number is required");
       return;
     }
     setTableError("");
-    clear();
-    // TEMP: later ordersApi.create() returns the real order id
-    navigate("/customer/orders/ORD-1001/track");
+    setSubmitError("");
+    setSubmitting(true);
+
+    try {
+      const order = await createOrder({
+        type: orderType,
+        table: orderType === "dine-in" ? table.trim() : undefined,
+        paymentMethod: payment,
+        items: items.map((item) => ({ foodId: item.id, quantity: item.quantity })),
+      });
+      clear();
+      navigate(`/customer/orders/${order.id}/track`);
+    } catch (err: unknown) {
+      console.error("Order creation failed", err);
+      const msg = err instanceof Error ? err.message : "Failed to place order. Try again.";
+      setSubmitError(msg);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (items.length === 0) {
@@ -146,7 +175,7 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <dt>Delivery Fee</dt>
-                <dd>{formatCurrency(deliveryFee)}</dd>
+                <dd>{formatCurrency(fee)}</dd>
               </div>
             </dl>
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
@@ -163,8 +192,16 @@ export default function CartPage() {
               value={payment}
               onChange={setPayment}
             />
-            <Button fullWidth className="mt-4" onClick={placeOrder}>
-              Place Order →
+            {submitError && (
+              <p className="mt-3 text-xs text-danger">{submitError}</p>
+            )}
+            <Button
+              fullWidth
+              className="mt-4"
+              disabled={submitting}
+              onClick={placeOrder}
+            >
+              {submitting ? "Placing Order..." : "Place Order →"}
             </Button>
           </Card>
         </div>

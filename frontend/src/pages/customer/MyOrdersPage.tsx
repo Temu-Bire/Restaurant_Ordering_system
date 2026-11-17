@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import PageHeader from "../../components/layout/PageHeader";
@@ -6,7 +6,7 @@ import Badge from "../../components/ui/Badge";
 import Card from "../../components/ui/Card";
 import DataTable, { type Column } from "../../components/ui/DataTable";
 import { ORDER_TYPE_LABEL, type Order } from "../../features/orders/types";
-import { orders } from "../../mocks/orders";
+import { listMyOrders } from "../../features/orders/ordersApi";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDate } from "../../utils/formatDate";
 
@@ -47,7 +47,13 @@ const columns: Column<Order>[] = [
 ];
 
 export default function MyOrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    listMyOrders().then(setOrders).catch(console.error);
+  }, []);
+
   const q = search.trim().replace(/^#/, "").toLowerCase();
 
   const visible = orders.filter(

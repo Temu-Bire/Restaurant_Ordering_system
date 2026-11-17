@@ -1,10 +1,10 @@
+import { useEffect, useState } from "react";
 import { HOME_BY_ROLE } from "../app/paths";
 import PublicFooter from "../components/layout/PublicFooter";
 import PublicNavbar from "../components/layout/PublicNavbar";
 import LinkButton from "../components/ui/LinkButton";
 import { useAuth } from "../features/auth/useAuth";
-import { cn } from "../lib/cn";
-import { menuItems } from "../mocks/menu";
+import { listFoods, type ApiFood } from "../features/menu/menuApi";
 import { formatCurrency } from "../utils/formatCurrency";
 
 const steps = [
@@ -45,6 +45,13 @@ const orderTypes = [
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const [foods, setFoods] = useState<ApiFood[]>([]);
+
+  useEffect(() => {
+    listFoods()
+      .then(setFoods)
+      .catch((err) => console.error("Failed to load foods on landing page", err));
+  }, []);
 
   // Where the "order" buttons lead, depending on who is looking
   const orderPath = !user
@@ -53,7 +60,7 @@ export default function LandingPage() {
       ? "/customer/menu"
       : HOME_BY_ROLE[user.role];
 
-  const popular = menuItems.filter((f) => f.available).slice(0, 4);
+  const popular = foods.filter((f) => f.isAvailable).slice(0, 4);
 
   return (
     <div className="min-h-screen">
@@ -127,7 +134,15 @@ export default function LandingPage() {
                 key={food.id}
                 className="overflow-hidden rounded-xl border border-border bg-surface"
               >
-                <div className={cn("h-32 bg-gradient-to-br", food.gradient)} />
+                {food.imageUrl ? (
+                  <img
+                    src={food.imageUrl}
+                    alt={food.name}
+                    className="h-32 w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-32 bg-gradient-to-br from-orange-400 to-orange-600" />
+                )}
                 <div className="p-3">
                   <h3 className="text-[13px] font-bold">{food.name}</h3>
                   <p className="mt-0.5 text-[13px] font-bold text-primary">
@@ -136,6 +151,11 @@ export default function LandingPage() {
                 </div>
               </article>
             ))}
+            {popular.length === 0 && (
+              <p className="col-span-full py-8 text-center text-muted">
+                Menu items will appear here once added.
+              </p>
+            )}
           </div>
         </section>
 

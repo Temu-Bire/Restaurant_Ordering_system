@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import PageHeader from "../../components/layout/PageHeader";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import OrderStatusStepper from "../../features/orders/components/OrderStatusStepper";
-import type { OrderStatus } from "../../features/orders/types";
-import { orders } from "../../mocks/orders";
+import type { Order, OrderStatus } from "../../features/orders/types";
+import { getOrder, cancelOrder } from "../../features/orders/ordersApi";
 
 const MESSAGES: Record<OrderStatus, string> = {
   pending: "Waiting for confirmation",
@@ -20,9 +20,24 @@ const MESSAGES: Record<OrderStatus, string> = {
 const CANCELLABLE: OrderStatus[] = ["pending", "confirmed", "preparing"];
 
 export default function OrderTrackingPage() {
-  const { id } = useParams();
-  const order = orders.find((o) => o.id === id);
-  const [status, setStatus] = useState<OrderStatus | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const [order, setOrder] = useState<Order | null | undefined>(undefined); // undefined = loading
+
+  useEffect(() => {
+    if (!id) { setOrder(null); return; }
+    getOrder(id)
+      .then(setOrder)
+      .catch(() => setOrder(null));
+  }, [id]);
+
+  if (order === undefined) {
+    return (
+      <>
+        <PageHeader title="Track Your Order" />
+        <p className="text-muted">Loading...</p>
+      </>
+    );
+  }
 
   if (!order) {
     return (
@@ -33,8 +48,18 @@ export default function OrderTrackingPage() {
     );
   }
 
-  const current = status ?? order.status;
+  const current = order.status;
   const subtitle = `#${order.id}${order.table ? ` · Table ${order.table}` : ""}`;
+
+  async function handleCancel() {
+    if (!order) return;
+    try {
+      const updated = await cancelOrder(order.id);
+      setOrder(updated);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   return (
     <>
@@ -59,7 +84,7 @@ export default function OrderTrackingPage() {
           </Link>
 
           {CANCELLABLE.includes(current) && (
-            <Button variant="secondary" onClick={() => setStatus("cancelled")}>
+            <Button variant="secondary" onClick={handleCancel}>
               Cancel Order
             </Button>
           )}
