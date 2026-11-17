@@ -124,12 +124,14 @@ interface RecipeEditorProps {
   foods: FoodItem[];
   ingredients: Ingredient[];
   initialRecipes: Record<string, RecipeLine[]>;
+  onSave?: (foodId: string, lines: RecipeLine[]) => void;
 }
 
 export default function RecipeEditor({
   foods,
   ingredients,
   initialRecipes,
+  onSave,
 }: RecipeEditorProps) {
   const [recipes, setRecipes] = useState(initialRecipes);
   const [foodId, setFoodId] = useState(foods[0]?.id ?? "");
@@ -148,7 +150,10 @@ export default function RecipeEditor({
         key={foodId}
         ingredients={ingredients}
         saved={recipes[foodId] ?? []}
-        onSave={(lines) => setRecipes((prev) => ({ ...prev, [foodId]: lines }))}
+        onSave={(lines) => {
+          setRecipes((prev) => ({ ...prev, [foodId]: lines }));
+          onSave?.(foodId, lines);
+        }}
       />
 
       <p className="mt-4 text-xs text-muted">
