@@ -6,7 +6,13 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UsersModule } from './users/users.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
 import { MenuModule } from './menu/menu.module.js';
+import { OrdersModule } from './orders/orders.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
+import { ReportsModule } from './reports/reports.module.js';
+import { SettingsModule } from './settings/settings.module.js';
+import { TablesModule } from './tables/tables.module.js';
 
 @Module({
   imports: [
@@ -14,7 +20,13 @@ import { MenuModule } from './menu/menu.module.js';
     PrismaModule,
     UsersModule,
     AuthModule,
-    MenuModule
+    MenuModule,
+    SettingsModule,
+    TablesModule,
+    OrdersModule,
+    PaymentsModule,
+    InventoryModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
