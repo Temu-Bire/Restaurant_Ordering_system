@@ -254,7 +254,7 @@ export class OrdersService {
       if (closing && wasOpen && order.tableId) {
         await this.releaseTable(order.tableId, tx);
       }
-      if (!closing && order.tableId && status !== OrderStatus.CANCELLED) {
+      if (!closing && order.tableId) {
         await tx.restaurantTable.update({
           where: { id: order.tableId },
           data: { status: TableStatus.OCCUPIED },

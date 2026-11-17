@@ -5,7 +5,7 @@ import { orderInclude, toOrderResponse } from '../orders/order-response.js';
 
 export type ReportPeriod = 'daily' | 'weekly' | 'monthly';
 
-const CLOSED = [OrderStatus.CANCELLED];
+const CLOSED: OrderStatus[] = [OrderStatus.CANCELLED];
 
 @Injectable()
 export class ReportsService {
