@@ -74,6 +74,7 @@ export class MenuController {
   })
   @UseInterceptors(FileInterceptor('image', menuImageOptions))
   @Post(':id/image')
+  @Patch(':id/image')
   uploadImage(
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: Express.Multer.File | undefined,

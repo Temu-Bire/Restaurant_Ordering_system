@@ -49,7 +49,13 @@ export class MenuService {
   async create(dto: CreateFoodDto) {
     try {
       const food = await this.prisma.food.create({
-        data: { ...dto },
+        data: {
+          name: dto.name,
+          description: dto.description,
+          price: dto.price,
+          categoryId: dto.categoryId,
+          isAvailable: dto.isAvailable,
+        },
         include: { category: true },
       });
       return this.respond(food);
@@ -62,7 +68,13 @@ export class MenuService {
     try {
       const food = await this.prisma.food.update({
         where: { id },
-        data: { ...dto },
+        data: {
+          ...(dto.name !== undefined && { name: dto.name }),
+          ...(dto.description !== undefined && { description: dto.description }),
+          ...(dto.price !== undefined && { price: dto.price }),
+          ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
+          ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
+        },
         include: { category: true },
       });
       return this.respond(food);

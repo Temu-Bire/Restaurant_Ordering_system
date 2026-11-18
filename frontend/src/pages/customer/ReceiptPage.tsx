@@ -12,13 +12,10 @@ import { formatDate } from "../../utils/formatDate";
 export default function ReceiptPage() {
   const { id } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(id));
 
   useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
+    if (!id) return;
     getOrder(id)
       .then(setOrder)
       .catch((err) => console.error("Failed to load order receipt", err))

@@ -1,18 +1,45 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 import PageHeader from "../../components/layout/PageHeader";
 import FoodCard from "../../features/menu/components/FoodCard";
-import { CATEGORIES } from "../../features/menu/types";
+import type { FoodItem } from "../../features/menu/types";
 import { useCart } from "../../features/cart/useCart";
-import { menuItems } from "../../mocks/menu";
+import { useAuth } from "../../features/auth/useAuth";
+import { listFoods, listCategories, type ApiCategory } from "../../features/menu/menuApi";
 
 export default function HomePage() {
+  const { user } = useAuth();
   const { addItem } = useCart();
-  const popular = menuItems.slice(0, 4);
+  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+
+  useEffect(() => {
+    listFoods()
+      .then((items) =>
+        setFoods(
+          items.filter((f) => f.isAvailable).map((f) => ({
+            id: f.id,
+            name: f.name,
+            price: f.price,
+            category: f.category.name.toLowerCase(),
+            description: f.description,
+            gradient: "from-orange-400 to-orange-600",
+            available: f.isAvailable,
+          }))
+        )
+      )
+      .catch(console.error);
+
+    listCategories().then(setCategories).catch(console.error);
+  }, []);
+
+  const popular = foods.slice(0, 4);
+  const firstName = user?.name ? user.name.split(" ")[0] : "Friend";
 
   return (
     <>
-      <PageHeader title="Home" description="Welcome back, John" />
+      <PageHeader title="Home" description={`Welcome back, ${firstName}`} />
 
       {/* Hero banner */}
       <section className="relative mb-6 overflow-hidden rounded-xl border border-border bg-surface p-8">
@@ -52,13 +79,13 @@ export default function HomePage() {
       {/* Categories */}
       <h2 className="mb-3 text-lg font-bold">Categories</h2>
       <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <Link
-            key={c.value}
-            to={`/customer/menu?category=${c.value}`}
+            key={c.id}
+            to={`/customer/menu?category=${encodeURIComponent(c.name.toLowerCase())}`}
             className="rounded-full border border-border bg-surface px-4 py-1.5 text-[13px] font-medium transition-colors hover:bg-surface-secondary"
           >
-            {c.label}
+            {c.name}
           </Link>
         ))}
       </div>

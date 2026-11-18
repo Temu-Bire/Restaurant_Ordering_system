@@ -21,10 +21,10 @@ const CANCELLABLE: OrderStatus[] = ["pending", "confirmed", "preparing"];
 
 export default function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
-  const [order, setOrder] = useState<Order | null | undefined>(undefined); // undefined = loading
+  const [order, setOrder] = useState<Order | null | undefined>(id ? undefined : null); // undefined = loading
 
   useEffect(() => {
-    if (!id) { setOrder(null); return; }
+    if (!id) return;
     getOrder(id)
       .then(setOrder)
       .catch(() => setOrder(null));

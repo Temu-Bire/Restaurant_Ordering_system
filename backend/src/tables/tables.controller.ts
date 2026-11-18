@@ -23,6 +23,7 @@ import { TablesService } from './tables.service.js';
 export class TablesController {
   constructor(private readonly tables: TablesService) {}
 
+  @Roles(Role.CUSTOMER, Role.STAFF, Role.ADMIN)
   @Get()
   findAll() {
     return this.tables.findAll();

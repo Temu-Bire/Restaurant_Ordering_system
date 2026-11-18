@@ -4,18 +4,15 @@ import { useState, useEffect } from "react";
 import PageHeader from "../../components/layout/PageHeader";
 import FilterTabs from "../../components/ui/FilterTabs";
 import FoodCard from "../../features/menu/components/FoodCard";
-import { CATEGORIES, type Category, type FoodItem } from "../../features/menu/types";
+import type { FoodItem } from "../../features/menu/types";
 import { useCart } from "../../features/cart/useCart";
-import { listFoods } from "../../features/menu/menuApi";
-
-type Filter = "all" | Category;
-
-const tabs = [{ value: "all" as Filter, label: "All" }, ...CATEGORIES];
+import { listFoods, listCategories, type ApiCategory } from "../../features/menu/menuApi";
 
 export default function MenuPage() {
   const { addItem } = useCart();
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<FoodItem[]>([]);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
 
   useEffect(() => {
     listFoods()
@@ -35,19 +32,26 @@ export default function MenuPage() {
         )
       )
       .catch(console.error);
+
+    listCategories()
+      .then(setCategories)
+      .catch(console.error);
   }, []);
 
-  const raw = params.get("category");
-  const filter: Filter = CATEGORIES.some((c) => c.value === raw)
-    ? (raw as Category)
-    : "all";
+  const tabs = [
+    { value: "all", label: "All" },
+    ...categories.map((c) => ({ value: c.name.toLowerCase(), label: c.name })),
+  ];
+
+  const raw = (params.get("category") ?? "").toLowerCase();
+  const filter = tabs.some((c) => c.value === raw) ? raw : "all";
 
   const [search, setSearch] = useState("");
   const q = search.trim().toLowerCase();
 
   const visible = items.filter(
     (f) =>
-      (filter === "all" || f.category === filter) &&
+      (filter === "all" || f.category.toLowerCase() === filter) &&
       f.name.toLowerCase().includes(q)
   );
 

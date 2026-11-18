@@ -102,12 +102,12 @@ export default function MenuManagementPage() {
   }, []);
 
   const categories = apiCategories.map((c) => ({
-    value: c.name.toLowerCase().replace(/\s+/g, "-"),
+    value: c.name.toLowerCase(),
     label: c.name,
   }));
 
   const categoryLabel = (value: string) =>
-    categories.find((c) => c.value === value)?.label ?? value;
+    categories.find((c) => c.value === value || c.label.toLowerCase() === value)?.label ?? value;
 
   async function saveFood(data: FoodFormData) {
     const { image, ...fields } = data;

@@ -297,9 +297,27 @@ export class OrdersService {
     const name = dto.table?.trim();
     if (!name) throw new BadRequestException('Table number is required');
 
-    const table = await tx.restaurantTable.findFirst({
+    let table = await tx.restaurantTable.findFirst({
       where: { name: { equals: name, mode: 'insensitive' } },
     });
+
+    if (!table) {
+      // Allow prefix matches (e.g. "Table 3" matches "Table 3 - Gondar")
+      table = await tx.restaurantTable.findFirst({
+        where: { name: { startsWith: name, mode: 'insensitive' } },
+      });
+    }
+
+    if (!table) {
+      // Allow shorthand table numbers (e.g. "3" or "T3" matches "Table 3 - ...")
+      const match = /^T?(\d+)$/i.exec(name);
+      if (match) {
+        table = await tx.restaurantTable.findFirst({
+          where: { name: { startsWith: `Table ${match[1]}`, mode: 'insensitive' } },
+        });
+      }
+    }
+
     if (!table) throw new BadRequestException('That table was not found');
     if (table.status !== TableStatus.FREE) {
       throw new BadRequestException('That table is not free');

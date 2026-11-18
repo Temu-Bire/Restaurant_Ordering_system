@@ -63,7 +63,7 @@ export async function uploadFoodImage(id: string, file: File): Promise<ApiFood> 
   const res = await fetch(
     `${API_BASE_URL}/menu/${id}/image`,
     {
-      method: "PATCH",
+      method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     }
