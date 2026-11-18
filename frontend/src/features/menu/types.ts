@@ -6,8 +6,9 @@ export interface FoodItem {
   price: number;
   category: Category;
   description?: string;
-  gradient: string; // placeholder for a photo, until real images exist
+  gradient?: string;
   available: boolean;
+  imageUrl?: string | null;
 }
 
 export const CATEGORIES: { value: Category; label: string }[] = [

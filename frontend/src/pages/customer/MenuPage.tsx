@@ -7,7 +7,7 @@ import FoodCard from "../../features/menu/components/FoodCard";
 import type { FoodItem } from "../../features/menu/types";
 import { useCart } from "../../features/cart/useCart";
 import { useTranslation } from "../../hooks/useTranslation";
-import { listFoods, listCategories, type ApiCategory } from "../../features/menu/menuApi";
+import { listFoods, listCategories, mapApiFoodToFoodItem, type ApiCategory } from "../../features/menu/menuApi";
 
 export default function MenuPage() {
   const { addItem } = useCart();
@@ -19,19 +19,7 @@ export default function MenuPage() {
   useEffect(() => {
     listFoods()
       .then((foods) =>
-        setItems(
-          foods
-            .filter((f) => f.isAvailable)
-            .map((f) => ({
-              id: f.id,
-              name: f.name,
-              price: f.price,
-              category: f.category.name.toLowerCase(),
-              description: f.description,
-              gradient: "from-orange-400 to-orange-600",
-              available: f.isAvailable,
-            }))
-        )
+        setItems(foods.filter((f) => f.isAvailable).map(mapApiFoodToFoodItem))
       )
       .catch(console.error);
 

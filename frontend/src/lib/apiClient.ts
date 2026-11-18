@@ -18,7 +18,7 @@ export class ApiError extends Error {
   }
 }
 
-const rawBaseUrl = (import.meta.env.VITE_API_URL as string) || "http://localhost:3000/api";
+const rawBaseUrl = (import.meta.env.VITE_API_URL as string) || "/api";
 export const API_BASE_URL = rawBaseUrl.endsWith("/api")
   ? rawBaseUrl
   : `${rawBaseUrl.replace(/\/+$/, "")}/api`;

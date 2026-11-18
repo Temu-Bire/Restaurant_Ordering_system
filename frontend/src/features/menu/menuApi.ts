@@ -74,3 +74,16 @@ export async function uploadFoodImage(id: string, file: File): Promise<ApiFood> 
   }
   return res.json() as Promise<ApiFood>;
 }
+
+export function mapApiFoodToFoodItem(f: ApiFood): import("./types").FoodItem {
+  return {
+    id: f.id,
+    name: f.name,
+    price: f.price,
+    category: f.category.name.toLowerCase(),
+    description: f.description,
+    gradient: "from-orange-400 to-orange-600",
+    available: f.isAvailable,
+    imageUrl: f.imageUrl ? f.imageUrl.replace(/^http:\/\/localhost:3000/, "") : "/default-food.png",
+  };
+}

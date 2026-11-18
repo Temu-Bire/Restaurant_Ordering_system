@@ -12,7 +12,6 @@ import FoodFormModal, {
   type FoodFormData,
 } from "../../features/menu/components/FoodForm";
 import type { FoodItem } from "../../features/menu/types";
-import { cn } from "../../lib/cn";
 import { useTranslation } from "../../hooks/useTranslation";
 import {
   listFoods,
@@ -22,23 +21,11 @@ import {
   deleteFood as apideleteFood,
   createCategory,
   uploadFoodImage,
+  mapApiFoodToFoodItem,
   type ApiCategory,
-  type ApiFood,
 } from "../../features/menu/menuApi";
 import { formatCurrency } from "../../utils/formatCurrency";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
-
-function apiFoodToFoodItem(f: ApiFood): FoodItem {
-  return {
-    id: f.id,
-    name: f.name,
-    price: f.price,
-    category: f.category.name.toLowerCase(),
-    description: f.description,
-    gradient: "from-orange-400 to-orange-600",
-    available: f.isAvailable,
-  };
-}
 
 /* ---------- Add category modal ---------- */
 interface CategoryModalProps {
@@ -98,7 +85,7 @@ export default function MenuManagementPage() {
 
   useEffect(() => {
     listFoods()
-      .then((foods) => setItems(foods.map(apiFoodToFoodItem)))
+      .then((foods) => setItems(foods.map(mapApiFoodToFoodItem)))
       .catch(console.error);
     listCategories().then(setApiCategories).catch(console.error);
   }, []);
@@ -111,6 +98,16 @@ export default function MenuManagementPage() {
   const categoryLabel = (value: string) =>
     categories.find((c) => c.value === value || c.label.toLowerCase() === value)?.label ?? value;
 
+  async function handleDirectUpload(foodId: string, file: File) {
+    try {
+      await uploadFoodImage(foodId, file);
+      const fresh = await listFoods();
+      setItems(fresh.map(mapApiFoodToFoodItem));
+    } catch (err) {
+      console.error("Direct image upload failed:", err);
+    }
+  }
+
   async function saveFood(data: FoodFormData) {
     const { image, ...fields } = data;
     // find the categoryId from apiCategories by matching the label
@@ -122,17 +119,15 @@ export default function MenuManagementPage() {
     const categoryId = matchedCat?.id ?? apiCategories[0]?.id ?? "";
 
     try {
+      let targetId: string | null = editing && editing !== "new" ? editing.id : null;
       if (editing && editing !== "new") {
-        const updated = await updateFood(editing.id, {
+        await updateFood(editing.id, {
           name: fields.name,
           description: fields.description,
           price: fields.price,
           categoryId,
           isAvailable: fields.available,
         });
-        setItems((prev) =>
-          prev.map((f) => (f.id === editing.id ? apiFoodToFoodItem(updated) : f))
-        );
       } else {
         const created = await createFood({
           name: fields.name,
@@ -141,19 +136,21 @@ export default function MenuManagementPage() {
           categoryId,
           isAvailable: fields.available,
         });
-        setItems((prev) => [...prev, apiFoodToFoodItem(created)]);
+        targetId = created.id;
       }
-    } catch (err) {
-      console.error(err);
-    }
 
-    if (image && editing && editing !== "new") {
-      // upload image separately
-      try {
-        await uploadFoodImage(editing.id, image);
-      } catch (err) {
-        console.error("Image upload failed:", err);
+      if (image && targetId) {
+        try {
+          await uploadFoodImage(targetId, image);
+        } catch (err) {
+          console.error("Image upload failed:", err);
+        }
       }
+
+      const fresh = await listFoods();
+      setItems(fresh.map(mapApiFoodToFoodItem));
+    } catch (err) {
+      console.error("Failed to save food item:", err);
     }
   }
 
@@ -188,13 +185,45 @@ export default function MenuManagementPage() {
 
   const columns: Column<FoodItem>[] = [
     {
+      header: t("image"),
+      className: "w-20",
+      cell: (f) => (
+        <div className="relative group size-12 shrink-0 rounded-xl overflow-hidden border border-border bg-surface-secondary flex items-center justify-center">
+          <img
+            src={f.imageUrl || "/default-food.png"}
+            alt={f.name}
+            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/default-food.png";
+            }}
+          />
+          <label
+            className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity text-[10px] font-semibold"
+            title={`${t("uploadImage")}: ${f.name}`}
+          >
+            <span className="text-sm">📷</span>
+            <span className="leading-tight">+ Image</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleDirectUpload(f.id, file);
+              }}
+            />
+          </label>
+        </div>
+      ),
+    },
+    {
       header: t("foodName"),
       cell: (f) => (
-        <div className="flex items-center gap-3">
-          <div className={cn("size-9 shrink-0 rounded-lg bg-gradient-to-br flex items-center justify-center text-sm", f.gradient)}>
-            🍲
-          </div>
-          <span className="font-medium text-foreground">{f.name}</span>
+        <div>
+          <span className="font-bold text-foreground block">{f.name}</span>
+          {f.description && (
+            <span className="text-xs text-muted line-clamp-1 max-w-xs">{f.description}</span>
+          )}
         </div>
       ),
     },

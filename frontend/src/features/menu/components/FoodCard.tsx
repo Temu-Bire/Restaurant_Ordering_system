@@ -18,8 +18,15 @@ export default function FoodCard({ food, onAdd }: FoodCardProps) {
         !food.available && "opacity-60"
       )}
     >
-      <div className={cn("relative h-32 sm:h-36 flex items-center justify-center bg-gradient-to-br text-3xl", food.gradient)}>
-        <span>🍲</span>
+      <div className="relative h-32 sm:h-36 overflow-hidden bg-surface-secondary flex items-center justify-center">
+        <img
+          src={food.imageUrl || "/default-food.png"}
+          alt={food.name}
+          className="size-full object-cover transition-transform duration-300 hover:scale-105"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/default-food.png";
+          }}
+        />
         <button
           onClick={() => onAdd(food)}
           disabled={!food.available}

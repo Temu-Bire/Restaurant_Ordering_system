@@ -7,7 +7,7 @@ import type { FoodItem } from "../../features/menu/types";
 import { useCart } from "../../features/cart/useCart";
 import { useAuth } from "../../features/auth/useAuth";
 import { useTranslation } from "../../hooks/useTranslation";
-import { listFoods, listCategories, type ApiCategory } from "../../features/menu/menuApi";
+import { listFoods, listCategories, mapApiFoodToFoodItem, type ApiCategory } from "../../features/menu/menuApi";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -19,17 +19,7 @@ export default function HomePage() {
   useEffect(() => {
     listFoods()
       .then((items) =>
-        setFoods(
-          items.filter((f) => f.isAvailable).map((f) => ({
-            id: f.id,
-            name: f.name,
-            price: f.price,
-            category: f.category.name.toLowerCase(),
-            description: f.description,
-            gradient: "from-orange-400 to-orange-600",
-            available: f.isAvailable,
-          }))
-        )
+        setFoods(items.filter((f) => f.isAvailable).map(mapApiFoodToFoodItem))
       )
       .catch(console.error);
 

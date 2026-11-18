@@ -144,6 +144,7 @@ export const translations = {
     active: "Active",
     unavailable: "Unavailable",
     uploadImage: "Upload Image",
+    image: "Image",
 
     // Auth
     loginTitle: "Welcome back",
@@ -300,6 +301,7 @@ export const translations = {
     active: "አገልግሎት ላይ",
     unavailable: "የለም",
     uploadImage: "ፎቶ ጫን",
+    image: "ፎቶ",
 
     // Auth
     loginTitle: "እንኳን ደህና መጡ",
