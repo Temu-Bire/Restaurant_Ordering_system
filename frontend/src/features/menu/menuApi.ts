@@ -1,4 +1,4 @@
-import { api } from "../../lib/apiClient";
+import { api, API_BASE_URL } from "../../lib/apiClient";
 import { getToken } from "../../lib/session";
 
 export interface ApiCategory {
@@ -61,7 +61,7 @@ export async function uploadFoodImage(id: string, file: File): Promise<ApiFood> 
   formData.append("image", file);
   const token = getToken();
   const res = await fetch(
-    `${import.meta.env.VITE_API_URL}/menu/${id}/image`,
+    `${API_BASE_URL}/menu/${id}/image`,
     {
       method: "PATCH",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
