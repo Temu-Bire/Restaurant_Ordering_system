@@ -6,10 +6,12 @@ import FoodCard from "../../features/menu/components/FoodCard";
 import type { FoodItem } from "../../features/menu/types";
 import { useCart } from "../../features/cart/useCart";
 import { useAuth } from "../../features/auth/useAuth";
+import { useTranslation } from "../../hooks/useTranslation";
 import { listFoods, listCategories, type ApiCategory } from "../../features/menu/menuApi";
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { addItem } = useCart();
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
@@ -39,51 +41,52 @@ export default function HomePage() {
 
   return (
     <>
-      <PageHeader title="Home" description={`Welcome back, ${firstName}`} />
+      <PageHeader
+        title={t("navHome")}
+        description={`${t("welcomeBack")}, ${firstName}`}
+      />
 
       {/* Hero banner */}
-      <section className="relative mb-6 overflow-hidden rounded-xl border border-border bg-surface p-8">
+      <section className="relative mb-6 overflow-hidden rounded-2xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <div className="relative z-10 max-w-sm">
-          <h2 className="text-3xl font-extrabold leading-tight">
-            Delicious Food,
-            <br />
-            Great Experience!
+          <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight text-foreground tracking-tight">
+            {t("heroTitle")}
           </h2>
           <p className="mt-2 text-[13px] text-muted">
-            Order your favorite meals easily
+            {t("brandTagline")}
           </p>
           <Link
             to="/customer/menu"
-            className="mt-4 inline-block rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover"
+            className="mt-4 inline-block rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover"
           >
-            Browse Menu →
+            {t("browseMenu")}
           </Link>
         </div>
-        <div className="absolute -right-16 top-1/2 hidden size-72 -translate-y-1/2 rounded-full bg-gradient-to-br from-red-500 to-amber-300 sm:block" />
+        <div className="absolute -right-16 top-1/2 hidden size-72 -translate-y-1/2 rounded-full bg-gradient-to-br from-red-500 to-amber-300 opacity-80 sm:block" />
       </section>
 
       {/* Popular dishes */}
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-bold">Popular Dishes</h2>
-        <Link to="/customer/menu" className="text-[13px] font-semibold text-primary">
-          View All →
+        <h2 className="text-lg font-bold text-foreground">{t("popularDishes")}</h2>
+        <Link to="/customer/menu" className="text-[13px] font-semibold text-primary hover:underline">
+          {t("viewAll")}
         </Link>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {popular.map((food) => (
           <FoodCard key={food.id} food={food} onAdd={addItem} />
         ))}
       </div>
 
       {/* Categories */}
-      <h2 className="mb-3 text-lg font-bold">Categories</h2>
+      <h2 className="mb-3 text-lg font-bold text-foreground">{t("categories")}</h2>
       <div className="flex flex-wrap gap-2">
         {categories.map((c) => (
           <Link
             key={c.id}
             to={`/customer/menu?category=${encodeURIComponent(c.name.toLowerCase())}`}
-            className="rounded-full border border-border bg-surface px-4 py-1.5 text-[13px] font-medium transition-colors hover:bg-surface-secondary"
+            className="rounded-full border border-border bg-surface px-4 py-1.5 text-[13px] font-medium text-foreground transition-all hover:bg-surface-secondary hover:border-primary/40 shadow-xs"
           >
             {c.name}
           </Link>

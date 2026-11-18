@@ -14,10 +14,12 @@ import { PAYMENT_LABEL, type PaymentMethod } from "../../features/orders/types";
 import { listPayments, recordPayment } from "../../features/payments/paymentsApi";
 import { listOrders } from "../../features/orders/ordersApi";
 import type { Order } from "../../features/orders/types";
+import { useTranslation } from "../../hooks/useTranslation";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatTimeAgo } from "../../utils/formatTimeAgo";
 
 export default function PaymentsPage({ role }: { role: "staff" | "admin" }) {
+  const { t } = useTranslation();
   const [list, setList] = useState<Payment[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [prefillId, setPrefillId] = useState<string | undefined>();
@@ -106,7 +108,7 @@ export default function PaymentsPage({ role }: { role: "staff" | "admin" }) {
   return (
     <>
       <PageHeader
-        title="Payments"
+        title={t("navPayments")}
         description={
           role === "admin"
             ? "Recorded payments & receipts"

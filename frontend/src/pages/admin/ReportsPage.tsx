@@ -7,6 +7,7 @@ import Card from "../../components/ui/Card";
 import FilterTabs from "../../components/ui/FilterTabs";
 import StatCard from "../../components/ui/StatCard";
 import { getReport, type Period, type ReportData } from "../../features/reports/reportsApi";
+import { useTranslation } from "../../hooks/useTranslation";
 import { formatCurrency, formatCurrencyWhole } from "../../utils/formatCurrency";
 
 const reportTabs: { value: Period; label: string }[] = [
@@ -18,6 +19,7 @@ const reportTabs: { value: Period; label: string }[] = [
 const totalRevenue = (r: ReportData) => r.values.reduce((sum, v) => sum + v, 0);
 
 export default function ReportsPage() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<Period>("daily");
   const [report, setReport] = useState<ReportData | null>(null);
 
@@ -25,14 +27,14 @@ export default function ReportsPage() {
     getReport(period).then(setReport).catch(console.error);
   }, [period]);
 
-  if (!report) return <p className="py-10 text-center text-muted">Loading...</p>;
+  if (!report) return <p className="py-10 text-center text-muted">{t("loading")}</p>;
 
   const revenue = totalRevenue(report);
   const maxSold = Math.max(...report.popular.map((p) => p.sold), 1);
 
   return (
     <>
-      <PageHeader title="Reports" description="Daily, weekly and monthly sales" />
+      <PageHeader title={t("navReports")} description="Daily, weekly and monthly sales" />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <FilterTabs value={period} onChange={setPeriod} tabs={reportTabs} />

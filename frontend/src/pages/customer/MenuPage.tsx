@@ -6,10 +6,12 @@ import FilterTabs from "../../components/ui/FilterTabs";
 import FoodCard from "../../features/menu/components/FoodCard";
 import type { FoodItem } from "../../features/menu/types";
 import { useCart } from "../../features/cart/useCart";
+import { useTranslation } from "../../hooks/useTranslation";
 import { listFoods, listCategories, type ApiCategory } from "../../features/menu/menuApi";
 
 export default function MenuPage() {
   const { addItem } = useCart();
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
@@ -39,7 +41,7 @@ export default function MenuPage() {
   }, []);
 
   const tabs = [
-    { value: "all", label: "All" },
+    { value: "all", label: t("all") },
     ...categories.map((c) => ({ value: c.name.toLowerCase(), label: c.name })),
   ];
 
@@ -58,12 +60,12 @@ export default function MenuPage() {
   return (
     <>
       <PageHeader
-        title="Our Menu"
-        description="Choose from our categories"
+        title={t("navMenu")}
+        description={t("chooseFromCategories")}
         search={{ value: search, onChange: setSearch }}
       />
 
-      <div className="mb-5">
+      <div className="mb-6 overflow-x-auto pb-1">
         <FilterTabs
           tabs={tabs}
           value={filter}
@@ -71,13 +73,15 @@ export default function MenuPage() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {visible.map((food) => (
           <FoodCard key={food.id} food={food} onAdd={addItem} />
         ))}
 
         {visible.length === 0 && (
-          <p className="py-10 text-center text-muted">No dishes match your search.</p>
+          <div className="col-span-full rounded-2xl border border-border bg-surface py-12 text-center text-muted">
+            <p className="text-base font-medium">{t("noDishesFound")}</p>
+          </div>
         )}
       </div>
     </>

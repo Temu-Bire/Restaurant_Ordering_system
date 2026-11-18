@@ -7,46 +7,12 @@ import Card from "../../components/ui/Card";
 import DataTable, { type Column } from "../../components/ui/DataTable";
 import { ORDER_TYPE_LABEL, type Order } from "../../features/orders/types";
 import { listMyOrders } from "../../features/orders/ordersApi";
+import { useTranslation } from "../../hooks/useTranslation";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDate } from "../../utils/formatDate";
 
-const columns: Column<Order>[] = [
-  { header: "Order", cell: (o) => `#${o.id}` },
-  { header: "Date", cell: (o) => formatDate(o.date) },
-  {
-    header: "Items",
-    cell: (o) => o.lines.reduce((sum, l) => sum + l.quantity, 0),
-  },
-  { header: "Type", cell: (o) => ORDER_TYPE_LABEL[o.type] },
-  { header: "Total", cell: (o) => formatCurrency(o.total) },
-  {
-    header: "Status",
-    cell: (o) => (
-      <Badge variant={o.status} className="capitalize">
-        {o.status}
-      </Badge>
-    ),
-  },
-  {
-    header: "",
-    className: "text-right",
-    cell: (o) => {
-      if (o.status === "cancelled") return null;
-
-      const isDone = o.status === "completed";
-      return (
-        <Link
-          to={`/customer/orders/${o.id}/${isDone ? "receipt" : "track"}`}
-          className="font-semibold text-primary"
-        >
-          {isDone ? "Receipt" : "Track"}
-        </Link>
-      );
-    },
-  },
-];
-
 export default function MyOrdersPage() {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState("");
 
@@ -59,23 +25,59 @@ export default function MyOrdersPage() {
   const visible = orders.filter(
     (o) =>
       o.id.toLowerCase().includes(q) ||
-      ORDER_TYPE_LABEL[o.type].toLowerCase().includes(q) ||
-      o.status.includes(q)
+      ORDER_TYPE_LABEL[o.type].toLowerCase().includes(q)
   );
+
+  const columns: Column<Order>[] = [
+    { header: "Order", cell: (o) => `#${o.id}` },
+    { header: "Date", cell: (o) => formatDate(o.date) },
+    {
+      header: t("itemsOrdered"),
+      cell: (o) => o.lines.reduce((sum, l) => sum + l.quantity, 0),
+    },
+    { header: t("orderType"), cell: (o) => ORDER_TYPE_LABEL[o.type] },
+    { header: t("total"), cell: (o) => formatCurrency(o.total) },
+    {
+      header: t("status"),
+      cell: (o) => (
+        <Badge variant={o.status} className="capitalize">
+          {o.status}
+        </Badge>
+      ),
+    },
+    {
+      header: "",
+      className: "text-right",
+      cell: (o) => {
+        if (o.status === "cancelled") return null;
+
+        const isDone = o.status === "completed";
+        return (
+          <Link
+            to={`/customer/orders/${o.id}/${isDone ? "receipt" : "track"}`}
+            className="font-semibold text-primary hover:underline"
+          >
+            {isDone ? t("receipt") : "Track →"}
+          </Link>
+        );
+      },
+    },
+  ];
 
   return (
     <>
       <PageHeader
-        title="My Orders"
-        description="Order history"
+        title={t("navMyOrders")}
+        description="Your order history"
         search={{ value: search, onChange: setSearch }}
       />
-      <Card>
+
+      <Card className="rounded-2xl shadow-xs overflow-hidden">
         <DataTable
           columns={columns}
           data={visible}
           getRowKey={(o) => o.id}
-          emptyMessage="No orders match your search."
+          emptyMessage="No orders placed yet."
         />
       </Card>
     </>

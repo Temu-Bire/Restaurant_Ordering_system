@@ -13,6 +13,7 @@ import FoodFormModal, {
 } from "../../features/menu/components/FoodForm";
 import type { FoodItem } from "../../features/menu/types";
 import { cn } from "../../lib/cn";
+import { useTranslation } from "../../hooks/useTranslation";
 import {
   listFoods,
   listCategories,
@@ -86,6 +87,7 @@ function CategoryModal({ existing, onClose, onAdd }: CategoryModalProps) {
 
 /* ---------- Page ---------- */
 export default function MenuManagementPage() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [apiCategories, setApiCategories] = useState<ApiCategory[]>([]);
   const [filter, setFilter] = useState("all");
@@ -186,27 +188,29 @@ export default function MenuManagementPage() {
 
   const columns: Column<FoodItem>[] = [
     {
-      header: "Food",
+      header: t("foodName"),
       cell: (f) => (
         <div className="flex items-center gap-3">
-          <div className={cn("size-9 shrink-0 rounded-lg bg-gradient-to-br", f.gradient)} />
-          <span className="font-medium">{f.name}</span>
+          <div className={cn("size-9 shrink-0 rounded-lg bg-gradient-to-br flex items-center justify-center text-sm", f.gradient)}>
+            🍲
+          </div>
+          <span className="font-medium text-foreground">{f.name}</span>
         </div>
       ),
     },
-    { header: "Category", cell: (f) => categoryLabel(f.category) },
-    { header: "Price", cell: (f) => formatCurrency(f.price) },
+    { header: t("foodCategory"), cell: (f) => categoryLabel(f.category) },
+    { header: t("foodPrice"), cell: (f) => formatCurrency(f.price) },
     {
-      header: "Status",
+      header: t("foodStatus"),
       cell: (f) =>
         f.available ? (
-          <Badge variant="active">Active</Badge>
+          <Badge variant="active">{t("active")}</Badge>
         ) : (
-          <Badge variant="disabled">Unavailable</Badge>
+          <Badge variant="disabled">{t("unavailable")}</Badge>
         ),
     },
     {
-      header: "Actions",
+      header: t("actions"),
       cell: (f) => (
         <div className="flex gap-4 text-muted">
           <button
@@ -231,31 +235,33 @@ export default function MenuManagementPage() {
   return (
     <>
       <PageHeader
-        title="Menu Management"
-        description="Add, update and delete food items"
+        title={t("menuManagement")}
+        description={t("menuManagementDesc")}
         search={{ value: search, onChange: setSearch }}
       />
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <FilterTabs
-          value={filter}
-          onChange={setFilter}
-          tabs={[{ value: "all", label: "All" }, ...categories]}
-        />
-        <div className="flex gap-2">
-          <Button onClick={() => setEditing("new")}>+ Add Food Item</Button>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="overflow-x-auto pb-1">
+          <FilterTabs
+            value={filter}
+            onChange={setFilter}
+            tabs={[{ value: "all", label: t("all") }, ...categories]}
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setEditing("new")}>{t("addFoodItem")}</Button>
           <Button variant="secondary" onClick={() => setAddingCategory(true)}>
-            + Category
+            {t("addCategory")}
           </Button>
         </div>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl shadow-xs overflow-hidden">
         <DataTable
           columns={columns}
           data={visible}
           getRowKey={(f) => f.id}
-          emptyMessage="No food items in this category."
+          emptyMessage={t("noDishesFound")}
         />
       </Card>
 

@@ -1,5 +1,7 @@
 import { useAuth } from "../../features/auth/useAuth";
 import ThemeSwitcher from "../ThemeSwitcher";
+import LanguageSwitcher from "../LanguageSwitcher";
+import { useTranslation } from "../../hooks/useTranslation";
 
 export interface SearchProps {
   value: string;
@@ -8,21 +10,26 @@ export interface SearchProps {
 
 export default function Topbar({ search }: { search?: SearchProps }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   return (
-    <div className="flex items-center gap-3 print:hidden">
+    <div className="flex flex-wrap items-center gap-2 print:hidden">
       {search && (
         <input
           type="search"
-          aria-label="Search"
-          placeholder="Search..."
+          aria-label={t("search")}
+          placeholder={t("search")}
           value={search.value}
           onChange={(e) => search.onChange(e.target.value)}
-          className="w-40 rounded-lg border border-border bg-surface px-3 py-2 text-[13px] outline-none placeholder:text-muted focus:border-primary sm:w-52"
+          className="w-32 rounded-xl border border-border bg-surface px-3 py-2 text-[13px] outline-none placeholder:text-muted transition-all focus:border-primary focus:w-44 sm:w-44 sm:focus:w-52"
         />
       )}
+      <LanguageSwitcher />
       <ThemeSwitcher />
-      <div className="flex size-9 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+      <div
+        title={user?.name ?? "User"}
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-xs font-bold text-primary"
+      >
         {user?.name.charAt(0) ?? "U"}
       </div>
     </div>

@@ -6,10 +6,12 @@ import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import { useAuth } from "../../features/auth/useAuth";
 import { useLogout } from "../../features/auth/useLogout";
+import { useTranslation } from "../../hooks/useTranslation";
 import * as usersApi from "../../features/users/usersApi";
 
 export default function ProfilePage() {
   const { user, replaceUser } = useAuth();
+  const { t } = useTranslation();
   const logout = useLogout();
   const [info, setInfo] = useState({
     fullName: user?.name ?? "",
@@ -51,7 +53,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <PageHeader title="Profile" description="Manage your account" />
+      <PageHeader title={t("navProfile")} description="Manage your account" />
 
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <Card title="Personal Info">

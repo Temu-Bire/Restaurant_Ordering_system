@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/useAuth";
+import { useTranslation } from "../../hooks/useTranslation";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
-
 
 interface Form {
   fullName: string;
@@ -16,6 +16,7 @@ const empty: Form = { fullName: "", phone: "", email: "", password: "" };
 
 export default function RegisterPage() {
   const { register } = useAuth();
+  const { t } = useTranslation();
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -27,70 +28,70 @@ export default function RegisterPage() {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   async function handleSubmit(e: FormEvent) {
-  e.preventDefault();
+    e.preventDefault();
 
-  const next: Partial<Form> = {};
-  if (!form.fullName.trim()) next.fullName = "Full name is required";
-  if (!form.phone.trim()) next.phone = "Phone is required";
-  if (!form.email.trim()) next.email = "Email is required";
-  if (form.password.length < 8)
-    next.password = "Password must be at least 8 characters";
-  setErrors(next);
-  if (Object.keys(next).length > 0) return;
+    const next: Partial<Form> = {};
+    if (!form.fullName.trim()) next.fullName = "Full name is required";
+    if (!form.phone.trim()) next.phone = "Phone is required";
+    if (!form.email.trim()) next.email = "Email is required";
+    if (form.password.length < 8)
+      next.password = "Password must be at least 8 characters";
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
 
-  setFormError("");
-  setSubmitting(true);
+    setFormError("");
+    setSubmitting(true);
 
-  try {
-    await register({
-      name: form.fullName.trim(),
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-      password: form.password,
-    });
-    navigate("/login", { state: { registered: true } });
-  } catch (err) {
-    setFormError(err instanceof Error ? err.message : "Something went wrong");
-    setSubmitting(false);
+    try {
+      await register({
+        name: form.fullName.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      });
+      navigate("/login", { state: { registered: true } });
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Something went wrong");
+      setSubmitting(false);
+    }
   }
-}
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div>
-        <h2 className="text-2xl font-bold">Create account</h2>
-        <p className="mt-1 text-[13px] text-muted">Register as a customer</p>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("registerTitle")}</h2>
+        <p className="mt-1 text-[13px] text-muted">{t("registerSubtitle")}</p>
       </div>
 
       <Input
         id="fullName"
-        label="Full Name"
-        placeholder="John Doe"
+        label={t("fullName")}
+        placeholder="Abebe Bikila"
         value={form.fullName}
         onChange={update("fullName")}
         error={errors.fullName}
       />
       <Input
         id="phone"
-        label="Phone"
+        label={t("phone")}
         type="tel"
-        placeholder="+251 9XX XXX XXX"
+        placeholder="+251 911 223344"
         value={form.phone}
         onChange={update("phone")}
         error={errors.phone}
       />
       <Input
         id="email"
-        label="Email"
+        label={t("email")}
         type="email"
-        placeholder="john@email.com"
+        placeholder="user@example.com"
         value={form.email}
         onChange={update("email")}
         error={errors.email}
       />
       <Input
         id="password"
-        label="Password"
+        label={t("password")}
         type="password"
         placeholder="At least 8 characters"
         value={form.password}
@@ -100,18 +101,18 @@ export default function RegisterPage() {
 
       {formError && (
         <p role="alert" className="text-[13px] text-danger">
-            {formError}
+          {formError}
         </p>
-        )}
+      )}
 
-        <Button type="submit" fullWidth disabled={submitting}>
-        {submitting ? "Creating account..." : "Register"}
-        </Button>
+      <Button type="submit" fullWidth disabled={submitting}>
+        {submitting ? t("loading") : t("navRegister")}
+      </Button>
 
       <p className="text-center text-[13px] text-muted">
-        Already have an account?{" "}
-        <Link to="/login" className="font-semibold text-primary">
-          Log in
+        {t("alreadyHaveAccount")}{" "}
+        <Link to="/login" className="font-semibold text-primary hover:underline">
+          {t("navLogin")}
         </Link>
       </p>
     </form>

@@ -15,13 +15,22 @@ export async function listTables(): Promise<RestaurantTable[]> {
   return raw.map(mapTable);
 }
 
-export async function createTable(name: string, seats: number): Promise<RestaurantTable> {
-  const raw = await api.post<{ id: string; name: string; seats: number; status: string }>("/tables", { name, seats });
+export async function createTable(
+  input: { name: string; seats: number } | string,
+  seatsArg?: number
+): Promise<RestaurantTable> {
+  const payload = typeof input === "string" ? { name: input, seats: seatsArg ?? 4 } : input;
+  const raw = await api.post<{ id: string; name: string; seats: number; status: string }>("/tables", payload);
   return mapTable(raw);
 }
 
-export async function updateTable(id: string, name: string, seats: number): Promise<RestaurantTable> {
-  const raw = await api.patch<{ id: string; name: string; seats: number; status: string }>(`/tables/${id}`, { name, seats });
+export async function updateTable(
+  id: string,
+  input: { name: string; seats?: number } | string,
+  seatsArg?: number
+): Promise<RestaurantTable> {
+  const payload = typeof input === "string" ? { name: input, seats: seatsArg } : input;
+  const raw = await api.patch<{ id: string; name: string; seats: number; status: string }>(`/tables/${id}`, payload);
   return mapTable(raw);
 }
 

@@ -6,6 +6,7 @@ import Card from "../../components/ui/Card";
 import Checkbox from "../../components/ui/Checkbox";
 import Input from "../../components/ui/Input";
 import Select from "../../components/ui/Select";
+import { useTranslation } from "../../hooks/useTranslation";
 import {
   orderTypeOptions,
   paymentOptions,
@@ -213,13 +214,14 @@ function OperationsForm({ initial, onSave }: { initial: Settings; onSave: (p: Pa
 
 /* ---------- Page ---------- */
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
     getSettings().then(setSettings).catch(console.error);
   }, []);
 
-  if (!settings) return <p className="py-10 text-center text-muted">Loading...</p>;
+  if (!settings) return <p className="py-10 text-center text-muted">{t("loading")}</p>;
 
   async function save(partial: Partial<Settings>) {
     const updated = await updateSettings(partial);
@@ -228,7 +230,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Restaurant settings" />
+      <PageHeader title={t("navSettings")} description="Restaurant settings" />
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <RestaurantInfoForm initial={settings} onSave={save} />
         <OperationsForm initial={settings} onSave={save} />

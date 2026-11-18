@@ -5,11 +5,12 @@ import {
   type ReactNode,
 } from "react";
 
-export type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark";
 
-interface ThemeContextType {
+export interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -18,35 +19,34 @@ const STORAGE_KEY = "restrogo-theme";
 
 function getInitialTheme(): Theme {
   const saved = localStorage.getItem(STORAGE_KEY);
-  return saved === "light" || saved === "dark" || saved === "system"
-    ? saved
-    : "system";
+  if (saved === "light" || saved === "dark") {
+    return saved;
+  }
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return "light";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-
-    const apply = () => {
-      const resolved =
-        theme === "system" ? (media.matches ? "dark" : "light") : theme;
-      document.documentElement.setAttribute("data-theme", resolved);
-    };
-
-    apply();
-    localStorage.setItem(STORAGE_KEY, theme);
-
-    // Follow OS changes only while in system mode
-    if (theme === "system") {
-      media.addEventListener("change", apply);
-      return () => media.removeEventListener("change", apply);
+    document.documentElement.setAttribute("data-theme", theme);
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
     }
+    localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -14,12 +14,14 @@ import {
   type OrderStatus,
 } from "../../features/orders/types";
 import { listOrders, updateOrderStatus } from "../../features/orders/ordersApi";
+import { useTranslation } from "../../hooks/useTranslation";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatTimeAgo } from "../../utils/formatTimeAgo";
 
 type Filter = "all" | OrderStatus;
 
 export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
+  const { t } = useTranslation();
   const [list, setList] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
@@ -55,11 +57,11 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
   const adminColumns: Column<Order>[] = [
     { header: "Order", cell: (o) => `#${o.id}` },
     { header: "Type", cell: (o) => ORDER_TYPE_LABEL[o.type] },
-    { header: "Table", cell: (o) => o.table ?? "—" },
-    { header: "Items", cell: (o) => o.lines.reduce((s, l) => s + l.quantity, 0) },
-    { header: "Total", cell: (o) => formatCurrency(o.total) },
+    { header: t("tableNumber"), cell: (o) => o.table ?? "—" },
+    { header: t("itemsOrdered"), cell: (o) => o.lines.reduce((s, l) => s + l.quantity, 0) },
+    { header: t("total"), cell: (o) => formatCurrency(o.total) },
     {
-      header: "Status",
+      header: t("status"),
       cell: (o) => (
         <Badge variant={o.status} className="capitalize">
           {o.status}
@@ -78,34 +80,34 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
     },
   ];
 
-  if (loading) return <p className="py-10 text-center text-muted">Loading...</p>;
+  if (loading) return <p className="py-10 text-center text-muted">{t("loading")}</p>;
 
   return (
     <>
       <PageHeader
-        title="Orders"
-        description={role === "admin" ? "All orders and history" : "Incoming orders"}
+        title={t("navOrders")}
+        description={role === "admin" ? "All orders and history" : "Incoming kitchen orders"}
         search={{ value: search, onChange: setSearch }}
       />
 
-      <div className="mb-4">
+      <div className="mb-5 overflow-x-auto pb-1">
         <FilterTabs
           value={filter}
           onChange={setFilter}
           tabs={[
-            { value: "all", label: "All" },
-            { value: "pending", label: "Pending", count: count("pending") },
-            { value: "confirmed", label: "Confirmed", count: count("confirmed") },
-            { value: "preparing", label: "Preparing", count: count("preparing") },
-            { value: "ready", label: "Ready", count: count("ready") },
-            { value: "completed", label: "Completed" },
-            { value: "cancelled", label: "Cancelled" },
+            { value: "all", label: t("all") },
+            { value: "pending", label: t("statusPending"), count: count("pending") },
+            { value: "confirmed", label: t("statusConfirmed"), count: count("confirmed") },
+            { value: "preparing", label: t("statusPreparing"), count: count("preparing") },
+            { value: "ready", label: t("statusReady"), count: count("ready") },
+            { value: "completed", label: t("statusCompleted") },
+            { value: "cancelled", label: t("statusCancelled") },
           ]}
         />
       </div>
 
       {role === "admin" ? (
-        <Card>
+        <Card className="rounded-2xl shadow-xs overflow-hidden">
           <DataTable columns={adminColumns} data={visible} getRowKey={(o) => o.id} />
         </Card>
       ) : (
@@ -114,7 +116,9 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
             <OrderRow key={order.id} order={order} onClick={() => setSelected(order)} />
           ))}
           {visible.length === 0 && (
-            <p className="py-10 text-center text-muted">No orders in this status.</p>
+            <div className="rounded-2xl border border-border bg-surface py-12 text-center text-muted">
+              <p className="text-sm">No orders in this status.</p>
+            </div>
           )}
         </div>
       )}

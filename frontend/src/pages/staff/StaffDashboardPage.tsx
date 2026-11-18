@@ -5,8 +5,10 @@ import StatCard from "../../components/ui/StatCard";
 import OrderRow from "../../features/orders/components/OrderRow";
 import TableTile from "../../features/tables/components/TableTile";
 import { getStaffDashboard, type StaffDashboardData } from "../../features/reports/reportsApi";
+import { useTranslation } from "../../hooks/useTranslation";
 
 export default function StaffDashboardPage() {
+  const { t } = useTranslation();
   const [data, setData] = useState<StaffDashboardData | null>(null);
 
   useEffect(() => {
@@ -19,18 +21,21 @@ export default function StaffDashboardPage() {
     year: "numeric",
   });
 
-  if (!data) return <p className="py-10 text-center text-muted">Loading...</p>;
+  if (!data) return <p className="py-10 text-center text-muted">{t("loading")}</p>;
 
   return (
     <>
-      <PageHeader title="Dashboard" description={`Today · ${today}`} />
+      <PageHeader
+        title={t("staffDashboardTitle")}
+        description={`${t("staffDashboardDesc")} · ${today}`}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="New Orders" value={data.pending} tone="primary" />
-        <StatCard label="Completed" value={data.completed} tone="success" />
-        <StatCard label="Preparing" value={data.preparing} tone="info" />
+        <StatCard label={t("statusPending")} value={data.pending} tone="primary" />
+        <StatCard label={t("statusCompleted")} value={data.completed} tone="success" />
+        <StatCard label={t("statusPreparing")} value={data.preparing} tone="info" />
         <StatCard
-          label="Tables Occupied"
+          label={t("occupiedTables")}
           value={data.occupiedTables}
           tone="purple"
         />
@@ -38,7 +43,7 @@ export default function StaffDashboardPage() {
 
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_380px]">
         <section>
-          <h2 className="mb-3 text-lg font-bold">Recent Orders</h2>
+          <h2 className="mb-3 text-lg font-bold">{t("recentOrders")}</h2>
           <div className="space-y-3">
             {data.recentOrders.slice(0, 3).map((order) => (
               <OrderRow key={order.id} order={order} />
@@ -47,8 +52,8 @@ export default function StaffDashboardPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-lg font-bold">Restaurant Tables</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <h2 className="mb-3 text-lg font-bold">{t("navTables")}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {data.tables.slice(0, 6).map((table) => (
               <TableTile key={table.id} table={table} />
             ))}

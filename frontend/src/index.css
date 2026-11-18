@@ -49,7 +49,7 @@
 }
 
 @theme inline {
-  --font-sans: "Inter", Arial, sans-serif;
+  --font-sans: "Inter", "Noto Sans Ethiopic", "Nyala", "Segoe UI", system-ui, -apple-system, sans-serif;
 
   --color-background: var(--background);
   --color-surface: var(--surface);

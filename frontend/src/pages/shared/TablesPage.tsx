@@ -17,6 +17,8 @@ import {
 } from "../../features/tables/tablesApi";
 import { listOrders, assignTable } from "../../features/orders/ordersApi";
 import type { Order } from "../../features/orders/types";
+import { useTranslation } from "../../hooks/useTranslation";
+import { useAuth } from "../../features/auth/useAuth";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 type Filter = "all" | TableStatus;
@@ -29,6 +31,7 @@ interface TableFormProps {
 }
 
 function TableFormModal({ table, onClose, onSave }: TableFormProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState(table?.name ?? "");
   const [seats, setSeats] = useState(String(table?.seats ?? 4));
   const [error, setError] = useState("");
@@ -46,83 +49,99 @@ function TableFormModal({ table, onClose, onSave }: TableFormProps) {
   return (
     <Modal open onClose={onClose} title={table ? "Edit Table" : "Add Table"}>
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <Input id="tname" label="Table Name" placeholder="T11" value={name} onChange={(e) => setName(e.target.value)} />
+        <Input id="tname" label="Table Name" placeholder="Table 9" value={name} onChange={(e) => setName(e.target.value)} />
         <Input id="tseats" label="Seats" type="number" min={1} value={seats} onChange={(e) => setSeats(e.target.value)} error={error} />
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
-          <Button type="submit">Save Table</Button>
+          <Button type="submit">{t("save")}</Button>
         </div>
       </form>
     </Modal>
   );
 }
 
-/* ---------- Page ---------- */
-export default function TablesPage({ role }: { role: "staff" | "admin" }) {
-  const [list, setList] = useState<RestaurantTable[]>([]);
+export default function TablesPage({ role: propRole }: { role?: string } = {}) {
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  const role = propRole ?? user?.role ?? "staff";
+
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<RestaurantTable | "new" | null>(null);
+  const [toDelete, setToDelete] = useState<RestaurantTable | null>(null);
 
   const [orderId, setOrderId] = useState("");
   const [tableId, setTableId] = useState("");
   const [notice, setNotice] = useState("");
 
-  const [toDelete, setToDelete] = useState<RestaurantTable | null>(null);
-
   useEffect(() => {
-    listTables().then(setList).catch(console.error);
-    listOrders().then(setOrders).catch(console.error);
-  }, []);
+    listTables().then(setTables).catch(console.error);
+    if (role === "staff") {
+      listOrders()
+        .then((all) => setOrders(all.filter((o) => o.status !== "completed" && o.status !== "cancelled")))
+        .catch(console.error);
+    }
+  }, [role]);
 
-  const visible = list.filter((t) => filter === "all" || t.status === filter);
-
-  const orderOptions = [
-    { value: "", label: "Select order" },
-    ...orders
-      .filter((o) => o.type === "dine-in" && !["completed", "cancelled"].includes(o.status))
-      .map((o) => ({ value: o.id, label: `Order #${o.id}` })),
-  ];
-  const tableOptions = [
-    { value: "", label: "Select table" },
-    ...list.filter((t) => t.status === "free").map((t) => ({ value: t.id, label: `Table ${t.name}` })),
-  ];
+  const visible = tables.filter((t) => (filter === "all" ? true : t.status === filter));
 
   async function saveTable(name: string, seats: number) {
     try {
       if (editing && editing !== "new") {
-        const updated = await apiUpdateTable(editing.id, name, seats);
-        setList((prev) => prev.map((t) => (t.id === editing.id ? updated : t)));
+        const updated = await apiUpdateTable(editing.id, { name, seats });
+        setTables((prev) => prev.map((t) => (t.id === editing.id ? updated : t)));
       } else {
-        const created = await createTable(name, seats);
-        setList((prev) => [...prev, created]);
+        const created = await createTable({ name, seats });
+        setTables((prev) => [...prev, created]);
       }
     } catch (err) {
       console.error(err);
     }
   }
 
-  const deleteTable = (table: RestaurantTable) => setToDelete(table);
+  function deleteTable(table: RestaurantTable) {
+    setToDelete(table);
+  }
 
   async function confirmDelete() {
     if (!toDelete) return;
     try {
       await apiDeleteTable(toDelete.id);
-      setList((prev) => prev.filter((t) => t.id !== toDelete.id));
+      setTables((prev) => prev.filter((t) => t.id !== toDelete.id));
     } catch (err) {
       console.error(err);
     }
     setToDelete(null);
   }
 
+  const orderOptions = [
+    { value: "", label: "Select order..." },
+    ...orders.map((o) => ({
+      value: o.id,
+      label: `#${o.id} · ${o.type} (${o.lines.reduce((s, l) => s + l.quantity, 0)} items)`,
+    })),
+  ];
+
+  const tableOptions = [
+    { value: "", label: "Select table..." },
+    ...tables.map((t) => ({
+      value: t.id,
+      label: `${t.name} (${t.status})`,
+    })),
+  ];
+
   async function assign() {
-    const table = list.find((t) => t.id === tableId);
+    if (!orderId || !tableId) return;
     try {
       await assignTable(orderId, tableId);
-      setList((prev) => prev.map((t) => (t.id === tableId ? { ...t, status: "occupied" as TableStatus } : t)));
-      setNotice(`Order #${orderId} assigned to table ${table?.name}.`);
+      const chosen = tables.find((t) => t.id === tableId);
+      setNotice(`Order #${orderId} assigned to ${chosen?.name ?? "table"}`);
+      setTables((prev) =>
+        prev.map((t) => (t.id === tableId ? { ...t, status: "occupied" as TableStatus } : t))
+      );
     } catch (err) {
       console.error(err);
     }
@@ -133,7 +152,7 @@ export default function TablesPage({ role }: { role: "staff" | "admin" }) {
   return (
     <>
       <PageHeader
-        title="Tables"
+        title={t("navTables")}
         description={
           role === "admin"
             ? "Create and manage restaurant tables"
@@ -141,25 +160,29 @@ export default function TablesPage({ role }: { role: "staff" | "admin" }) {
         }
       />
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         {role === "staff" ? (
-          <FilterTabs
-            value={filter}
-            onChange={setFilter}
-            tabs={[
-              { value: "all", label: "All" },
-              { value: "free", label: "Free" },
-              { value: "occupied", label: "Occupied" },
-              { value: "reserved", label: "Reserved" },
-            ]}
-          />
+          <div className="overflow-x-auto pb-1">
+            <FilterTabs
+              value={filter}
+              onChange={setFilter}
+              tabs={[
+                { value: "all", label: t("all") },
+                { value: "free", label: t("free") },
+                { value: "occupied", label: t("occupied") },
+                { value: "reserved", label: t("reserved") },
+              ]}
+            />
+          </div>
         ) : (
           <span />
         )}
-        <Button onClick={() => setEditing("new")}>+ Add Table</Button>
+        {role === "admin" && (
+          <Button onClick={() => setEditing("new")}>+ Add Table</Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {visible.map((table) => (
           <TableTile
             key={table.id}
@@ -172,15 +195,15 @@ export default function TablesPage({ role }: { role: "staff" | "admin" }) {
       </div>
 
       {role === "staff" && (
-        <Card title="Assign Order to Table" className="mt-6">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-48 flex-1">
+        <Card title="Assign Order to Table" className="mt-6 rounded-2xl shadow-xs">
+          <div className="flex flex-col sm:flex-row flex-wrap items-end gap-3">
+            <div className="w-full sm:min-w-48 sm:flex-1">
               <Select id="order" value={orderId} options={orderOptions} onChange={(e) => setOrderId(e.target.value)} />
             </div>
-            <div className="min-w-48 flex-1">
+            <div className="w-full sm:min-w-48 sm:flex-1">
               <Select id="table" value={tableId} options={tableOptions} onChange={(e) => setTableId(e.target.value)} />
             </div>
-            <Button disabled={!orderId || !tableId} onClick={assign}>
+            <Button disabled={!orderId || !tableId} onClick={assign} className="w-full sm:w-auto">
               Assign
             </Button>
           </div>

@@ -4,9 +4,11 @@ import { Link, useLocation } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { useAuth } from "../../features/auth/useAuth";
+import { useTranslation } from "../../hooks/useTranslation";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
   const justRegistered = (location.state as { registered?: boolean } | null)
     ?.registered;
@@ -31,7 +33,6 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // Success: GuestRoute redirects to the right area
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Something went wrong");
       setSubmitting(false);
@@ -41,21 +42,21 @@ export default function LoginPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div>
-        <h2 className="text-2xl font-bold">Welcome back</h2>
-        <p className="mt-1 text-[13px] text-muted">Log in to continue</p>
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("loginTitle")}</h2>
+        <p className="mt-1 text-[13px] text-muted">{t("loginSubtitle")}</p>
       </div>
 
       {justRegistered && (
-        <p className="rounded-lg bg-success/10 px-3 py-2 text-[13px] text-success">
+        <p className="rounded-xl bg-success/10 px-3 py-2 text-[13px] text-success">
           Account created. Log in to continue.
         </p>
       )}
 
       <Input
         id="email"
-        label="Email"
+        label={t("email")}
         type="email"
-        placeholder="john@email.com"
+        placeholder="admin@habesha.com"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         error={errors.email}
@@ -63,9 +64,9 @@ export default function LoginPage() {
 
       <Input
         id="password"
-        label="Password"
+        label={t("password")}
         type="password"
-        placeholder="Enter your password"
+        placeholder="••••••••"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         error={errors.password}
@@ -78,22 +79,21 @@ export default function LoginPage() {
       )}
 
       <Button type="submit" fullWidth disabled={submitting}>
-        {submitting ? "Logging in..." : "Log in"}
+        {submitting ? t("loading") : t("navLogin")}
       </Button>
 
       <p className="text-center text-[13px] text-muted">
-        No account?{" "}
-        <Link to="/register" className="font-semibold text-primary">
-          Register
+        {t("noAccount")}{" "}
+        <Link to="/register" className="font-semibold text-primary hover:underline">
+          {t("navRegister")}
         </Link>
       </p>
 
-      {/* TEMP: remove when the real backend is connected */}
-      <div className="rounded-lg bg-surface-secondary p-3 text-xs text-muted">
-        <p className="mb-1 font-semibold">Demo accounts (password: password123)</p>
-        <p>Customer: john@email.com</p>
-        <p>Staff: sara@restro.com</p>
-        <p>Admin: admin@restro.com</p>
+      <div className="rounded-xl bg-surface-secondary p-3.5 text-xs text-muted border border-border">
+        <p className="mb-1.5 font-semibold text-foreground">Demo Accounts (password: password123)</p>
+        <p>• Admin: admin@habesha.com</p>
+        <p>• Staff: staff@habesha.com</p>
+        <p>• Customer: dawit@email.com</p>
       </div>
     </form>
   );

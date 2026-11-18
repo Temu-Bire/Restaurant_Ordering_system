@@ -7,11 +7,10 @@ import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import OptionPicker from "../../components/ui/OptionPicker";
 import { useCart } from "../../features/cart/useCart";
+import { useTranslation } from "../../hooks/useTranslation";
 import { createOrder } from "../../features/orders/ordersApi";
 import { getSettings } from "../../features/settings/settingsApi";
 import {
-  orderTypeOptions,
-  paymentOptions,
   type OrderType,
   type PaymentMethod,
 } from "../../features/orders/types";
@@ -20,6 +19,7 @@ import { formatCurrency } from "../../utils/formatCurrency";
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { items, count, subtotal, increase, decrease, removeItem, clear } =
     useCart();
 
@@ -27,9 +27,21 @@ export default function CartPage() {
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [table, setTable] = useState("");
   const [tableError, setTableError] = useState("");
-  const [deliveryFee, setDeliveryFee] = useState(2);
+  const [deliveryFee, setDeliveryFee] = useState(100);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  const orderTypeOptions: { value: OrderType; label: string }[] = [
+    { value: "dine-in", label: t("dineIn") },
+    { value: "takeaway", label: t("takeaway") },
+    { value: "delivery", label: t("delivery") },
+  ];
+
+  const paymentOptions: { value: PaymentMethod; label: string }[] = [
+    { value: "cash", label: t("cash") },
+    { value: "card", label: t("card") },
+    { value: "mobile", label: t("mobile") },
+  ];
 
   useEffect(() => {
     getSettings()
@@ -42,11 +54,12 @@ export default function CartPage() {
   }, []);
 
   const fee = orderType === "delivery" ? deliveryFee : 0;
-  const total = subtotal + fee;
+  const tax = Math.round(subtotal * 0.15 * 100) / 100;
+  const total = subtotal + fee + tax;
 
   async function placeOrder() {
     if (orderType === "dine-in" && !table.trim()) {
-      setTableError("Table number is required");
+      setTableError(t("tableRequired"));
       return;
     }
     setTableError("");
@@ -74,14 +87,14 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <>
-        <PageHeader title="Your Cart" description="0 items" />
-        <Card className="py-12 text-center">
-          <p className="text-muted">Your cart is empty.</p>
+        <PageHeader title={t("yourCart")} description="0 items" />
+        <Card className="py-12 text-center rounded-2xl">
+          <p className="text-base text-muted">{t("cartEmpty")}</p>
           <Link
             to="/customer/menu"
-            className="mt-4 inline-block rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover"
+            className="mt-4 inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover"
           >
-            Browse Menu →
+            {t("browseMenu")}
           </Link>
         </Card>
       </>
@@ -91,60 +104,71 @@ export default function CartPage() {
   return (
     <>
       <PageHeader
-        title="Your Cart"
+        title={t("yourCart")}
         description={`${count} ${count === 1 ? "item" : "items"}`}
       />
 
-      <div className="grid items-start gap-5 lg:grid-cols-[1fr_360px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
         {/* Left: items + order type */}
-        <Card title="Items">
+        <Card title={t("itemsOrdered")} className="rounded-2xl">
           <ul className="divide-y divide-border">
             {items.map((item) => (
-              <li key={item.id} className="flex items-center gap-4 py-3">
-                <div
-                  className={cn(
-                    "size-10 shrink-0 rounded-lg bg-gradient-to-br",
-                    item.gradient
-                  )}
-                />
+              <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3.5">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div
+                    className={cn(
+                      "flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-xl shadow-xs",
+                      item.gradient
+                    )}
+                  >
+                    🍲
+                  </div>
 
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-bold">{item.name}</p>
-                  <p className="text-xs text-muted">
-                    {formatCurrency(item.price)}
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-foreground">{item.name}</p>
+                    <p className="text-xs text-muted">
+                      {formatCurrency(item.price)}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-full border border-border px-3 py-1 text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-1 text-sm shadow-xs">
+                    <button
+                      type="button"
+                      onClick={() => decrease(item.id)}
+                      aria-label={`Decrease ${item.name}`}
+                      className="size-6 font-bold text-muted hover:text-foreground"
+                    >
+                      −
+                    </button>
+                    <span className="w-5 text-center font-bold text-foreground">
+                      {item.quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => increase(item.id)}
+                      aria-label={`Increase ${item.name}`}
+                      className="size-6 font-bold text-primary hover:text-primary-hover"
+                    >
+                      +
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => decrease(item.id)}
-                    aria-label={`Decrease ${item.name}`}
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                    aria-label={`Remove ${item.name}`}
+                    className="p-1 text-muted hover:text-danger"
                   >
-                    −
-                  </button>
-                  <span className="w-4 text-center font-semibold">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => increase(item.id)}
-                    aria-label={`Increase ${item.name}`}
-                  >
-                    +
+                    🗑
                   </button>
                 </div>
-
-                <button
-                  onClick={() => removeItem(item.id)}
-                  aria-label={`Remove ${item.name}`}
-                  className="text-danger"
-                >
-                  🗑
-                </button>
               </li>
             ))}
           </ul>
 
-          <h3 className="mb-3 mt-6 text-base font-bold">Order Type</h3>
+          <h3 className="mb-3 mt-6 text-sm font-bold text-foreground">{t("orderType")}</h3>
           <OptionPicker
             options={orderTypeOptions}
             value={orderType}
@@ -155,8 +179,8 @@ export default function CartPage() {
             <div className="mt-4">
               <Input
                 id="table"
-                label="Table Number"
-                placeholder="T2"
+                label={t("tableNumber")}
+                placeholder={t("tablePlaceholder")}
                 value={table}
                 onChange={(e) => setTable(e.target.value)}
                 error={tableError}
@@ -166,27 +190,33 @@ export default function CartPage() {
         </Card>
 
         {/* Right: summary + payment */}
-        <div className="space-y-5">
-          <Card title="Summary">
-            <dl className="space-y-1.5 text-[13px]">
-              <div className="flex justify-between">
-                <dt>Subtotal</dt>
-                <dd>{formatCurrency(subtotal)}</dd>
+        <div className="space-y-6">
+          <Card title="Summary" className="rounded-2xl">
+            <dl className="space-y-2 text-[13px]">
+              <div className="flex justify-between text-muted">
+                <dt>{t("subtotal")}</dt>
+                <dd className="font-semibold text-foreground">{formatCurrency(subtotal)}</dd>
               </div>
-              <div className="flex justify-between">
-                <dt>Delivery Fee</dt>
-                <dd>{formatCurrency(fee)}</dd>
+              <div className="flex justify-between text-muted">
+                <dt>{t("tax")}</dt>
+                <dd className="font-semibold text-foreground">{formatCurrency(tax)}</dd>
               </div>
+              {orderType === "delivery" && (
+                <div className="flex justify-between text-muted">
+                  <dt>{t("deliveryFee")}</dt>
+                  <dd className="font-semibold text-foreground">{formatCurrency(fee)}</dd>
+                </div>
+              )}
             </dl>
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-              <span className="text-[13px] font-bold">Total</span>
-              <span className="text-2xl font-bold text-primary">
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <span className="text-sm font-bold text-foreground">{t("total")}</span>
+              <span className="text-2xl font-black text-primary">
                 {formatCurrency(total)}
               </span>
             </div>
           </Card>
 
-          <Card title="Payment Method">
+          <Card title={t("paymentMethod")} className="rounded-2xl">
             <OptionPicker
               options={paymentOptions}
               value={payment}
@@ -197,11 +227,12 @@ export default function CartPage() {
             )}
             <Button
               fullWidth
-              className="mt-4"
+              size="lg"
+              className="mt-5"
               disabled={submitting}
               onClick={placeOrder}
             >
-              {submitting ? "Placing Order..." : "Place Order →"}
+              {submitting ? t("placingOrder") : `${t("placeOrder")} →`}
             </Button>
           </Card>
         </div>

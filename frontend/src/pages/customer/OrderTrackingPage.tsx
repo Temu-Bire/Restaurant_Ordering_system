@@ -7,21 +7,15 @@ import Card from "../../components/ui/Card";
 import OrderStatusStepper from "../../features/orders/components/OrderStatusStepper";
 import type { Order, OrderStatus } from "../../features/orders/types";
 import { getOrder, cancelOrder } from "../../features/orders/ordersApi";
-
-const MESSAGES: Record<OrderStatus, string> = {
-  pending: "Waiting for confirmation",
-  confirmed: "Your order is confirmed",
-  preparing: "Your order is being prepared!",
-  ready: "Your order is ready!",
-  completed: "Order completed. Enjoy!",
-  cancelled: "This order was cancelled",
-};
+import { useTranslation } from "../../hooks/useTranslation";
+import { formatCurrency } from "../../utils/formatCurrency";
 
 const CANCELLABLE: OrderStatus[] = ["pending", "confirmed", "preparing"];
 
 export default function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
-  const [order, setOrder] = useState<Order | null | undefined>(id ? undefined : null); // undefined = loading
+  const { t } = useTranslation();
+  const [order, setOrder] = useState<Order | null | undefined>(id ? undefined : null);
 
   useEffect(() => {
     if (!id) return;
@@ -30,11 +24,22 @@ export default function OrderTrackingPage() {
       .catch(() => setOrder(null));
   }, [id]);
 
+  const messages: Record<OrderStatus, string> = {
+    pending: t("statusPending"),
+    confirmed: t("statusConfirmed"),
+    preparing: t("statusPreparing"),
+    ready: t("statusReady"),
+    completed: t("statusCompleted"),
+    cancelled: t("statusCancelled"),
+  };
+
   if (order === undefined) {
     return (
       <>
-        <PageHeader title="Track Your Order" />
-        <p className="text-muted">Loading...</p>
+        <PageHeader title={t("trackYourOrder")} />
+        <Card className="mx-auto max-w-lg py-12 text-center text-muted rounded-2xl">
+          {t("loading")}
+        </Card>
       </>
     );
   }
@@ -42,14 +47,19 @@ export default function OrderTrackingPage() {
   if (!order) {
     return (
       <>
-        <PageHeader title="Track Your Order" />
-        <p className="text-muted">Order not found.</p>
+        <PageHeader title={t("trackYourOrder")} />
+        <Card className="mx-auto max-w-lg py-12 text-center text-muted rounded-2xl">
+          <p>Order not found.</p>
+          <Link to="/customer/menu" className="mt-3 inline-block font-semibold text-primary">
+            {t("browseMenu")}
+          </Link>
+        </Card>
       </>
     );
   }
 
   const current = order.status;
-  const subtitle = `#${order.id}${order.table ? ` · Table ${order.table}` : ""}`;
+  const subtitle = `#${order.id}${order.table ? ` · ${t("tableNumber")} ${order.table}` : ""}`;
 
   async function handleCancel() {
     if (!order) return;
@@ -63,33 +73,63 @@ export default function OrderTrackingPage() {
 
   return (
     <>
-      <PageHeader title="Track Your Order" description={subtitle} />
+      <PageHeader title={t("trackYourOrder")} description={subtitle} />
 
-      <Card className="mx-auto max-w-md text-center">
-        {current !== "cancelled" && <OrderStatusStepper status={current} />}
+      <div className="mx-auto max-w-xl space-y-6">
+        <Card className="rounded-2xl shadow-sm">
+          <div className="mb-6 text-center">
+            <span className="text-3xl">🍲</span>
+            <h2 className="mt-2 text-xl font-bold text-foreground">
+              {messages[current]}
+            </h2>
+            <p className="mt-1 text-xs text-muted">{t("trackSubtitle")}</p>
+          </div>
 
-        <div className="mx-auto my-8 size-28 rounded-full border-4 border-primary bg-primary/10" />
+          <div className="overflow-x-auto py-2">
+            <OrderStatusStepper status={current} />
+          </div>
+        </Card>
 
-        <h2 className="text-xl font-bold">{MESSAGES[current]}</h2>
-        {["pending", "confirmed", "preparing"].includes(current) && (
-          <p className="mt-2 text-[13px] text-muted">Estimated time: 15 min</p>
-        )}
+        {/* Order Details summary */}
+        <Card title={t("itemsOrdered")} className="rounded-2xl shadow-sm">
+          <ul className="divide-y divide-border">
+            {order.lines.map((line, idx) => (
+              <li
+                key={`${line.name}-${idx}`}
+                className="flex items-center justify-between py-2 text-[13px]"
+              >
+                <span>
+                  {line.quantity} × {line.name}
+                </span>
+                <span className="font-semibold text-foreground">
+                  {formatCurrency(line.price * line.quantity)}
+                </span>
+              </li>
+            ))}
+          </ul>
 
-        <div className="mt-5 flex justify-center gap-3">
+          <div className="mt-4 flex items-center justify-between border-t border-border pt-3 font-bold text-foreground">
+            <span>{t("total")}</span>
+            <span className="text-lg text-primary">{formatCurrency(order.total)}</span>
+          </div>
+        </Card>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <Link
             to={`/customer/orders/${order.id}/receipt`}
-            className="rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+            className="flex-1 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover"
           >
-            View Details
+            {t("receipt")} →
           </Link>
 
           {CANCELLABLE.includes(current) && (
-            <Button variant="secondary" onClick={handleCancel}>
-              Cancel Order
+            <Button variant="danger" onClick={handleCancel} className="flex-1 rounded-xl">
+              {t("cancel")}
             </Button>
           )}
         </div>
-      </Card>
+      </div>
     </>
   );
 }

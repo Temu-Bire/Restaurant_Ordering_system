@@ -11,9 +11,11 @@ import StockModal from "../../features/inventory/components/StockModal";
 import { isLow, type Ingredient, type RecipeLine } from "../../features/inventory/types";
 import { listIngredients, updateStock, listRecipes, saveRecipe } from "../../features/inventory/inventoryApi";
 import { listFoods } from "../../features/menu/menuApi";
+import { useTranslation } from "../../hooks/useTranslation";
 import type { FoodItem } from "../../features/menu/types";
 
 export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<Ingredient[]>([]);
   const [recipes, setRecipes] = useState<Record<string, RecipeLine[]>>({});
   const [foods, setFoods] = useState<FoodItem[]>([]);
@@ -95,7 +97,7 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
   return (
     <>
       <PageHeader
-        title={role === "admin" ? "Inventory & Recipes" : "Inventory"}
+        title={t("navInventory")}
         description={
           role === "admin"
             ? "Stock levels, minimums and recipe quantities"

@@ -11,11 +11,13 @@ import UserFormModal, {
 } from "../../features/users/components/UserFormModal";
 import * as usersApi from "../../features/users/usersApi";
 import { ROLE_LABEL, type Role, type User } from "../../types/user";
+import { useTranslation } from "../../hooks/useTranslation";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 type Filter = "all" | Role;
 
 export default function UsersPage() {
+  const { t } = useTranslation();
   const [list, setList] = useState<User[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<User | "new" | null>(null);
@@ -127,7 +129,7 @@ export default function UsersPage() {
   return (
     <>
       <PageHeader
-        title="Users"
+        title={t("navUsers")}
         description="Manage customers, staff and administrators"
         search={{ value: search, onChange: setSearch }}
       />
