@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
@@ -13,12 +14,18 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
+  const corsOrigins =
+    config.get<string[]>('corsOrigins') ??
+    config
+      .get<string>('CORS_ORIGINS')
+      ?.split(',')
+      .map((origin) => origin.trim()) ?? ['http://localhost:5173'];
+
   app.enableCors({
-    origin: config
-      .getOrThrow<string>('CORS_ORIGINS')
-      .split(',')
-      .map((origin) => origin.trim()),
+    origin: corsOrigins,
   });
+
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   app.useGlobalPipes(
     new ValidationPipe({

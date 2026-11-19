@@ -13,12 +13,23 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: Number(config.getOrThrow('JWT_EXPIRES_IN')),
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const rawExpiry =
+          config.get<string | number>('jwt.expiresIn') ??
+          config.get<string | number>('JWT_EXPIRES_IN') ??
+          '7d';
+        const expiresIn =
+          typeof rawExpiry === 'string' && /^\d+$/.test(rawExpiry)
+            ? Number(rawExpiry)
+            : (rawExpiry as any);
+
+        return {
+          secret: config.getOrThrow<string>('JWT_SECRET'),
+          signOptions: {
+            expiresIn,
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

@@ -107,6 +107,12 @@ export const HERO_SLIDES: HeroSlide[] = [
     description: "Communal platters with rich wots, tender sauteed meats, and pure teff injera.",
   },
   {
+    src: "/LandingPage3.png",
+    tag: "Signature Specialties",
+    title: "Handcrafted Culinary Excellence",
+    description: "Savor sizzling tibs, velvety slow-cooked wots, and warm fresh teff injera.",
+  },
+  {
     src: "/images/restaurant-interior.jpg",
     tag: "Upscale Atmosphere",
     title: "Authentic Cultural Dining",

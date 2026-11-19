@@ -1,72 +1,141 @@
-import { useState, useEffect, useRef, useTransition } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { HERO_SLIDES } from "./landingData";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
+
+const SLIDE_DURATION_MS = 5000;
+const MIN_SWIPE_DISTANCE = 45;
 
 export default function HeroSection() {
   const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const timerRef = useRef<number | null>(null);
-  const [, startTransition] = useTransition();
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  // Slideshow automatic 5-second interval
+  // Preload all slide images on mount to avoid white flashes or delays
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion || isPaused) return;
+    HERO_SLIDES.forEach((slide) => {
+      const img = new Image();
+      img.src = slide.src;
+    });
+  }, []);
 
-    timerRef.current = window.setInterval(() => {
-      startTransition(() => {
-        setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-      });
-    }, 5000);
+  const handleNext = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+  }, []);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isPaused]);
+  const handlePrev = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
+  }, []);
+
+  const goToSlide = useCallback((index: number) => {
+    setCurrentSlide(index);
+  }, []);
+
+  // Automatic slideshow: smoothly advances every 5 seconds and resets upon slide change
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, SLIDE_DURATION_MS);
+
+    return () => clearInterval(timer);
+  }, [currentSlide]);
+
+  // Touch swipe handling for mobile devices
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > MIN_SWIPE_DISTANCE) {
+      handleNext();
+    } else if (distance < -MIN_SWIPE_DISTANCE) {
+      handlePrev();
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  const handleTouchCancel = () => {
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  // Keyboard arrow key navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      handlePrev();
+    } else if (e.key === "ArrowRight") {
+      handleNext();
+    }
+  };
+
+  const activeSlideData = HERO_SLIDES[currentSlide] || HERO_SLIDES[0];
 
   return (
     <section
       id="home"
-      className="relative overflow-hidden min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center justify-center text-white"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Hero Ethiopian Cuisine Carousel"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
+      className="relative overflow-hidden min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center justify-center text-white focus:outline-hidden"
     >
-      {/* Full-Bleed 3-Image Slideshow Background */}
-      <div className="absolute inset-0 z-0">
-        {HERO_SLIDES.map((slide, index) => {
-          const isActive = currentSlide === index;
-          return (
-            <div
-              key={slide.title}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                isActive ? "opacity-100 scale-100" : "opacity-0 scale-105 pointer-events-none"
-              }`}
-            >
-              <img
-                src={slide.src}
-                alt={slide.title}
-                className="size-full object-cover"
-                loading={index === 0 ? "eager" : "lazy"}
-              />
-            </div>
-          );
-        })}
+      {/* Full-Bleed Animated Horizontal Slide Track */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div
+          className="flex h-full w-full transition-transform duration-700 ease-out will-change-transform"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {HERO_SLIDES.map((slide, index) => {
+            const isActive = currentSlide === index;
+            return (
+              <div
+                key={`${slide.src}-${index}`}
+                className="relative h-full w-full min-w-full shrink-0 overflow-hidden"
+              >
+                <img
+                  src={slide.src}
+                  alt={slide.title}
+                  className={`size-full object-cover transition-transform duration-1000 ease-out ${
+                    isActive ? "scale-105" : "scale-100"
+                  }`}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    if (!target.src.endsWith("/LandingPage1.png")) {
+                      target.src = "/LandingPage1.png";
+                    }
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
 
-        {/* Premium Dark Gradient Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-black/60" />
-        <div className="absolute inset-0 bg-black/35 backdrop-blur-[0.5px]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-[#111318]/70" />
+        {/* Premium Dark Gradient Overlays for High Legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-black/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-black/35 backdrop-blur-[0.5px] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-[#111318]/70 pointer-events-none" />
       </div>
 
       {/* Left Arrow Navigation Button */}
       <button
         type="button"
-        onClick={() =>
-          setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length)
-        }
-        aria-label="Previous slide"
-        className="absolute left-3 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 text-2xl font-bold"
+        onClick={handlePrev}
+        aria-label="Previous background slide"
+        className="absolute left-3 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 text-2xl font-bold cursor-pointer"
       >
         ‹
       </button>
@@ -74,20 +143,19 @@ export default function HeroSection() {
       {/* Right Arrow Navigation Button */}
       <button
         type="button"
-        onClick={() =>
-          setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length)
-        }
-        aria-label="Next slide"
-        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 text-2xl font-bold"
+        onClick={handleNext}
+        aria-label="Next background slide"
+        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 text-2xl font-bold cursor-pointer"
       >
         ›
       </button>
 
       {/* Hero Content */}
       <div className="relative z-10 mx-auto max-w-4xl px-8 sm:px-14 text-center py-20 lg:py-28 space-y-6">
-        <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/20 px-4 py-1.5 text-xs font-semibold text-orange-300 backdrop-blur-sm">
+        {/* Dynamic Tag Badge with Smooth Fade */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/20 px-4 py-1.5 text-xs font-semibold text-orange-300 backdrop-blur-sm transition-all duration-300">
           <span>✨</span>
-          <span>Authentic Ethiopian Cuisine · {HERO_SLIDES[currentSlide].tag}</span>
+          <span>Authentic Ethiopian Cuisine · {activeSlideData.tag}</span>
         </div>
 
         <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1] text-white drop-shadow-md">
@@ -120,25 +188,33 @@ export default function HeroSection() {
           </a>
         </div>
 
-        {/* Slide Indicators with active title */}
-        <div className="pt-6 flex flex-col items-center gap-2">
-          <div className="flex items-center gap-2.5 rounded-full bg-black/50 px-4 py-2 backdrop-blur-md border border-white/10">
-            {HERO_SLIDES.map((slide, idx) => (
-              <button
-                key={slide.title}
-                type="button"
-                onClick={() => setCurrentSlide(idx)}
-                aria-label={`Slide ${idx + 1}: ${slide.title}`}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  currentSlide === idx
-                    ? "w-8 bg-orange-500 shadow-sm"
-                    : "w-2.5 bg-white/40 hover:bg-white/70"
-                }`}
-              />
-            ))}
+        {/* Slide Indicators with active title and progress indicator */}
+        <div className="pt-6 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2.5 rounded-full bg-black/60 px-4 py-2 backdrop-blur-md border border-white/10 shadow-lg">
+            {HERO_SLIDES.map((slide, idx) => {
+              const isActive = currentSlide === idx;
+              return (
+                <button
+                  key={`${slide.title}-${idx}`}
+                  type="button"
+                  onClick={() => goToSlide(idx)}
+                  aria-label={`Slide ${idx + 1}: ${slide.title}`}
+                  className={`relative h-2.5 rounded-full transition-all duration-500 overflow-hidden cursor-pointer ${
+                    isActive
+                      ? "w-10 bg-orange-500 shadow-md shadow-orange-500/50"
+                      : "w-2.5 bg-white/40 hover:bg-white/70"
+                  }`}
+                />
+              );
+            })}
+            <span className="text-[11px] font-semibold text-stone-300 pl-1">
+              0{currentSlide + 1} / 0{HERO_SLIDES.length}
+            </span>
           </div>
-          <p className="text-xs text-orange-200 font-medium drop-shadow">
-            {HERO_SLIDES[currentSlide].title} — {HERO_SLIDES[currentSlide].description}
+
+          <p className="text-xs text-orange-200 font-medium drop-shadow transition-all duration-300 max-w-md">
+            <span className="font-semibold text-white">{activeSlideData.title}</span> —{" "}
+            {activeSlideData.description}
           </p>
         </div>
 

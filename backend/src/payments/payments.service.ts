@@ -76,12 +76,14 @@ export class PaymentsService {
     }
   }
 
-  private async nextReceipt() {
-    const latest = await this.prisma.payment.findMany({
+  private async nextReceipt(): Promise<string> {
+    const recent = await this.prisma.payment.findMany({
       where: { receipt: { not: null } },
+      orderBy: { updatedAt: 'desc' },
+      take: 20,
       select: { receipt: true },
     });
-    const max = latest.reduce((highest, payment) => {
+    const max = recent.reduce((highest, payment) => {
       const value = Number(payment.receipt?.replace(/^R-/, ''));
       return Number.isFinite(value) ? Math.max(highest, value) : highest;
     }, 0);

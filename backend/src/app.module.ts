@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import configuration from './config/configuration.js';
 import { AuthModule } from './auth/auth.module.js';
+import { HealthModule } from './health/health.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -16,8 +18,12 @@ import { TablesModule } from './tables/tables.module.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
     PrismaModule,
+    HealthModule,
     UsersModule,
     AuthModule,
     MenuModule,
