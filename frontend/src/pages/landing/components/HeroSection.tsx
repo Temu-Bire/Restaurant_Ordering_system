@@ -94,40 +94,37 @@ export default function HeroSection() {
     >
       {/* Full-Bleed Animated Horizontal Slide Track */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <div
-          className="flex h-full w-full transition-transform duration-700 ease-out will-change-transform"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {HERO_SLIDES.map((slide, index) => {
-            const isActive = currentSlide === index;
-            return (
-              <div
-                key={`${slide.src}-${index}`}
-                className="relative h-full w-full min-w-full shrink-0 overflow-hidden"
-              >
-                <img
-                  src={slide.src}
-                  alt={slide.title}
-                  className={`size-full object-cover transition-transform duration-1000 ease-out ${
-                    isActive ? "scale-105" : "scale-100"
-                  }`}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    if (!target.src.endsWith("/LandingPage1.png")) {
-                      target.src = "/LandingPage1.png";
-                    }
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
+        {HERO_SLIDES.map((slide, index) => {
+          const offset = index - currentSlide;
+          return (
+            <div
+              key={`${slide.src}-${index}`}
+              className="absolute inset-0 w-full h-full transition-transform duration-700 ease-in-out will-change-transform"
+              style={{
+                transform: `translateX(${offset * 100}%)`,
+              }}
+            >
+              <img
+                src={slide.src}
+                alt={slide.title}
+                className={`size-full object-cover object-center transition-transform duration-1000 ease-out ${
+                  offset === 0 ? "scale-105" : "scale-100"
+                }`}
+                loading={index === 0 ? "eager" : "lazy"}
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  if (!target.src.endsWith("/LandingPage1.png")) {
+                    target.src = "/LandingPage1.png";
+                  }
+                }}
+              />
+            </div>
+          );
+        })}
 
-        {/* Premium Dark Gradient Overlays for High Legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-black/60 pointer-events-none" />
-        <div className="absolute inset-0 bg-black/35 backdrop-blur-[0.5px] pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111318] via-transparent to-[#111318]/70 pointer-events-none" />
+        {/* Balanced Dark Overlay: Keeps images clear & vibrant while ensuring text is readable */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/55 pointer-events-none" />
+        <div className="absolute inset-0 bg-black/20 pointer-events-none" />
       </div>
 
       {/* Left Arrow Navigation Button */}
