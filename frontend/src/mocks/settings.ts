@@ -1,9 +1,9 @@
 import type { Operations, RestaurantInfo } from "../features/settings/types";
 
 export const restaurantInfo: RestaurantInfo = {
-  name: "RestroGo",
-  phone: "+251 11 XXX XXXX",
-  address: "Bole, Addis Ababa",
+  name: "Arif Food",
+  phone: "+251 9 123 4567",
+  address: "Addis Ababa, Ethiopia",
   currency: "USD",
   taxRate: 5,
 };

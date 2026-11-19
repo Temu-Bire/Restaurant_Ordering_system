@@ -59,7 +59,7 @@ export default function ReceiptPage() {
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary font-bold text-white shadow-xs">
               R
             </div>
-            <span className="text-xl font-bold tracking-tight">RestroGo</span>
+            <span className="text-xl font-bold tracking-tight">Arif Food</span>
           </div>
           <p className="mt-1 text-xs text-muted">
             {t("receipt")} · #{order.id} · {formatDate(order.date)}

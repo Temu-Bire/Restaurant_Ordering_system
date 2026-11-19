@@ -17,10 +17,10 @@ export default function AuthLayout() {
         }}
       >
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-white font-bold text-primary shadow-sm">
-            R
+          <div className="flex size-9 items-center justify-center rounded-xl bg-white font-bold text-orange-500 shadow-sm">
+            🍽️
           </div>
-          <span className="text-2xl font-bold tracking-tight">RestroGo</span>
+          <span className="text-2xl font-bold tracking-tight">Arif Food</span>
         </Link>
 
         <div>
@@ -43,7 +43,7 @@ export default function AuthLayout() {
             <span className="flex size-8 items-center justify-center rounded-lg bg-primary font-bold text-white text-xs">
               R
             </span>
-            <span className="text-lg font-bold">RestroGo</span>
+            <span className="text-lg font-bold">Arif Food</span>
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitcher />
@@ -58,7 +58,7 @@ export default function AuthLayout() {
         </div>
 
         <div className="text-center text-xs text-muted pt-2">
-          © {new Date().getFullYear()} RestroGo. {t("rightsReserved")}
+          © {new Date().getFullYear()} Arif Food. {t("rightsReserved")}
         </div>
       </div>
     </div>

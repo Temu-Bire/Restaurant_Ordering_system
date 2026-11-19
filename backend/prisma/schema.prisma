@@ -181,7 +181,7 @@ model RestaurantTable {
 
 model Settings {
   id               String  @id @default("default")
-  name             String  @default("RestroGo")
+  name             String  @default("Arif Food")
   phone            String  @default("+251 11 XXX XXXX")
   address          String  @default("Bole, Addis Ababa")
   currency         String  @default("USD")

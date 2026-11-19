@@ -29,7 +29,7 @@ async function bootstrap() {
   );
 
   const swagger = new DocumentBuilder()
-    .setTitle('RestroGo API')
+    .setTitle('Arif Food API')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

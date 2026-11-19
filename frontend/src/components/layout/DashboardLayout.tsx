@@ -41,10 +41,10 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
             </svg>
           </button>
           <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-white shadow-xs">
-              R
+            <span className="flex size-7 items-center justify-center rounded-lg bg-orange-500 text-xs font-bold text-white shadow-xs">
+              🍽️
             </span>
-            <span className="text-base font-bold tracking-tight">RestroGo</span>
+            <span className="text-base font-bold tracking-tight">Arif Food</span>
           </div>
         </div>
 
