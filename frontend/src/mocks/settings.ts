@@ -4,7 +4,7 @@ export const restaurantInfo: RestaurantInfo = {
   name: "Arif Food",
   phone: "+251 9 123 4567",
   address: "Addis Ababa, Ethiopia",
-  currency: "USD",
+  currency: "ETB",
   taxRate: 5,
 };
 
