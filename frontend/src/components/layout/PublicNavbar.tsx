@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HOME_BY_ROLE } from "../../app/paths";
 import { useAuth } from "../../features/auth/useAuth";
 import { useCart } from "../../features/cart/useCart";
@@ -9,7 +9,7 @@ import ArifLogo from "../ui/ArifLogo";
 import LanguageSwitcher from "../LanguageSwitcher";
 
 interface PublicNavbarProps {
-  onOpenAuth?: (mode: "login" | "register") => void;
+  onOpenAuth?: (mode: "login" | "register", redirectTo?: string) => void;
 }
 
 export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
@@ -18,17 +18,47 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("home");
 
   const isLanding = location.pathname === "/";
 
   const links = [
-    { label: t("navHome"), href: isLanding ? "#" : "/" },
-    { label: t("navMenu"), href: "#menu" },
-    { label: "About", href: "#about" },
-    { label: "Reviews", href: "#reviews" },
-    { label: t("contact"), href: "#contact" },
+    { id: "home", label: t("navHome"), href: isLanding ? "#" : "/" },
+    { id: "menu", label: t("navMenu"), href: "#menu" },
+    { id: "about", label: t("aboutUs"), href: "#about" },
+    { id: "how-it-works", label: t("howItWorks"), href: "#how-it-works" },
   ];
+
+  // Track active section on scroll
+  useEffect(() => {
+    if (!isLanding) return;
+
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 120;
+      const sections = ["home", "menu", "about", "how-it-works"];
+
+      for (const section of sections) {
+        if (section === "home" && scrollPosition < 400) {
+          setActiveSection("home");
+          break;
+        }
+        const el = document.getElementById(section);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPosition >= top && scrollPosition < top + height) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isLanding]);
 
   const handleAuthClick = (mode: "login" | "register") => {
     if (onOpenAuth) {
@@ -38,23 +68,23 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-orange-950/40 bg-[#16120e]/95 text-white backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-40 w-full border-b border-orange-950/40 bg-[#111318]/95 text-white backdrop-blur-md transition-colors shadow-sm">
       <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         {/* Brand Logo */}
         <ArifLogo size="md" variant="light" />
 
         {/* Desktop Nav Links */}
         <nav aria-label="Page navigation" className="hidden items-center gap-7 md:flex">
-          {links.map((l, index) => {
-            const isHome = index === 0;
+          {links.map((l) => {
+            const isActive = activeSection === l.id;
             return (
               <a
-                key={l.label}
+                key={l.id}
                 href={l.href}
                 className={`text-sm font-medium transition-all duration-200 relative py-1 ${
-                  isHome
+                  isActive
                     ? "text-orange-400 font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-orange-500 after:rounded-full"
-                    : "text-stone-300 hover:text-white hover:text-orange-400"
+                    : "text-stone-300 hover:text-orange-400"
                 }`}
               >
                 {l.label}
@@ -93,8 +123,17 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
           </button>
 
           {/* Cart Pill Button */}
-          <Link
-            to={user ? "/customer/cart" : "#menu"}
+          <button
+            type="button"
+            onClick={() => {
+              if (user) {
+                navigate("/customer/cart");
+              } else if (onOpenAuth) {
+                onOpenAuth("login", "/customer/cart");
+              } else {
+                navigate("/login", { state: { from: "/customer/cart" } });
+              }
+            }}
             className="flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-orange-600 active:scale-95"
           >
             <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,7 +145,7 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
               />
             </svg>
             <span>Cart ({count})</span>
-          </Link>
+          </button>
 
           {/* User Logged in / Guest Auth Buttons */}
           {user ? (
@@ -128,9 +167,9 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
               <button
                 type="button"
                 onClick={() => handleAuthClick("register")}
-                className="rounded-full bg-stone-800/80 px-3.5 py-1.5 text-xs font-semibold text-orange-400 border border-orange-500/40 transition-colors hover:bg-stone-800 hover:text-orange-300"
+                className="rounded-full bg-orange-500 px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-orange-600 active:scale-95"
               >
-                {t("navRegister")}
+                {t("startOrdering")}
               </button>
             </div>
           )}
@@ -155,14 +194,18 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="border-t border-orange-950/40 bg-[#16120e] px-4 py-4 md:hidden">
+        <div className="border-t border-orange-950/40 bg-[#111318] px-4 py-4 md:hidden animate-in fade-in duration-200">
           <nav className="flex flex-col gap-2.5">
             {links.map((l) => (
               <a
-                key={l.label}
+                key={l.id}
                 href={l.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-xl px-3 py-2 text-sm font-medium text-stone-200 hover:bg-white/10 hover:text-white"
+                className={`rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                  activeSection === l.id
+                    ? "bg-orange-500/15 text-orange-400 font-bold"
+                    : "text-stone-200 hover:bg-white/10 hover:text-white"
+                }`}
               >
                 {l.label}
               </a>
@@ -182,16 +225,16 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
                   <button
                     type="button"
                     onClick={() => handleAuthClick("login")}
-                    className="w-full rounded-full border border-white/20 bg-white/5 py-2 text-xs font-bold text-white hover:bg-white/10"
+                    className="w-full rounded-full border border-white/20 bg-white/5 py-2.5 text-xs font-bold text-white hover:bg-white/10"
                   >
                     {t("navLogin")}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleAuthClick("register")}
-                    className="w-full rounded-full bg-orange-500 py-2 text-xs font-bold text-white hover:bg-orange-600"
+                    className="w-full rounded-full bg-orange-500 py-2.5 text-xs font-bold text-white hover:bg-orange-600 shadow-sm"
                   >
-                    {t("navRegister")}
+                    {t("startOrdering")}
                   </button>
                 </>
               )}
