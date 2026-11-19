@@ -1,7 +1,6 @@
-import Badge from "../../../components/ui/Badge";
+import Badge from "../../../shared/components/ui/Badge";
 import { cn } from "../../../lib/cn";
-import { menuItems } from "../../../mocks/menu";
-import { formatTimeAgo } from "../../../utils/formatTimeAgo";
+import { formatTimeAgo } from "../../../shared/utils/formatTimeAgo";
 import { ORDER_TYPE_LABEL, type Order } from "../types";
 
 interface OrderRowProps {
@@ -9,12 +8,22 @@ interface OrderRowProps {
   onClick?: () => void;
 }
 
+const GRADIENTS = [
+  "from-orange-400 to-orange-600",
+  "from-amber-400 to-amber-600",
+  "from-red-400 to-red-600",
+  "from-yellow-400 to-orange-500",
+];
+
+function getGradient(name: string) {
+  const code = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return GRADIENTS[code % GRADIENTS.length];
+}
+
 export default function OrderRow({ order, onClick }: OrderRowProps) {
   const itemCount = order.lines.reduce((sum, l) => sum + l.quantity, 0);
   const place = order.table ? `Table ${order.table}` : ORDER_TYPE_LABEL[order.type];
-  const gradient =
-    menuItems.find((m) => m.name === order.lines[0]?.name)?.gradient ??
-    "from-orange-400 to-orange-600";
+  const gradient = getGradient(order.lines[0]?.name ?? "Order");
 
   const Tag = onClick ? "button" : "div";
 

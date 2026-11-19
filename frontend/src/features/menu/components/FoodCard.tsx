@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn } from "../../../lib/cn";
-import { formatCurrency } from "../../../utils/formatCurrency";
-import { useTranslation } from "../../../hooks/useTranslation";
+import { formatCurrency } from "../../../shared/utils/formatCurrency";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type { FoodItem } from "../types";
 
 interface FoodCardProps {

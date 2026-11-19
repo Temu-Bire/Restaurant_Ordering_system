@@ -1,5 +1,5 @@
 import { cn } from "../../../lib/cn";
-import { useTranslation } from "../../../hooks/useTranslation";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type { RestaurantTable, TableStatus } from "../types";
 
 const tones: Record<TableStatus, string> = {

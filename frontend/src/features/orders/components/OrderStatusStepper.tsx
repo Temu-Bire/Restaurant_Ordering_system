@@ -1,5 +1,5 @@
 import { cn } from "../../../lib/cn";
-import { useTranslation } from "../../../hooks/useTranslation";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type { OrderStatus } from "../types";
 
 const STATUS_STEP: Record<OrderStatus, number> = {

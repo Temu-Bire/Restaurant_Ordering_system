@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-import Button from "../../../components/ui/Button";
-import Card from "../../../components/ui/Card";
-import Select from "../../../components/ui/Select";
+import Button from "../../../shared/components/ui/Button";
+import Card from "../../../shared/components/ui/Card";
+import Select from "../../../shared/components/ui/Select";
 import type { FoodItem } from "../../menu/types";
 import type { Ingredient, RecipeLine } from "../types";
 

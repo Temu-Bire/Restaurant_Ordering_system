@@ -1,32 +1,37 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
-import DashboardLayout from "../components/layout/DashboardLayout";
-import type { NavItem } from "../components/layout/Sidebar";
+import DashboardLayout from "../shared/components/layout/DashboardLayout";
+import AuthLayout from "../shared/components/layout/AuthLayout";
+import type { NavItem } from "../shared/components/layout/Sidebar";
 
 import LandingPage from "../pages/LandingPage";
 import NotFoundPage from "../pages/NotFoundPage";
 
-import HomePage from "../pages/customer/HomePage";
-import MenuPage from "../pages/customer/MenuPage";
-import CartPage from "../pages/customer/CartPage";
-import MyOrdersPage from "../pages/customer/MyOrdersPage";
-import OrderTrackingPage from "../pages/customer/OrderTrackingPage";
-import ReceiptPage from "../pages/customer/ReceiptPage";
-import ProfilePage from "../pages/customer/ProfilePage";
+import LoginPage from "../features/auth/pages/LoginPage";
+import RegisterPage from "../features/auth/pages/RegisterPage";
 
-import StaffDashboardPage from "../pages/staff/StaffDashboardPage";
+import HomePage from "../features/menu/pages/HomePage";
+import MenuPage from "../features/menu/pages/MenuPage";
+import CartPage from "../features/cart/pages/CartPage";
+import MyOrdersPage from "../features/orders/pages/MyOrdersPage";
+import OrderTrackingPage from "../features/orders/pages/OrderTrackingPage";
+import ReceiptPage from "../features/payments/pages/ReceiptPage";
+import ProfilePage from "../features/users/pages/ProfilePage";
 
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
-import MenuManagementPage from "../pages/admin/MenuManagementPage";
-import ReportsPage from "../pages/admin/ReportsPage";
-import UsersPage from "../pages/admin/UsersPage";
-import SettingsPage from "../pages/admin/SettingsPage";
+import StaffDashboardPage from "../features/reports/pages/StaffDashboardPage";
 
-import OrdersPage from "../pages/shared/OrdersPage";
-import TablesPage from "../pages/shared/TablesPage";
-import InventoryPage from "../pages/shared/InventoryPage";
-import PaymentsPage from "../pages/shared/PaymentsPage";
+import AdminDashboardPage from "../features/reports/pages/AdminDashboardPage";
+import MenuManagementPage from "../features/menu/pages/MenuManagementPage";
+import ReportsPage from "../features/reports/pages/ReportsPage";
+import UsersPage from "../features/users/pages/UsersPage";
+import SettingsPage from "../features/settings/pages/SettingsPage";
 
+import OrdersPage from "../features/orders/pages/OrdersPage";
+import TablesPage from "../features/tables/pages/TablesPage";
+import InventoryPage from "../features/inventory/pages/InventoryPage";
+import PaymentsPage from "../features/payments/pages/PaymentsPage";
+
+import GuestRoute from "./guards/GuestRoute";
 import ProtectedRoute from "./guards/ProtectedRoute";
 import RoleRoute from "./guards/RoleRoute";
 import { PATHS } from "./paths";
@@ -65,8 +70,20 @@ const adminNav: NavItem[] = [
 export const router = createBrowserRouter([
   // Public
   { path: PATHS.home, element: <LandingPage /> },
-  { path: PATHS.login, element: <LandingPage initialAuthMode="login" /> },
-  { path: PATHS.register, element: <LandingPage initialAuthMode="register" /> },
+
+  // Full-page authentication flow (for guests)
+  {
+    element: <GuestRoute />,
+    children: [
+      {
+        element: <AuthLayout />,
+        children: [
+          { path: PATHS.login, element: <LoginPage /> },
+          { path: PATHS.register, element: <RegisterPage /> },
+        ],
+      },
+    ],
+  },
 
   // Everything below requires login, then the right role
   {

@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
 
-import Button from "../../../components/ui/Button";
-import Input from "../../../components/ui/Input";
-import Modal from "../../../components/ui/Modal";
-import Select from "../../../components/ui/Select";
+import Button from "../../../shared/components/ui/Button";
+import Input from "../../../shared/components/ui/Input";
+import Modal from "../../../shared/components/ui/Modal";
+import Select from "../../../shared/components/ui/Select";
 import type { Category, FoodItem } from "../types";
 
 export interface FoodFormData {

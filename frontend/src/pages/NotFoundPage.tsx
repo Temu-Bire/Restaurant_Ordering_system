@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { HOME_BY_ROLE } from "../app/paths";
-import { useAuth } from "../features/auth/useAuth";
+import { useAuth } from "../features/auth/hooks/useAuth";
 
 export default function NotFoundPage() {
   const { user } = useAuth();

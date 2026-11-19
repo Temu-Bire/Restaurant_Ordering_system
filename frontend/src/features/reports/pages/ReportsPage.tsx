@@ -1,0 +1,80 @@
+import { useState, useEffect } from "react";
+
+import BarChart from "../components/BarChart";
+import PageHeader from "../../../shared/components/layout/PageHeader";
+import Button from "../../../shared/components/ui/Button";
+import Card from "../../../shared/components/ui/Card";
+import FilterTabs from "../../../shared/components/ui/FilterTabs";
+import StatCard from "../../../shared/components/ui/StatCard";
+import { getReport, type Period, type ReportData } from "../api/reportsApi";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
+import { formatCurrency, formatCurrencyWhole } from "../../../shared/utils/formatCurrency";
+
+const reportTabs: { value: Period; label: string }[] = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
+
+const totalRevenue = (r: ReportData) => r.values.reduce((sum, v) => sum + v, 0);
+
+export default function ReportsPage() {
+  const { t } = useTranslation();
+  const [period, setPeriod] = useState<Period>("daily");
+  const [report, setReport] = useState<ReportData | null>(null);
+
+  useEffect(() => {
+    getReport(period).then(setReport).catch(console.error);
+  }, [period]);
+
+  if (!report) return <p className="py-10 text-center text-muted">{t("loading")}</p>;
+
+  const revenue = totalRevenue(report);
+  const maxSold = Math.max(...report.popular.map((p) => p.sold), 1);
+
+  return (
+    <>
+      <PageHeader title={t("navReports")} description="Daily, weekly and monthly sales" />
+
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <FilterTabs value={period} onChange={setPeriod} tabs={reportTabs} />
+        {/* The print dialog has a "Save as PDF" option */}
+        <Button variant="secondary" className="print:hidden" onClick={() => window.print()}>
+          Export PDF
+        </Button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Revenue" value={formatCurrencyWhole(revenue)} icon="💰" tone="primary" />
+        <StatCard label="Orders" value={report.orders.toLocaleString("en-US")} icon="🧾" tone="info" />
+        <StatCard label="Avg. Order" value={formatCurrency(revenue / report.orders)} icon="📊" tone="success" />
+        <StatCard label="Completed" value={`${report.completedPercent}%`} icon="✅" tone="purple" />
+      </div>
+
+      <div className="mt-5 grid items-start gap-5 lg:grid-cols-2">
+        <Card title={report.chartTitle}>
+          <BarChart labels={report.labels} values={report.values} />
+        </Card>
+
+        <Card title="Popular Food Items">
+          <ul className="space-y-4">
+            {report.popular.map((item) => (
+              <li key={item.name}>
+                <div className="mb-1.5 flex justify-between text-[13px]">
+                  <span>{item.name}</span>
+                  <span className="font-semibold">{item.sold.toLocaleString("en-US")}</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-secondary">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${(item.sold / maxSold) * 100}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+    </>
+  );
+}

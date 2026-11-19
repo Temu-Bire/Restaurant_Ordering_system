@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 
-import { useAuth } from "../../features/auth/useAuth";
-import type { Role } from "../../types/user";
+import { useAuth } from "../../features/auth/hooks/useAuth";
+import type { Role } from "../../shared/types/user";
 import { HOME_BY_ROLE } from "../paths";
 
 // Always used inside <ProtectedRoute />, so a user exists here

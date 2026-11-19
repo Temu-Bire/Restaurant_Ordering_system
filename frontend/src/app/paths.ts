@@ -1,5 +1,5 @@
 import { generatePath } from "react-router-dom";
-import type { Role, User } from "../types/user";
+import type { Role, User } from "../shared/types/user";
 
 export const PATHS = {
   home: "/",

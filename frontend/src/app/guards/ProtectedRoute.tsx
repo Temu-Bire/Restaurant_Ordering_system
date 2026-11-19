@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-import { useAuth } from "../../features/auth/useAuth";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import { PATHS } from "../paths";
 
 export default function ProtectedRoute() {

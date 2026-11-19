@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-import { useAuth } from "../../features/auth/useAuth";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import { landingPath } from "../paths";
 
 export default function GuestRoute() {

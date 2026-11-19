@@ -1,13 +1,12 @@
 import { useState } from "react";
 
-import Badge from "../../../components/ui/Badge";
-import Button from "../../../components/ui/Button";
-import Modal from "../../../components/ui/Modal";
-import Select from "../../../components/ui/Select";
+import Badge from "../../../shared/components/ui/Badge";
+import Button from "../../../shared/components/ui/Button";
+import Modal from "../../../shared/components/ui/Modal";
+import Select from "../../../shared/components/ui/Select";
 import { cn } from "../../../lib/cn";
-import { menuItems } from "../../../mocks/menu";
-import { formatCurrency } from "../../../utils/formatCurrency";
-import { formatTimeAgo } from "../../../utils/formatTimeAgo";
+import { formatCurrency } from "../../../shared/utils/formatCurrency";
+import { formatTimeAgo } from "../../../shared/utils/formatTimeAgo";
 import {
   ORDER_TYPE_LABEL,
   statusOptions,
@@ -19,6 +18,18 @@ interface OrderDetailsModalProps {
   order: Order;
   onClose: () => void;
   onSave: (id: string, status: OrderStatus) => void;
+}
+
+const GRADIENTS = [
+  "from-orange-400 to-orange-600",
+  "from-amber-400 to-amber-600",
+  "from-red-400 to-red-600",
+  "from-yellow-400 to-orange-500",
+];
+
+function getGradient(name: string) {
+  const code = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return GRADIENTS[code % GRADIENTS.length];
 }
 
 export default function OrderDetailsModal({
@@ -50,9 +61,7 @@ export default function OrderDetailsModal({
 
       <ul className="mt-4 divide-y divide-border">
         {order.lines.map((line) => {
-          const gradient =
-            menuItems.find((m) => m.name === line.name)?.gradient ??
-            "from-orange-400 to-orange-600";
+          const gradient = getGradient(line.name);
 
           return (
             <li key={line.name} className="flex items-center gap-3 py-3">
@@ -67,29 +76,36 @@ export default function OrderDetailsModal({
         })}
       </ul>
 
-      <div className="flex justify-between border-t border-border py-3 text-[13px] font-bold">
+      <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-sm font-bold">
         <span>Total</span>
-        <span>{formatCurrency(order.total)}</span>
+        <span className="text-base text-primary">
+          {formatCurrency(order.total)}
+        </span>
       </div>
 
-      <div className="mt-2 flex items-end gap-3">
-        <div className="flex-1">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+        <div className="w-44">
           <Select
-            id="status"
-            label="Update Status"
+            label="Update status"
             value={status}
             options={statusOptions}
             onChange={(e) => setStatus(e.target.value as OrderStatus)}
           />
         </div>
-        <Button
-          onClick={() => {
-            onSave(order.id, status);
-            onClose();
-          }}
-        >
-          Update Status
-        </Button>
+
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={onClose}>
+            Close
+          </Button>
+          <Button
+            onClick={() => {
+              onSave(order.id, status);
+              onClose();
+            }}
+          >
+            Save Changes
+          </Button>
+        </div>
       </div>
     </Modal>
   );
