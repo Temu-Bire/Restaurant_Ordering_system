@@ -93,3 +93,72 @@
     cursor: pointer;
   }
 }
+
+@keyframes float-main {
+  0%, 100% {
+    transform: translateY(0px) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(-4.5deg);
+  }
+}
+
+@keyframes float-card-tr {
+  0%, 100% {
+    transform: translateY(0px) rotate(8deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(9.5deg);
+  }
+}
+
+@keyframes float-card-br {
+  0%, 100% {
+    transform: translateY(0px) rotate(6deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(4.5deg);
+  }
+}
+
+@keyframes spark-shimmer {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-float-main {
+  animation: float-main 5s ease-in-out infinite;
+}
+
+.animate-float-tr {
+  animation: float-card-tr 4.5s ease-in-out infinite 0.5s;
+}
+
+.animate-float-br {
+  animation: float-card-br 5.5s ease-in-out infinite 1s;
+}
+
+.animate-spark {
+  animation: spark-shimmer 2.5s ease-in-out infinite;
+}
+
+.animate-in.fade-in {
+  animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}

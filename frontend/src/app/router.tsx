@@ -1,14 +1,10 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
-import AuthLayout from "../components/layout/AuthLayout";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import type { NavItem } from "../components/layout/Sidebar";
 
 import LandingPage from "../pages/LandingPage";
 import NotFoundPage from "../pages/NotFoundPage";
-
-import LoginPage from "../pages/auth/LoginPage";
-import RegisterPage from "../pages/auth/RegisterPage";
 
 import HomePage from "../pages/customer/HomePage";
 import MenuPage from "../pages/customer/MenuPage";
@@ -31,7 +27,6 @@ import TablesPage from "../pages/shared/TablesPage";
 import InventoryPage from "../pages/shared/InventoryPage";
 import PaymentsPage from "../pages/shared/PaymentsPage";
 
-import GuestRoute from "./guards/GuestRoute";
 import ProtectedRoute from "./guards/ProtectedRoute";
 import RoleRoute from "./guards/RoleRoute";
 import { PATHS } from "./paths";
@@ -70,20 +65,8 @@ const adminNav: NavItem[] = [
 export const router = createBrowserRouter([
   // Public
   { path: PATHS.home, element: <LandingPage /> },
-
-  // Login and Register: skipped when already logged in
-  {
-    element: <GuestRoute />,
-    children: [
-      {
-        element: <AuthLayout />,
-        children: [
-          { path: PATHS.login, element: <LoginPage /> },
-          { path: PATHS.register, element: <RegisterPage /> },
-        ],
-      },
-    ],
-  },
+  { path: PATHS.login, element: <LandingPage initialAuthMode="login" /> },
+  { path: PATHS.register, element: <LandingPage initialAuthMode="register" /> },
 
   // Everything below requires login, then the right role
   {
