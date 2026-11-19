@@ -3,9 +3,9 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --background: #f6f6f8;
+  --background: #f8f9fa;
   --surface: #ffffff;
-  --surface-secondary: #f1f1f4;
+  --surface-secondary: #f3f4f6;
   --border: #e5e7eb;
   --foreground: #111827;
   --muted: #6b7280;
@@ -17,10 +17,10 @@
 }
 
 [data-theme="dark"] {
-  --background: #0f1216;
-  --surface: #14181e;
-  --surface-secondary: #1b2028;
-  --border: #262c36;
+  --background: #111318;
+  --surface: #1c2029;
+  --surface-secondary: #252b37;
+  --border: #2d3443;
   --foreground: #f3f4f6;
   --muted: #9ca3af;
 
