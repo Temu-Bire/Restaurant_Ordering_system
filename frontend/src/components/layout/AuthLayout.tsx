@@ -51,8 +51,8 @@ export default function AuthLayout() {
           </div>
         </div>
 
-        <div className="mx-auto flex w-full max-w-md flex-1 items-center justify-center py-4">
-          <div className="w-full rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+        <div className="mx-auto flex w-full max-w-xl flex-1 items-center justify-center py-4">
+          <div className="w-full rounded-3xl border border-border bg-surface p-6 sm:p-10 shadow-sm">
             <Outlet />
           </div>
         </div>
