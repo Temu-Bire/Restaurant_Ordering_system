@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  MovementType,
   OrderStatus,
   OrderType,
   PaymentMethod,
@@ -53,23 +54,69 @@ export async function adjustOrderStock(
   }
 
   for (const [ingredientId, amount] of needed) {
+    const ingredient = await tx.ingredient.findUnique({ where: { id: ingredientId } });
+    if (!ingredient) continue;
+
+    const prevStock = ingredient.stock;
+
     if (direction === 'restore') {
+      const newStock = prevStock.add(amount);
       await tx.ingredient.update({
         where: { id: ingredientId },
-        data: { stock: { increment: amount } },
+        data: { stock: newStock },
+      });
+
+      await tx.stockMovement.create({
+        data: {
+          ingredientId,
+          type: MovementType.ADJUSTMENT,
+          quantityChanged: amount,
+          previousQuantity: prevStock,
+          newQuantity: newStock,
+          reason: 'Order cancellation: stock restored',
+        },
       });
       continue;
     }
 
-    const updated = await tx.ingredient.updateMany({
-      where: { id: ingredientId, stock: { gte: amount } },
-      data: { stock: { decrement: amount } },
-    });
-    if (updated.count !== 1) {
-      const ingredient = await tx.ingredient.findUnique({ where: { id: ingredientId } });
+    if (prevStock.lessThan(amount)) {
       throw new BadRequestException(
-        `Not enough ${ingredient?.name ?? 'stock'} for this order`,
+        `Not enough ${ingredient.name} in stock (requires ${amount.toNumber()} ${ingredient.unit}, available: ${prevStock.toNumber()} ${ingredient.unit})`,
       );
+    }
+
+    const newStock = prevStock.sub(amount);
+    await tx.ingredient.update({
+      where: { id: ingredientId },
+      data: { stock: newStock },
+    });
+
+    await tx.stockMovement.create({
+      data: {
+        ingredientId,
+        type: MovementType.ORDER_CONSUMPTION,
+        quantityChanged: amount.negated(),
+        previousQuantity: prevStock,
+        newQuantity: newStock,
+        reason: 'Order preparation consumption',
+      },
+    });
+
+    // Check if ingredient becomes insufficient for any menu items
+    const insufficientRecipes = await tx.recipeLine.findMany({
+      where: {
+        ingredientId,
+        quantity: { gt: newStock },
+      },
+      select: { foodId: true },
+    });
+
+    if (insufficientRecipes.length > 0) {
+      const foodIds = insufficientRecipes.map((r) => r.foodId);
+      await tx.food.updateMany({
+        where: { id: { in: foodIds } },
+        data: { isAvailable: false },
+      });
     }
   }
 }

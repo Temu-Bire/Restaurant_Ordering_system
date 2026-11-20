@@ -1,4 +1,13 @@
-import { OrderStatus, OrderType, PaymentMethod, PaymentStatus, TableStatus } from '@prisma/client';
+import {
+  InventoryCategory,
+  InventoryStatus,
+  MovementType,
+  OrderStatus,
+  OrderType,
+  PaymentMethod,
+  PaymentStatus,
+  TableStatus,
+} from '@prisma/client';
 
 const ORDER_TYPES: Record<string, OrderType> = {
   'dine-in': OrderType.DINE_IN,
@@ -109,3 +118,31 @@ export const orderNumberFromCode = (id: string) => {
   const match = /^ORD-(\d+)$/i.exec(id.trim());
   return match ? Number(match[1]) : null;
 };
+
+const INVENTORY_CATEGORIES: Record<string, InventoryCategory> = {
+  ingredients: InventoryCategory.INGREDIENTS,
+  beverages: InventoryCategory.BEVERAGES,
+  dry_goods: InventoryCategory.DRY_GOODS,
+  'dry-goods': InventoryCategory.DRY_GOODS,
+  packaging: InventoryCategory.PACKAGING,
+  supplies: InventoryCategory.SUPPLIES,
+  INGREDIENTS: InventoryCategory.INGREDIENTS,
+  BEVERAGES: InventoryCategory.BEVERAGES,
+  DRY_GOODS: InventoryCategory.DRY_GOODS,
+  PACKAGING: InventoryCategory.PACKAGING,
+  SUPPLIES: InventoryCategory.SUPPLIES,
+};
+
+export const parseInventoryCategory = (value: unknown) =>
+  typeof value === 'string' ? (INVENTORY_CATEGORIES[value] ?? value) : value;
+
+export const toApiInventoryCategory = (category: InventoryCategory) =>
+  category.toLowerCase();
+
+export const parseMovementType = (value: unknown) => {
+  if (typeof value !== 'string') return value;
+  const upper = value.toUpperCase();
+  if (upper in MovementType) return upper as MovementType;
+  return value;
+};
+

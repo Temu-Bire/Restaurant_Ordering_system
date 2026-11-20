@@ -32,7 +32,8 @@ model User {
   orders         Order[]
   payments       Payment[]
   addresses      Address[]
-  handoverOrders Order[]   @relation("HandoverStaff")
+  handoverOrders Order[]         @relation("HandoverStaff")
+  stockMovements StockMovement[]
 }
 
 // ───────────────────────── Delivery Addresses ─────────────────────────
@@ -199,13 +200,65 @@ model Payment {
 
 // ───────────────────────── FR-05: Inventory ─────────────────────────
 
+enum InventoryCategory {
+  INGREDIENTS
+  BEVERAGES
+  DRY_GOODS
+  PACKAGING
+  SUPPLIES
+}
+
+enum InventoryStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum MovementType {
+  RECEIVE
+  WASTE
+  COUNT
+  ADJUSTMENT
+  ORDER_CONSUMPTION
+}
+
 model Ingredient {
-  id        String       @id @default(uuid())
-  name      String       @unique
-  stock     Decimal      @db.Decimal(10, 3)
-  minimum   Decimal      @db.Decimal(10, 3)
-  recipes   RecipeLine[]
-  updatedAt DateTime     @updatedAt
+  id              String            @id @default(uuid())
+  name            String            @unique
+  category        InventoryCategory @default(INGREDIENTS)
+  sku             String?
+  stock           Decimal           @default(0) @db.Decimal(10, 3)
+  minimum         Decimal           @default(5) @db.Decimal(10, 3)
+  unit            String            @default("kg") // kg, g, L, ml, pcs, packs, bottles, cans, boxes
+  unitCost        Decimal           @default(0) @db.Decimal(10, 2)
+  expiryDate      DateTime?
+  storageLocation String?
+  status          InventoryStatus   @default(ACTIVE)
+  recipes         RecipeLine[]
+  movements       StockMovement[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([sku])
+  @@index([category])
+  @@index([status])
+}
+
+model StockMovement {
+  id               String       @id @default(uuid())
+  ingredientId     String
+  ingredient       Ingredient   @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  type             MovementType
+  quantityChanged  Decimal      @db.Decimal(10, 3)
+  previousQuantity Decimal      @db.Decimal(10, 3)
+  newQuantity      Decimal      @db.Decimal(10, 3)
+  reason           String?
+  userId           String?
+  user             User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt        DateTime     @default(now())
+
+  @@index([ingredientId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 model RecipeLine {

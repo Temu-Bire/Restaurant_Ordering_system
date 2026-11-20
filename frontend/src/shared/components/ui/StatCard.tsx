@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { cn } from "../../../lib/cn";
 
-type Tone = "primary" | "success" | "info" | "purple";
+type Tone = "primary" | "success" | "info" | "purple" | "danger";
 
 const tones: Record<Tone, string> = {
   primary: "bg-primary/15 text-primary",
   success: "bg-success/15 text-success",
   info: "bg-info/15 text-info",
   purple: "bg-violet-500/15 text-violet-500",
+  danger: "bg-danger/15 text-danger",
 };
 
 interface StatCardProps {
