@@ -15,6 +15,8 @@ import { PaymentsModule } from './payments/payments.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { SettingsModule } from './settings/settings.module.js';
 import { TablesModule } from './tables/tables.module.js';
+import { AddressesModule } from './addresses/addresses.module.js';
+import { DeliveryModule } from './delivery/delivery.module.js';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { TablesModule } from './tables/tables.module.js';
     PaymentsModule,
     InventoryModule,
     ReportsModule,
+    AddressesModule,
+    DeliveryModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

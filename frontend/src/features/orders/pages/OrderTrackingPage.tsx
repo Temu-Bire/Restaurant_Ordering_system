@@ -2,15 +2,22 @@ import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
+import Badge from "../../../shared/components/ui/Badge";
 import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
 import OrderStatusStepper from "../components/OrderStatusStepper";
-import type { Order, OrderStatus } from "../types";
+import {
+  ORDER_STATUS_LABEL,
+  ORDER_TYPE_LABEL,
+  PAYMENT_STATUS_LABEL,
+  type Order,
+  type OrderStatus,
+} from "../types";
 import { getOrder, cancelOrder } from "../api/ordersApi";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 
-const CANCELLABLE: OrderStatus[] = ["pending", "confirmed", "preparing"];
+const CANCELLABLE: OrderStatus[] = ["pending", "confirmed"];
 
 export default function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
@@ -42,15 +49,6 @@ export default function OrderTrackingPage() {
     };
   }, [id, order]);
 
-  const messages: Record<OrderStatus, string> = {
-    pending: "Order Received · Awaiting Kitchen Confirmation",
-    confirmed: "Order Confirmed · Ready for Preparation",
-    preparing: "In Kitchen · Chefs are Preparing Your Meal",
-    ready: "Food Ready · Service in Progress",
-    completed: "Order Completed · Enjoy Your Meal!",
-    cancelled: "Order Cancelled",
-  };
-
   if (order === undefined) {
     return (
       <>
@@ -77,7 +75,8 @@ export default function OrderTrackingPage() {
   }
 
   const current = order.status;
-  const subtitle = `#${order.id}${order.table ? ` · ${t("tableNumber")} ${order.table}` : ""}`;
+  const isPaid = order.payment.paid;
+  const subtitle = `#${order.id} · ${ORDER_TYPE_LABEL[order.type]}`;
 
   async function handleCancel() {
     if (!order) return;
@@ -105,19 +104,94 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
+        {/* Stepper Card */}
         <Card className="rounded-2xl shadow-xs">
           <div className="mb-6 text-center">
-            <span className="text-4xl">🍲</span>
-            <h2 className="mt-2 text-lg sm:text-xl font-black text-foreground">
-              {messages[current] || current}
-            </h2>
-            <p className="mt-1 text-xs text-muted">
-              Live updates automatically refresh as staff prepares your order
-            </p>
+            <span className="text-4xl">
+              {order.type === "dine-in" ? "🍽" : order.type === "takeaway" ? "🥡" : "🛵"}
+            </span>
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <h2 className="text-lg sm:text-xl font-black text-foreground">
+                {ORDER_STATUS_LABEL[current] || current}
+              </h2>
+            </div>
+
+            <div className="mt-2 flex items-center justify-center gap-2 text-xs">
+              <Badge variant={isPaid ? "active" : "inactive"} className="font-bold">
+                Payment: {PAYMENT_STATUS_LABEL[order.payment.status ?? (isPaid ? "paid" : "unpaid")]}
+              </Badge>
+              {order.prepTimeMinutes && current !== "completed" && current !== "cancelled" && current !== "served" && current !== "delivered" && (
+                <span className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-muted font-semibold">
+                  ⏱ Prep Guidance: ~{order.prepTimeMinutes} mins
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="overflow-x-auto py-2">
-            <OrderStatusStepper status={current} />
+            <OrderStatusStepper status={current} type={order.type} />
+          </div>
+
+          {/* Fulfillment specific guidance */}
+          <div className="mt-5 rounded-xl border border-border bg-surface-secondary/40 p-3.5 text-xs space-y-2">
+            {order.type === "dine-in" && (
+              <div>
+                <div className="flex justify-between font-bold text-foreground">
+                  <span>Reserved Dining Table:</span>
+                  <span className="text-primary font-black">
+                    {order.table || "Auto-assigned"}
+                    {order.tableCapacity ? ` (${order.tableCapacity} seats)` : ""}
+                  </span>
+                </div>
+                {order.partySize && (
+                  <p className="text-muted mt-0.5">Party Size: {order.partySize} Guests</p>
+                )}
+                <p className="text-[11px] text-muted italic mt-1">
+                  Please proceed to your table upon arrival. Our team will bring your dishes directly to you.
+                </p>
+              </div>
+            )}
+
+            {order.type === "takeaway" && (
+              <div>
+                <div className="flex justify-between font-bold text-foreground">
+                  <span>Pickup Location:</span>
+                  <span>Takeaway Counter</span>
+                </div>
+                <p className="text-muted mt-0.5">
+                  Show your Order ID <strong>#{order.id}</strong> at the counter when you arrive.
+                </p>
+                {order.pickupInstructions && (
+                  <p className="text-[11px] text-muted italic mt-1">
+                    Notes: {order.pickupInstructions}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {order.type === "delivery" && (
+              <div className="space-y-1">
+                <div className="flex justify-between font-bold text-foreground">
+                  <span>Delivery Address:</span>
+                  <span className="text-muted font-normal text-right max-w-[240px] truncate">
+                    {order.deliveryAddress}
+                  </span>
+                </div>
+                {order.deliveryDistanceKm && (
+                  <p className="text-muted">Distance from Restaurant: {order.deliveryDistanceKm} km</p>
+                )}
+                {order.handover ? (
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] mt-1">
+                    ✓ Handed over by {order.handover.staffName} at{" "}
+                    {new Date(order.handover.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted italic">
+                    Our courier will deliver directly to your specified address.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </Card>
 
@@ -132,16 +206,30 @@ export default function OrderTrackingPage() {
                 <span>
                   {line.quantity} × {line.name}
                 </span>
-                <span className="font-semibold text-foreground">
+                <span className="font-semibold text-foreground font-mono">
                   {formatCurrency(line.price * line.quantity)}
                 </span>
               </li>
             ))}
           </ul>
 
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-3 font-bold text-foreground">
-            <span>{t("total")}</span>
-            <span className="text-lg text-primary">{formatCurrency(order.total)}</span>
+          <div className="mt-4 border-t border-border pt-3 space-y-1 text-xs">
+            {order.subtotal !== undefined && (
+              <div className="flex justify-between text-muted">
+                <span>Subtotal:</span>
+                <span>{formatCurrency(order.subtotal)}</span>
+              </div>
+            )}
+            {order.deliveryFee !== undefined && order.deliveryFee > 0 && (
+              <div className="flex justify-between text-muted">
+                <span>Delivery Fee:</span>
+                <span>{formatCurrency(order.deliveryFee)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-2 border-t border-border font-bold text-foreground text-sm">
+              <span>{t("total")}</span>
+              <span className="text-lg text-primary font-black">{formatCurrency(order.total)}</span>
+            </div>
           </div>
         </Card>
 

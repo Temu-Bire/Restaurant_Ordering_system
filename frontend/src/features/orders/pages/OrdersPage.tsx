@@ -9,7 +9,9 @@ import FilterTabs from "../../../shared/components/ui/FilterTabs";
 import OrderDetailsModal from "../components/OrderDetailsModal";
 import OrderRow from "../components/OrderRow";
 import {
+  ORDER_STATUS_LABEL,
   ORDER_TYPE_LABEL,
+  PAYMENT_STATUS_LABEL,
   type Order,
   type OrderStatus,
 } from "../types";
@@ -78,14 +80,29 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
     { header: "Order ID", cell: (o) => <span className="font-mono font-bold">#{o.id}</span> },
     { header: "Customer", cell: (o) => <span className="font-semibold text-foreground">{o.customerName || "Customer"}</span> },
     { header: "Type", cell: (o) => ORDER_TYPE_LABEL[o.type] },
-    { header: t("tableNumber"), cell: (o) => o.table ? `Table ${o.table}` : "—" },
+    {
+      header: "Fulfillment",
+      cell: (o) => {
+        if (o.type === "dine-in") return o.table ? `Table ${o.table}` : "Dine-in";
+        if (o.type === "takeaway") return "Takeaway";
+        return o.deliveryDistanceKm ? `${o.deliveryDistanceKm} km` : "Delivery";
+      },
+    },
     { header: t("itemsOrdered"), cell: (o) => `${o.lines.reduce((s, l) => s + l.quantity, 0)} items` },
     { header: t("total"), cell: (o) => <span className="font-bold text-foreground">{formatCurrency(o.total)}</span> },
     {
+      header: "Payment",
+      cell: (o) => (
+        <Badge variant={o.payment.paid ? "active" : "inactive"} className="text-[11px] font-bold">
+          {PAYMENT_STATUS_LABEL[o.payment.status ?? (o.payment.paid ? "paid" : "unpaid")]}
+        </Badge>
+      ),
+    },
+    {
       header: t("status"),
       cell: (o) => (
-        <Badge variant={o.status} className="capitalize">
-          {o.status}
+        <Badge variant={o.status} className="capitalize text-xs font-bold">
+          {ORDER_STATUS_LABEL[o.status] ?? o.status}
         </Badge>
       ),
     },
@@ -109,8 +126,8 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
         title={t("navOrders")}
         description={
           role === "admin"
-            ? "View customer orders, history, and items (Read-Only)"
-            : "Incoming kitchen orders and real-time status management"
+            ? "View customer orders, fulfillment history, and sales (Read-Only)"
+            : "Incoming orders, kitchen preparation, and customer handovers"
         }
         search={{ value: search, onChange: setSearch }}
       />
@@ -128,12 +145,16 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
           onChange={setFilter}
           tabs={[
             { value: "all", label: t("all") },
-            { value: "pending", label: t("statusPending"), count: count("pending") },
-            { value: "confirmed", label: t("statusConfirmed"), count: count("confirmed") },
-            { value: "preparing", label: t("statusPreparing"), count: count("preparing") },
-            { value: "ready", label: t("statusReady"), count: count("ready") },
-            { value: "completed", label: t("statusCompleted") },
-            { value: "cancelled", label: t("statusCancelled") },
+            { value: "pending", label: "Pending", count: count("pending") },
+            { value: "confirmed", label: "Confirmed", count: count("confirmed") },
+            { value: "preparing", label: "Preparing", count: count("preparing") },
+            { value: "ready", label: "Ready", count: count("ready") },
+            { value: "served", label: "Served", count: count("served") },
+            { value: "picked_up", label: "Picked Up", count: count("picked_up") },
+            { value: "out_for_delivery", label: "Out for Delivery", count: count("out_for_delivery") },
+            { value: "delivered", label: "Delivered", count: count("delivered") },
+            { value: "completed", label: "Completed" },
+            { value: "cancelled", label: "Cancelled" },
           ]}
         />
       </div>
@@ -167,6 +188,10 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
           readOnly={role === "admin"}
           onClose={() => setSelected(null)}
           onSave={role === "staff" ? updateStatus : undefined}
+          onOrderUpdated={(updated) => {
+            setList((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+            setSelected(updated);
+          }}
         />
       )}
     </>

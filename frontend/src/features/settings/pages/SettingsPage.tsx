@@ -14,6 +14,7 @@ import {
   type PaymentMethod,
 } from "../../orders/types";
 import { getSettings, updateSettings, type Settings } from "../api/settingsApi";
+import DeliveryManagementCard from "../../delivery/components/DeliveryManagementCard";
 
 function toggle<T>(list: T[], item: T): T[] {
   return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
@@ -133,7 +134,7 @@ function OperationsForm({ initial, onSave }: { initial: Settings; onSave: (p: Pa
   }
 
   return (
-    <Card title="Operations">
+    <Card title="Operations & Payment Methods">
       <form onSubmit={submit} className="space-y-4" noValidate>
         <fieldset>
           <legend className="mb-2 text-[13px] font-semibold">Order Types Enabled</legend>
@@ -157,7 +158,7 @@ function OperationsForm({ initial, onSave }: { initial: Settings; onSave: (p: Pa
 
         <Input
           id="ops-fee"
-          label="Delivery Fee ($)"
+          label="Default Base Delivery Fee (ETB)"
           type="number"
           step="0.01"
           min="0"
@@ -175,9 +176,8 @@ function OperationsForm({ initial, onSave }: { initial: Settings; onSave: (p: Pa
             {paymentOptions.map((o) => (
               <Checkbox
                 key={o.value}
-                label={o.value === "cash" ? "Cash (always on)" : o.label}
-                checked={o.value === "cash" || methods.includes(o.value)}
-                disabled={o.value === "cash"}
+                label={o.label}
+                checked={methods.includes(o.value)}
                 onChange={() => {
                   setMethods((prev) => toggle(prev, o.value));
                   setSaved(false);
@@ -186,7 +186,7 @@ function OperationsForm({ initial, onSave }: { initial: Settings; onSave: (p: Pa
             ))}
           </div>
           <p className="mt-1.5 text-xs text-muted">
-            Card and Mobile need a payment provider configured first.
+            Customer ordering exclusively utilizes secure mobile payments (Telebirr, CBE Birr, Chapa).
           </p>
         </fieldset>
 
@@ -230,10 +230,14 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={t("navSettings")} description="Restaurant settings" />
-      <div className="grid items-start gap-5 lg:grid-cols-2">
-        <RestaurantInfoForm initial={settings} onSave={save} />
-        <OperationsForm initial={settings} onSave={save} />
+      <PageHeader title={t("navSettings")} description="Restaurant system configuration & delivery boundaries" />
+      <div className="space-y-6">
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          <RestaurantInfoForm initial={settings} onSave={save} />
+          <OperationsForm initial={settings} onSave={save} />
+        </div>
+
+        <DeliveryManagementCard />
       </div>
     </>
   );

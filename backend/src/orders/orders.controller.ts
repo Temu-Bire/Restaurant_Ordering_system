@@ -13,6 +13,7 @@ import { Roles } from '../common/decorators/roles.decorator.js';
 import type { PublicUser } from '../users/public-user.js';
 import { AssignTableDto } from './dto/assign-table.dto.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
+import { HandoverOrderDto } from './dto/handover-order.dto.js';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto.js';
 import { OrdersService } from './orders.service.js';
 
@@ -53,6 +54,16 @@ export class OrdersController {
     @CurrentUser() user: PublicUser,
   ) {
     return this.orders.updateStatus(id, dto, user);
+  }
+
+  @Roles(Role.STAFF)
+  @Patch(':id/handover')
+  handover(
+    @Param('id') id: string,
+    @Body() dto: HandoverOrderDto,
+    @CurrentUser() user: PublicUser,
+  ) {
+    return this.orders.handover(id, user, dto);
   }
 
   @Roles(Role.CUSTOMER)

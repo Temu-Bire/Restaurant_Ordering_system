@@ -15,21 +15,50 @@ enum Role {
   STAFF
   ADMIN
 }
+
 // ───────────────────────── FR-01: Users ─────────────────────────
 
 model User {
-  id        String    @id @default(uuid())
-  fullName  String
-  email     String    @unique
-  phone     String?
-  address   String?
-  password  String // bcrypt hash, never return it in API responses
-  role      Role      @default(CUSTOMER)
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  orders    Order[]
-  payments  Payment[]
+  id             String    @id @default(uuid())
+  fullName       String
+  email          String    @unique
+  phone          String?
+  address        String?
+  password       String // bcrypt hash, never return it in API responses
+  role           Role      @default(CUSTOMER)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  orders         Order[]
+  payments       Payment[]
+  addresses      Address[]
+  handoverOrders Order[]   @relation("HandoverStaff")
+}
+
+// ───────────────────────── Delivery Addresses ─────────────────────────
+
+model Address {
+  id                   String   @id @default(uuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label                String   // "Home", "Work", "Other"
+  recipientName        String
+  phone                String
+  city                 String
+  area                 String   // neighborhood
+  street               String
+  landmark             String?
+  building             String?
+  apartment            String?
+  deliveryInstructions String?
+  latitude             Decimal  @db.Decimal(10, 7)
+  longitude            Decimal  @db.Decimal(10, 7)
+  isDefault            Boolean  @default(false)
+  orders               Order[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ───────────────────────── FR-02: Menu ─────────────────────────
@@ -42,12 +71,12 @@ model Category {
 }
 
 model Food {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String       @id @default(uuid())
+  name        String       @unique
   description String?
-  price       Decimal  @db.Decimal(10, 2) // money is never a float
+  price       Decimal      @db.Decimal(10, 2) // money is never a float
   imagePath   String? // relative path like /uploads/menu/abc.jpg
-  isAvailable Boolean  @default(true)
+  isAvailable Boolean      @default(true)
   categoryId  String
   category    Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   orderItems  OrderItem[]
@@ -65,8 +94,21 @@ enum OrderStatus {
   CONFIRMED
   PREPARING
   READY
+  SERVED
+  PICKED_UP
+  OUT_FOR_DELIVERY
+  DELIVERED
   COMPLETED
   CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
 }
 
 enum OrderType {
@@ -82,27 +124,41 @@ enum PaymentMethod {
 }
 
 model Order {
-  id            String      @id @default(uuid())
-  number        Int         @unique @default(autoincrement())
-  customerId    String
-  customer      User        @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  type          OrderType
-  status        OrderStatus @default(PENDING)
-  tableId       String?
-  table         RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
-  tableLabel    String?
-  subtotal      Decimal     @db.Decimal(10, 2)
-  deliveryFee   Decimal     @default(0) @db.Decimal(10, 2)
-  tax           Decimal     @default(0) @db.Decimal(10, 2)
-  total         Decimal     @db.Decimal(10, 2)
-  stockAdjusted Boolean     @default(true)
-  items         OrderItem[]
-  payment       Payment?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                  String           @id @default(uuid())
+  number              Int              @unique @default(autoincrement())
+  customerId          String
+  customer            User             @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  type                OrderType
+  status              OrderStatus      @default(PENDING)
+  paymentStatus       PaymentStatus    @default(UNPAID)
+  partySize           Int?             // For Dine-in
+  prepTimeMinutes     Int?             // Estimated food preparation arrival guidance
+  tableId             String?
+  table               RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  tableLabel          String?
+  heldUntil           DateTime?        // Temporary table hold during checkout payment
+  addressId           String?
+  address             Address?         @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  deliveryDistanceKm  Decimal?         @db.Decimal(5, 2)
+  deliveryAddressText String?
+  pickupInstructions  String?          // For Takeaway
+  subtotal            Decimal          @db.Decimal(10, 2)
+  deliveryFee         Decimal          @default(0) @db.Decimal(10, 2)
+  tax                 Decimal          @default(0) @db.Decimal(10, 2)
+  total               Decimal          @db.Decimal(10, 2)
+  stockAdjusted       Boolean          @default(true)
+  handoverStaffId     String?
+  handoverStaff       User?            @relation("HandoverStaff", fields: [handoverStaffId], references: [id], onDelete: SetNull)
+  handoverAt          DateTime?
+  handoverNotes       String?
+  items               OrderItem[]
+  payment             Payment?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
   @@index([customerId])
   @@index([status])
+  @@index([paymentStatus])
   @@index([createdAt])
 }
 
@@ -123,17 +179,22 @@ model OrderItem {
 // ───────────────────────── FR-04: Payments ─────────────────────────
 
 model Payment {
-  id           String        @id @default(uuid())
-  receipt      String?       @unique
-  orderId      String        @unique
-  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  amount       Decimal       @db.Decimal(10, 2)
-  method       PaymentMethod
-  paid         Boolean       @default(false)
-  recordedById String?
-  recordedBy   User?         @relation(fields: [recordedById], references: [id], onDelete: SetNull)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id            String        @id @default(uuid())
+  receipt       String?       @unique
+  orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod @default(MOBILE)
+  status        PaymentStatus @default(UNPAID)
+  paid          Boolean       @default(false)
+  provider      String?       // e.g. "Telebirr", "CBE Birr", "Chapa"
+  transactionId String?
+  paymentUrl    String?
+  verifiedAt    DateTime?
+  recordedById  String?
+  recordedBy    User?         @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 // ───────────────────────── FR-05: Inventory ─────────────────────────
@@ -159,40 +220,59 @@ model RecipeLine {
 }
 
 // ───────────────────────── FR-06: Tables ─────────────────────────
-// Named RestaurantTable to avoid clashing with the word "Table".
 
 enum TableStatus {
+  AVAILABLE
   FREE
-  OCCUPIED
   RESERVED
+  OCCUPIED
+  CLEANING
 }
 
 model RestaurantTable {
-  id        String      @id @default(uuid())
-  name      String      @unique
-  seats     Int
-  status    TableStatus @default(FREE)
-  orders    Order[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            String      @id @default(uuid())
+  name          String      @unique
+  seats         Int
+  status        TableStatus @default(AVAILABLE)
+  section       String?     // e.g. "Main Dining", "Window Side", "Balcony"
+  activeOrderId String?
+  heldUntil     DateTime?
+  orders        Order[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+// ───────────────────────── Delivery Tier Configuration ─────────────────────────
+
+model DeliveryTier {
+  id          String   @id @default(uuid())
+  minDistance Decimal  @db.Decimal(5, 2) // km
+  maxDistance Decimal  @db.Decimal(5, 2) // km
+  fee         Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // ───────────────────────── FR-07: Settings ─────────────────────────
 
 model Settings {
-  id               String  @id @default("default")
-  name             String  @default("Arif Food")
-  phone            String  @default("+251 11 XXX XXXX")
-  address          String  @default("Bole, Addis Ababa")
-  currency         String  @default("USD")
-  taxRate          Decimal @default(5) @db.Decimal(5, 2)
-  dineInEnabled    Boolean @default(true)
-  takeawayEnabled  Boolean @default(true)
-  deliveryEnabled  Boolean @default(true)
-  deliveryFee      Decimal @default(2) @db.Decimal(10, 2)
-  cashEnabled      Boolean @default(true)
-  cardEnabled      Boolean @default(false)
-  mobileEnabled    Boolean @default(false)
-  lowStockMinimum  Decimal @default(5) @db.Decimal(10, 3)
-  updatedAt        DateTime @updatedAt
+  id                     String   @id @default("default")
+  name                   String   @default("Arif Food")
+  phone                  String   @default("+251 11 XXX XXXX")
+  address                String   @default("Bole, Addis Ababa")
+  currency               String   @default("ETB")
+  taxRate                Decimal  @default(15) @db.Decimal(5, 2)
+  dineInEnabled          Boolean  @default(true)
+  takeawayEnabled        Boolean  @default(true)
+  deliveryEnabled        Boolean  @default(true)
+  deliveryFee            Decimal  @default(50) @db.Decimal(10, 2)
+  restaurantLat          Decimal? @default(9.005401) @db.Decimal(10, 7)
+  restaurantLng          Decimal? @default(38.763611) @db.Decimal(10, 7)
+  maxDeliveryDistanceKm  Decimal  @default(15) @db.Decimal(5, 2)
+  minDeliveryOrderAmount Decimal  @default(0) @db.Decimal(10, 2)
+  cashEnabled            Boolean  @default(false)
+  cardEnabled            Boolean  @default(false)
+  mobileEnabled          Boolean  @default(true)
+  lowStockMinimum        Decimal  @default(5) @db.Decimal(10, 3)
+  updatedAt              DateTime @updatedAt
 }

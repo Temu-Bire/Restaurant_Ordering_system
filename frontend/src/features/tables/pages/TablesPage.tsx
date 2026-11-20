@@ -13,6 +13,7 @@ import {
   listTables,
   createTable,
   updateTable as apiUpdateTable,
+  updateTableStatus as apiUpdateTableStatus,
   deleteTable as apiDeleteTable,
 } from "../api/tablesApi";
 import { listOrders, assignTable } from "../../orders/api/ordersApi";
@@ -27,13 +28,14 @@ type Filter = "all" | TableStatus;
 interface TableFormProps {
   table: RestaurantTable | null;
   onClose: () => void;
-  onSave: (name: string, seats: number) => void;
+  onSave: (name: string, seats: number, section?: string) => void;
 }
 
 function TableFormModal({ table, onClose, onSave }: TableFormProps) {
   const { t } = useTranslation();
   const [name, setName] = useState(table?.name ?? "");
   const [seats, setSeats] = useState(String(table?.seats ?? 4));
+  const [section, setSection] = useState(table?.section ?? "Main Dining");
   const [error, setError] = useState("");
 
   function submit(e: React.FormEvent) {
@@ -42,15 +44,36 @@ function TableFormModal({ table, onClose, onSave }: TableFormProps) {
     if (!name.trim()) return setError("Table name is required");
     if (!Number.isInteger(seatCount) || seatCount < 1)
       return setError("Seats must be a whole number of at least 1");
-    onSave(name.trim(), seatCount);
+    onSave(name.trim(), seatCount, section.trim() || undefined);
     onClose();
   }
 
   return (
     <Modal open onClose={onClose} title={table ? "Edit Table" : "Add Table"}>
       <form onSubmit={submit} className="space-y-4" noValidate>
-        <Input id="tname" label="Table Name" placeholder="Table 9" value={name} onChange={(e) => setName(e.target.value)} />
-        <Input id="tseats" label="Seats" type="number" min={1} value={seats} onChange={(e) => setSeats(e.target.value)} error={error} />
+        <Input
+          id="tname"
+          label="Table Name / Number *"
+          placeholder="Table 9"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Input
+          id="tseats"
+          label="Seating Capacity (Guests) *"
+          type="number"
+          min={1}
+          value={seats}
+          onChange={(e) => setSeats(e.target.value)}
+          error={error}
+        />
+        <Input
+          id="tsection"
+          label="Section / Location (Optional)"
+          placeholder="e.g. Main Dining, Balcony, Window Side"
+          value={section}
+          onChange={(e) => setSection(e.target.value)}
+        />
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             {t("cancel")}
@@ -86,19 +109,36 @@ export default function TablesPage({ role: propRole }: { role?: string } = {}) {
     }
   }, [role]);
 
-  const visible = tables.filter((t) => (filter === "all" ? true : t.status === filter));
+  const visible = tables.filter((t) => {
+    if (filter === "all") return true;
+    if (filter === "available" || filter === "free") {
+      return t.status === "available" || t.status === "free";
+    }
+    return t.status === filter;
+  });
 
-  async function saveTable(name: string, seats: number) {
+  async function saveTable(name: string, seats: number, section?: string) {
     try {
       if (editing && editing !== "new") {
-        const updated = await apiUpdateTable(editing.id, { name, seats });
+        const updated = await apiUpdateTable(editing.id, { name, seats, section });
         setTables((prev) => prev.map((t) => (t.id === editing.id ? updated : t)));
       } else {
-        const created = await createTable({ name, seats });
+        const created = await createTable({ name, seats, section });
         setTables((prev) => [...prev, created]);
       }
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  async function handleStatusChange(tableId: string, newStatus: TableStatus) {
+    try {
+      const updated = await apiUpdateTableStatus(tableId, newStatus);
+      setTables((prev) => prev.map((t) => (t.id === tableId ? updated : t)));
+      setNotice(`Table status updated to ${newStatus}`);
+      setTimeout(() => setNotice(""), 3000);
+    } catch (err) {
+      console.error("Failed to change table status", err);
     }
   }
 
@@ -129,7 +169,7 @@ export default function TablesPage({ role: propRole }: { role?: string } = {}) {
     { value: "", label: "Select table..." },
     ...tables.map((t) => ({
       value: t.id,
-      label: `${t.name} (${t.status})`,
+      label: `${t.name} (${t.status.toUpperCase()})`,
     })),
   ];
 
@@ -155,28 +195,32 @@ export default function TablesPage({ role: propRole }: { role?: string } = {}) {
         title={t("navTables")}
         description={
           role === "admin"
-            ? "Create and manage restaurant tables"
-            : "Manage tables & assign dine-in orders"
+            ? "Create and manage restaurant tables, sections, and seating capacities"
+            : "Live floor management: monitor occupancy, clearing, and table turnaround"
         }
       />
 
+      {notice && (
+        <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs font-semibold text-success">
+          ✓ {notice}
+        </div>
+      )}
+
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        {role === "staff" ? (
-          <div className="overflow-x-auto pb-1">
-            <FilterTabs
-              value={filter}
-              onChange={setFilter}
-              tabs={[
-                { value: "all", label: t("all") },
-                { value: "free", label: t("free") },
-                { value: "occupied", label: t("occupied") },
-                { value: "reserved", label: t("reserved") },
-              ]}
-            />
-          </div>
-        ) : (
-          <span />
-        )}
+        <div className="overflow-x-auto pb-1">
+          <FilterTabs
+            value={filter}
+            onChange={setFilter}
+            tabs={[
+              { value: "all", label: "All Tables" },
+              { value: "available", label: "Available" },
+              { value: "occupied", label: "Occupied" },
+              { value: "cleaning", label: "Cleaning" },
+              { value: "reserved", label: "Reserved" },
+            ]}
+          />
+        </div>
+
         {role === "admin" && (
           <Button onClick={() => setEditing("new")}>+ Add Table</Button>
         )}
@@ -190,6 +234,7 @@ export default function TablesPage({ role: propRole }: { role?: string } = {}) {
             detailed
             onEdit={role === "admin" ? () => setEditing(table) : undefined}
             onDelete={role === "admin" ? () => deleteTable(table) : undefined}
+            onChangeStatus={(st) => handleStatusChange(table.id, st)}
           />
         ))}
       </div>
@@ -207,7 +252,6 @@ export default function TablesPage({ role: propRole }: { role?: string } = {}) {
               Assign
             </Button>
           </div>
-          {notice && <p className="mt-3 text-[13px] text-success">{notice}</p>}
         </Card>
       )}
 

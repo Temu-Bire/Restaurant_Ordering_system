@@ -32,9 +32,30 @@ export class CreateOrderDto {
   type: OrderType;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  partySize?: number;
+
+  @IsOptional()
+  @IsUUID()
+  addressId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  pickupInstructions?: string;
+
+  @IsOptional()
   @IsString()
   @MaxLength(40)
   table?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  paymentProvider?: string;
 
   @Transform(({ value }) => parsePaymentMethod(value))
   @IsEnum(PaymentMethod)

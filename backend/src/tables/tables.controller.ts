@@ -13,7 +13,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { Roles } from '../common/decorators/roles.decorator.js';
-import { SaveTableDto } from './dto/save-table.dto.js';
+import { ChangeTableStatusDto, SaveTableDto } from './dto/save-table.dto.js';
 import { TablesService } from './tables.service.js';
 
 @ApiTags('tables')
@@ -29,6 +29,7 @@ export class TablesController {
     return this.tables.findAll();
   }
 
+  @Roles(Role.ADMIN)
   @Post()
   create(@Body() dto: SaveTableDto) {
     return this.tables.create(dto);
@@ -38,6 +39,14 @@ export class TablesController {
   @Patch(':id')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SaveTableDto) {
     return this.tables.update(id, dto);
+  }
+
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ChangeTableStatusDto,
+  ) {
+    return this.tables.updateStatus(id, dto);
   }
 
   @Roles(Role.ADMIN)
