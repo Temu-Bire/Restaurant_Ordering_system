@@ -27,12 +27,27 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Order | null>(null);
   const [search, setSearch] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function fetchOrders() {
+    try {
+      const orders = await listOrders();
+      setList(orders);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    listOrders()
-      .then(setList)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    void fetchOrders();
+    // Poll for incoming orders every 8 seconds
+    const timer = setInterval(() => {
+      void fetchOrders();
+    }, 8000);
+    return () => clearInterval(timer);
   }, []);
 
   const count = (s: OrderStatus) => list.filter((o) => o.status === s).length;
@@ -41,6 +56,7 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
     (o) =>
       (filter === "all" || o.status === filter) &&
       (o.id.toLowerCase().includes(q) ||
+        (o.customerName ?? "").toLowerCase().includes(q) ||
         (o.table ?? "").toLowerCase().includes(q) ||
         ORDER_TYPE_LABEL[o.type].toLowerCase().includes(q))
   );
@@ -49,17 +65,22 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
     try {
       const updated = await updateOrderStatus(id, status);
       setList((prev) => prev.map((o) => (o.id === id ? updated : o)));
+      if (selected && selected.id === id) {
+        setSelected(updated);
+      }
     } catch (err) {
       console.error(err);
+      setErrorMessage(err instanceof Error ? err.message : "Failed to update order status");
     }
   }
 
   const adminColumns: Column<Order>[] = [
-    { header: "Order", cell: (o) => `#${o.id}` },
+    { header: "Order ID", cell: (o) => <span className="font-mono font-bold">#{o.id}</span> },
+    { header: "Customer", cell: (o) => <span className="font-semibold text-foreground">{o.customerName || "Customer"}</span> },
     { header: "Type", cell: (o) => ORDER_TYPE_LABEL[o.type] },
-    { header: t("tableNumber"), cell: (o) => o.table ?? "—" },
-    { header: t("itemsOrdered"), cell: (o) => o.lines.reduce((s, l) => s + l.quantity, 0) },
-    { header: t("total"), cell: (o) => formatCurrency(o.total) },
+    { header: t("tableNumber"), cell: (o) => o.table ? `Table ${o.table}` : "—" },
+    { header: t("itemsOrdered"), cell: (o) => `${o.lines.reduce((s, l) => s + l.quantity, 0)} items` },
+    { header: t("total"), cell: (o) => <span className="font-bold text-foreground">{formatCurrency(o.total)}</span> },
     {
       header: t("status"),
       cell: (o) => (
@@ -74,7 +95,7 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
       className: "text-right",
       cell: (o) => (
         <Button size="sm" variant="outline" onClick={() => setSelected(o)}>
-          Details
+          View
         </Button>
       ),
     },
@@ -86,9 +107,20 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
     <>
       <PageHeader
         title={t("navOrders")}
-        description={role === "admin" ? "All orders and history" : "Incoming kitchen orders"}
+        description={
+          role === "admin"
+            ? "View customer orders, history, and items (Read-Only)"
+            : "Incoming kitchen orders and real-time status management"
+        }
         search={{ value: search, onChange: setSearch }}
       />
+
+      {errorMessage && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-medium text-danger">
+          <span>⚠ {errorMessage}</span>
+          <button onClick={() => setErrorMessage("")} className="hover:opacity-75">✕</button>
+        </div>
+      )}
 
       <div className="mb-5 overflow-x-auto pb-1">
         <FilterTabs
@@ -108,7 +140,12 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
 
       {role === "admin" ? (
         <Card className="rounded-2xl shadow-xs overflow-hidden">
-          <DataTable columns={adminColumns} data={visible} getRowKey={(o) => o.id} />
+          <DataTable
+            columns={adminColumns}
+            data={visible}
+            getRowKey={(o) => o.id}
+            emptyMessage="No orders found."
+          />
         </Card>
       ) : (
         <div className="space-y-3">
@@ -127,8 +164,9 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
         <OrderDetailsModal
           key={selected.id}
           order={selected}
+          readOnly={role === "admin"}
           onClose={() => setSelected(null)}
-          onSave={updateStatus}
+          onSave={role === "staff" ? updateStatus : undefined}
         />
       )}
     </>

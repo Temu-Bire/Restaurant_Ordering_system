@@ -54,7 +54,7 @@ export class MenuService {
           description: dto.description,
           price: dto.price,
           categoryId: dto.categoryId,
-          isAvailable: dto.isAvailable,
+          isAvailable: true,
         },
         include: { category: true },
       });
@@ -73,12 +73,27 @@ export class MenuService {
           ...(dto.description !== undefined && { description: dto.description }),
           ...(dto.price !== undefined && { price: dto.price }),
           ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
-          ...(dto.isAvailable !== undefined && { isAvailable: dto.isAvailable }),
         },
         include: { category: true },
       });
       return this.respond(food);
     } catch (error) {
+      throw this.translate(error);
+    }
+  }
+
+  async setAvailability(id: string, isAvailable: boolean) {
+    try {
+      const food = await this.prisma.food.update({
+        where: { id },
+        data: { isAvailable },
+        include: { category: true },
+      });
+      return this.respond(food);
+    } catch (error) {
+      if (isPrismaError(error, 'P2025')) {
+        throw new NotFoundException('Food item not found');
+      }
       throw this.translate(error);
     }
   }

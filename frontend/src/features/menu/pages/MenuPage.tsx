@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import FilterTabs from "../../../shared/components/ui/FilterTabs";
 import FoodCard from "../components/FoodCard";
+import CustomerFoodModal from "../components/CustomerFoodModal";
 import type { FoodItem } from "../types";
 import { useCart } from "../../cart/hooks/useCart";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
@@ -15,17 +16,17 @@ export default function MenuPage() {
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    listFoods()
-      .then((foods) =>
-        setItems(foods.filter((f) => f.isAvailable).map(mapApiFoodToFoodItem))
-      )
-      .catch(console.error);
-
-    listCategories()
-      .then(setCategories)
-      .catch(console.error);
+    Promise.all([listFoods(), listCategories()])
+      .then(([foods, cats]) => {
+        setItems(foods.map(mapApiFoodToFoodItem));
+        setCategories(cats);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const tabs = [
@@ -61,17 +62,34 @@ export default function MenuPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {visible.map((food) => (
-          <FoodCard key={food.id} food={food} onAdd={addItem} />
-        ))}
+      {loading ? (
+        <div className="py-16 text-center text-sm text-muted">{t("loading")}</div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {visible.map((food) => (
+            <FoodCard
+              key={food.id}
+              food={food}
+              onAdd={addItem}
+              onViewDetails={setSelectedFood}
+            />
+          ))}
 
-        {visible.length === 0 && (
-          <div className="col-span-full rounded-2xl border border-border bg-surface py-12 text-center text-muted">
-            <p className="text-base font-medium">{t("noDishesFound")}</p>
-          </div>
-        )}
-      </div>
+          {visible.length === 0 && (
+            <div className="col-span-full rounded-2xl border border-border bg-surface py-12 text-center text-muted">
+              <p className="text-base font-medium">{t("noDishesFound")}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedFood && (
+        <CustomerFoodModal
+          food={selectedFood}
+          onClose={() => setSelectedFood(null)}
+          onAdd={addItem}
+        />
+      )}
     </>
   );
 }

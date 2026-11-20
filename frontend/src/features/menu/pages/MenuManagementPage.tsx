@@ -20,6 +20,8 @@ import {
   updateFood,
   deleteFood as apideleteFood,
   createCategory,
+  updateCategory,
+  deleteCategory,
   uploadFoodImage,
   mapApiFoodToFoodItem,
   type ApiCategory,
@@ -27,67 +29,242 @@ import {
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import ConfirmDialog from "../../../shared/components/ui/ConfirmDialog";
 
-/* ---------- Add category modal ---------- */
-interface CategoryModalProps {
-  existing: string[];
+/* ---------- Category Management Modal (Create, Edit, Delete Categories) ---------- */
+interface ManageCategoriesModalProps {
+  categories: ApiCategory[];
   onClose: () => void;
-  onAdd: (label: string) => void;
+  onRefresh: () => Promise<void>;
 }
 
-function CategoryModal({ existing, onClose, onAdd }: CategoryModalProps) {
+function ManageCategoriesModal({ categories, onClose, onRefresh }: ManageCategoriesModalProps) {
+  const [editingCat, setEditingCat] = useState<ApiCategory | null>(null);
   const [name, setName] = useState("");
+  const [newName, setNewName] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [deletingCat, setDeletingCat] = useState<ApiCategory | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function submit(e: FormEvent) {
+  async function handleCreate(e: FormEvent) {
     e.preventDefault();
-    const label = name.trim();
-
+    const label = newName.trim();
     if (!label) return setError("Category name is required");
-    if (existing.includes(label.toLowerCase()))
+    if (categories.some((c) => c.name.toLowerCase() === label.toLowerCase())) {
       return setError("That category already exists");
+    }
 
-    onAdd(label);
-    onClose();
+    try {
+      setLoading(true);
+      setError("");
+      await createCategory(label);
+      setNewName("");
+      setSuccess(`Category "${label}" created successfully.`);
+      await onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create category");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleUpdate(e: FormEvent) {
+    e.preventDefault();
+    if (!editingCat) return;
+    const label = name.trim();
+    if (!label) return setError("Category name is required");
+    if (
+      categories.some(
+        (c) => c.id !== editingCat.id && c.name.toLowerCase() === label.toLowerCase()
+      )
+    ) {
+      return setError("That category name already exists");
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      await updateCategory(editingCat.id, label);
+      setEditingCat(null);
+      setName("");
+      setSuccess(`Category updated to "${label}".`);
+      await onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update category");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(category: ApiCategory) {
+    try {
+      setLoading(true);
+      setError("");
+      await deleteCategory(category.id);
+      setSuccess(`Category "${category.name}" deleted.`);
+      await onRefresh();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Cannot delete category with existing menu items"
+      );
+    } finally {
+      setLoading(false);
+      setDeletingCat(null);
+    }
   }
 
   return (
-    <Modal open onClose={onClose} title="Add Category">
-      <form onSubmit={submit} className="space-y-4" noValidate>
-        <Input
-          id="category-name"
-          label="Category Name"
-          placeholder="Soups"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          error={error}
-        />
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit">Add Category</Button>
+    <>
+      <Modal open onClose={onClose} title="Manage Categories">
+        <div className="space-y-6">
+          {/* Notification alerts */}
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-danger">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-success">
+              {success}
+            </div>
+          )}
+
+          {/* Add new category form */}
+          <form onSubmit={handleCreate} className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
+              Add New Category
+            </h4>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  id="new-category"
+                  label="Category Name"
+                  placeholder="e.g. Traditional Stews"
+                  value={newName}
+                  onChange={(e) => {
+                    setNewName(e.target.value);
+                    setError("");
+                  }}
+                />
+              </div>
+              <Button type="submit" disabled={loading || !newName.trim()}>
+                Add
+              </Button>
+            </div>
+          </form>
+
+          {/* Category list */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
+              Existing Categories ({categories.length})
+            </h4>
+            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+              {categories.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between rounded-xl border border-border bg-surface-secondary/50 px-3.5 py-2.5"
+                >
+                  {editingCat?.id === c.id ? (
+                    <form onSubmit={handleUpdate} className="flex flex-1 items-center gap-2">
+                      <Input
+                        id={`edit-${c.id}`}
+                        label="Edit Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="py-1 text-xs"
+                      />
+                      <Button size="sm" type="submit" disabled={loading || !name.trim()}>
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        type="button"
+                        onClick={() => {
+                          setEditingCat(null);
+                          setName("");
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </form>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-foreground text-sm">{c.name}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCat(c);
+                            setName(c.name);
+                            setError("");
+                          }}
+                          className="rounded-lg p-1.5 text-muted hover:bg-surface hover:text-foreground transition-colors text-xs font-medium"
+                          title="Edit Category Name"
+                        >
+                          ✎ Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingCat(c)}
+                          className="rounded-lg p-1.5 text-muted hover:bg-surface hover:text-danger transition-colors text-xs font-medium"
+                          title="Delete Category"
+                        >
+                          🗑 Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-border">
+            <Button variant="secondary" onClick={onClose}>
+              Done
+            </Button>
+          </div>
         </div>
-      </form>
-    </Modal>
+      </Modal>
+
+      {deletingCat && (
+        <ConfirmDialog
+          title="Delete Category"
+          message={`Are you sure you want to delete category "${deletingCat.name}"? If dishes belong to it, you must reassign or remove them first.`}
+          onConfirm={() => handleDelete(deletingCat)}
+          onCancel={() => setDeletingCat(null)}
+        />
+      )}
+    </>
   );
 }
 
-/* ---------- Page ---------- */
+/* ---------- Admin Menu Management Page ---------- */
 export default function MenuManagementPage() {
   const { t } = useTranslation();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [apiCategories, setApiCategories] = useState<ApiCategory[]>([]);
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState<FoodItem | "new" | null>(null);
-  const [addingCategory, setAddingCategory] = useState(false);
+  const [managingCategories, setManagingCategories] = useState(false);
   const [search, setSearch] = useState("");
   const [toDelete, setToDelete] = useState<FoodItem | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function loadData() {
+    try {
+      const [foods, cats] = await Promise.all([listFoods(), listCategories()]);
+      setItems(foods.map(mapApiFoodToFoodItem));
+      setApiCategories(cats);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Failed to load menu data");
+    }
+  }
 
   useEffect(() => {
-    listFoods()
-      .then((foods) => setItems(foods.map(mapApiFoodToFoodItem)))
-      .catch(console.error);
-    listCategories().then(setApiCategories).catch(console.error);
+    void loadData();
   }, []);
 
   const categories = apiCategories.map((c) => ({
@@ -100,17 +277,18 @@ export default function MenuManagementPage() {
 
   async function handleDirectUpload(foodId: string, file: File) {
     try {
+      setErrorMessage("");
       await uploadFoodImage(foodId, file);
-      const fresh = await listFoods();
-      setItems(fresh.map(mapApiFoodToFoodItem));
+      setFeedbackMessage("Image updated successfully.");
+      await loadData();
     } catch (err) {
       console.error("Direct image upload failed:", err);
+      setErrorMessage(err instanceof Error ? err.message : "Failed to upload image");
     }
   }
 
   async function saveFood(data: FoodFormData) {
     const { image, ...fields } = data;
-    // find the categoryId from apiCategories by matching the label
     const matchedCat = apiCategories.find(
       (c) =>
         c.name.toLowerCase() === fields.category.toLowerCase() ||
@@ -119,6 +297,7 @@ export default function MenuManagementPage() {
     const categoryId = matchedCat?.id ?? apiCategories[0]?.id ?? "";
 
     try {
+      setErrorMessage("");
       let targetId: string | null = editing && editing !== "new" ? editing.id : null;
       if (editing && editing !== "new") {
         await updateFood(editing.id, {
@@ -126,17 +305,17 @@ export default function MenuManagementPage() {
           description: fields.description,
           price: fields.price,
           categoryId,
-          isAvailable: fields.available,
         });
+        setFeedbackMessage(`Dish "${fields.name}" updated successfully.`);
       } else {
         const created = await createFood({
           name: fields.name,
           description: fields.description,
           price: fields.price,
           categoryId,
-          isAvailable: fields.available,
         });
         targetId = created.id;
+        setFeedbackMessage(`Dish "${fields.name}" created successfully.`);
       }
 
       if (image && targetId) {
@@ -147,10 +326,10 @@ export default function MenuManagementPage() {
         }
       }
 
-      const fresh = await listFoods();
-      setItems(fresh.map(mapApiFoodToFoodItem));
+      await loadData();
     } catch (err) {
       console.error("Failed to save food item:", err);
+      setErrorMessage(err instanceof Error ? err.message : "Failed to save food item");
     }
   }
 
@@ -161,26 +340,22 @@ export default function MenuManagementPage() {
       f.name.toLowerCase().includes(q)
   );
 
-  const deleteFoodItem = (food: FoodItem) => setToDelete(food);
-
   async function confirmDelete() {
     if (!toDelete) return;
     try {
+      setErrorMessage("");
       await apideleteFood(toDelete.id);
       setItems((prev) => prev.filter((f) => f.id !== toDelete.id));
+      setFeedbackMessage(`"${toDelete.name}" was deleted from the menu.`);
     } catch (err) {
       console.error(err);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "Cannot delete dish because it is referenced in past orders."
+      );
     }
     setToDelete(null);
-  }
-
-  async function addCategory(label: string) {
-    try {
-      const created = await createCategory(label);
-      setApiCategories((prev) => [...prev, created]);
-    } catch (err) {
-      console.error(err);
-    }
   }
 
   const columns: Column<FoodItem>[] = [
@@ -209,7 +384,7 @@ export default function MenuManagementPage() {
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) handleDirectUpload(f.id, file);
+                if (file) void handleDirectUpload(f.id, file);
               }}
             />
           </label>
@@ -231,30 +406,35 @@ export default function MenuManagementPage() {
     { header: t("foodPrice"), cell: (f) => formatCurrency(f.price) },
     {
       header: t("foodStatus"),
-      cell: (f) =>
-        f.available ? (
-          <Badge variant="active">{t("active")}</Badge>
-        ) : (
-          <Badge variant="disabled">{t("unavailable")}</Badge>
-        ),
+      cell: (f) => (
+        <div className="flex items-center gap-1.5" title="Availability is managed by Staff (read-only for Admin)">
+          {f.available ? (
+            <Badge variant="active">{t("active")}</Badge>
+          ) : (
+            <Badge variant="disabled">{t("unavailable")}</Badge>
+          )}
+          <span className="text-[11px] text-muted font-normal">(Staff managed)</span>
+        </div>
+      ),
     },
     {
       header: t("actions"),
+      className: "text-right",
       cell: (f) => (
-        <div className="flex gap-4 text-muted">
+        <div className="flex justify-end gap-3 text-muted">
           <button
             onClick={() => setEditing(f)}
             aria-label={`Edit ${f.name}`}
-            className="hover:text-foreground"
+            className="rounded-lg px-2.5 py-1 text-xs font-semibold text-primary hover:bg-surface-secondary transition-colors"
           >
-            ✎
+            ✎ Edit
           </button>
           <button
-            onClick={() => deleteFoodItem(f)}
+            onClick={() => setToDelete(f)}
             aria-label={`Delete ${f.name}`}
-            className="hover:text-danger"
+            className="rounded-lg px-2.5 py-1 text-xs font-semibold text-danger hover:bg-surface-secondary transition-colors"
           >
-            🗑
+            🗑 Delete
           </button>
         </div>
       ),
@@ -265,9 +445,23 @@ export default function MenuManagementPage() {
     <>
       <PageHeader
         title={t("menuManagement")}
-        description={t("menuManagementDesc")}
+        description="Create dishes, edit details, and organize menu categories"
         search={{ value: search, onChange: setSearch }}
       />
+
+      {feedbackMessage && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-xs font-medium text-success">
+          <span>✓ {feedbackMessage}</span>
+          <button onClick={() => setFeedbackMessage("")} className="hover:opacity-75">✕</button>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-medium text-danger">
+          <span>⚠ {errorMessage}</span>
+          <button onClick={() => setErrorMessage("")} className="hover:opacity-75">✕</button>
+        </div>
+      )}
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="overflow-x-auto pb-1">
@@ -279,8 +473,8 @@ export default function MenuManagementPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => setEditing("new")}>{t("addFoodItem")}</Button>
-          <Button variant="secondary" onClick={() => setAddingCategory(true)}>
-            {t("addCategory")}
+          <Button variant="secondary" onClick={() => setManagingCategories(true)}>
+            Manage Categories
           </Button>
         </div>
       </div>
@@ -304,17 +498,18 @@ export default function MenuManagementPage() {
         />
       )}
 
-      {addingCategory && (
-        <CategoryModal
-          existing={categories.flatMap((c) => [c.value, c.label.toLowerCase()])}
-          onClose={() => setAddingCategory(false)}
-          onAdd={addCategory}
+      {managingCategories && (
+        <ManageCategoriesModal
+          categories={apiCategories}
+          onClose={() => setManagingCategories(false)}
+          onRefresh={loadData}
         />
       )}
+
       {toDelete && (
         <ConfirmDialog
           title="Delete food item"
-          message={`Delete "${toDelete.name}" from the menu?`}
+          message={`Are you sure you want to delete "${toDelete.name}" from the menu? If this dish is in past orders, it cannot be deleted.`}
           onConfirm={confirmDelete}
           onCancel={() => setToDelete(null)}
         />

@@ -21,9 +21,11 @@ export const PATHS = {
     root: "/staff",
     dashboard: "/staff/dashboard",
     orders: "/staff/orders",
+    menu: "/staff/menu",
     tables: "/staff/tables",
     inventory: "/staff/inventory",
     payments: "/staff/payments",
+    profile: "/staff/profile",
   },
 
   admin: {
@@ -37,6 +39,7 @@ export const PATHS = {
     reports: "/admin/reports",
     users: "/admin/users",
     settings: "/admin/settings",
+    profile: "/admin/profile",
   },
 } as const;
 

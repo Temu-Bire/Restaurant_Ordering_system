@@ -45,7 +45,7 @@ export class OrdersController {
     return this.orders.create(user.id, dto);
   }
 
-  @Roles(Role.STAFF, Role.ADMIN)
+  @Roles(Role.STAFF)
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
@@ -61,7 +61,7 @@ export class OrdersController {
     return this.orders.cancel(id, user.id);
   }
 
-  @Roles(Role.STAFF, Role.ADMIN)
+  @Roles(Role.STAFF)
   @Patch(':id/table')
   assignTable(@Param('id') id: string, @Body() dto: AssignTableDto) {
     return this.orders.assignTable(id, dto);

@@ -1,6 +1,5 @@
 import { Transform } from 'class-transformer';
 import {
-  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -34,8 +33,4 @@ export class CreateFoodDto {
 
   @IsUUID()
   categoryId: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isAvailable?: boolean;
 }

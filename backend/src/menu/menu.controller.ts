@@ -20,6 +20,7 @@ import { Public } from '../common/decorators/public.decorator.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CreateFoodDto } from './dto/create-food.dto.js';
 import { UpdateFoodDto } from './dto/update-food.dto.js';
+import { UpdateFoodAvailabilityDto } from './dto/update-food-availability.dto.js';
 import { menuImageOptions } from './menu-image.options.js';
 import { MenuService } from './menu.service.js';
 
@@ -60,6 +61,16 @@ export class MenuController {
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.menu.remove(id);
+  }
+
+  @ApiBearerAuth()
+  @Roles(Role.STAFF)
+  @Patch(':id/availability')
+  updateAvailability(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateFoodAvailabilityDto,
+  ) {
+    return this.menu.setAvailability(id, dto.isAvailable);
   }
 
   @ApiBearerAuth()

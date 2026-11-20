@@ -155,7 +155,7 @@ export class OrdersService {
     actor: { id: string; role: Role },
   ) {
     const order = await this.findRecord(id);
-    if (actor.role === Role.CUSTOMER) {
+    if (actor.role !== Role.STAFF) {
       throw new ForbiddenException('Only staff can update order status');
     }
     return this.changeStatus(order.id, dto.status);

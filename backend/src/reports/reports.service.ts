@@ -59,12 +59,31 @@ export class ReportsService {
   }
 
   async admin(period: ReportPeriod) {
-    const [report, customers, pendingOrders, ingredients] = await Promise.all([
+    const [
+      report,
+      customers,
+      pendingOrders,
+      totalOrders,
+      totalMenuItems,
+      availableFoodItems,
+      recentOrders,
+      ingredients,
+    ] = await Promise.all([
       this.report(period),
       this.prisma.user.count({ where: { role: Role.CUSTOMER } }),
       this.prisma.order.count({ where: { status: OrderStatus.PENDING } }),
+      this.prisma.order.count(),
+      this.prisma.food.count(),
+      this.prisma.food.count({ where: { isAvailable: true } }),
+      this.prisma.order.findMany({
+        include: orderInclude,
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+      }),
       this.prisma.ingredient.findMany({ orderBy: { name: 'asc' } }),
     ]);
+
+    const unavailableFoodItems = totalMenuItems - availableFoodItems;
 
     const lowStock = ingredients
       .filter((item) => item.stock.lessThanOrEqualTo(item.minimum))
@@ -78,6 +97,11 @@ export class ReportsService {
     return {
       report,
       customers,
+      totalOrders,
+      totalMenuItems,
+      availableFoodItems,
+      unavailableFoodItems,
+      recentOrders: recentOrders.map(toOrderResponse),
       popularItems: report.popular.reduce((sum, item) => sum + item.sold, 0),
       pendingOrders,
       lowStock,
@@ -99,7 +123,7 @@ export class ReportsService {
       this.prisma.order.findMany({
         include: orderInclude,
         orderBy: { createdAt: 'desc' },
-        take: 3,
+        take: 10,
       }),
       this.prisma.restaurantTable.findMany({ orderBy: { name: 'asc' }, take: 6 }),
     ]);
@@ -113,8 +137,10 @@ export class ReportsService {
 
     return {
       pending: count(OrderStatus.PENDING),
-      completed: count(OrderStatus.COMPLETED),
+      confirmed: count(OrderStatus.CONFIRMED),
       preparing: count(OrderStatus.PREPARING),
+      ready: count(OrderStatus.READY),
+      completed: count(OrderStatus.COMPLETED),
       occupiedTables: occupied,
       recentOrders: recent.map(toOrderResponse),
       tables: tables.map((table) => ({

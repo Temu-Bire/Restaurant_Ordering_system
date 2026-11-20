@@ -11,7 +11,6 @@ export interface FoodFormData {
   price: number;
   category: Category;
   description: string;
-  available: boolean;
   image: File | null;
 }
 
@@ -36,22 +35,20 @@ export default function FoodFormModal({
     food?.category ?? categories[0]?.value ?? ""
   );
   const [description, setDescription] = useState(food?.description ?? "");
-  const [available, setAvailable] = useState(
-    food ? (food.available ? "available" : "unavailable") : "available"
-  );
   const [image, setImage] = useState<File | null>(null);
 
   const [errors, setErrors] = useState<{
     name?: string;
     price?: string;
+    category?: string;
     image?: string;
   }>({});
 
   function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
 
-    if (file && !["image/png", "image/jpeg"].includes(file.type)) {
-      setErrors((prev) => ({ ...prev, image: "Use a PNG or JPG image" }));
+    if (file && !["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setErrors((prev) => ({ ...prev, image: "Use a PNG, JPG, or WebP image" }));
       setImage(null);
       return;
     }
@@ -71,18 +68,18 @@ export default function FoodFormModal({
     const value = Number(price);
     const next: typeof errors = { image: errors.image };
     if (!name.trim()) next.name = "Food name is required";
+    if (!category.trim()) next.category = "Category selection is required";
     if (!price.trim() || Number.isNaN(value) || value <= 0)
-      next.price = "Enter a price above 0";
+      next.price = "Price is required and must be greater than zero";
 
     setErrors(next);
-    if (next.name || next.price || next.image) return;
+    if (next.name || next.price || next.category || next.image) return;
 
     onSave({
       name: name.trim(),
       price: value,
       category,
       description: description.trim(),
-      available: available === "available",
       image,
     });
     onClose();
@@ -94,7 +91,7 @@ export default function FoodFormModal({
         <Input
           id="food-name"
           label="Food Name *"
-          placeholder="Margherita Pizza"
+          placeholder="e.g. Margherita Pizza"
           value={name}
           onChange={(e) => setName(e.target.value)}
           error={errors.name}
@@ -103,17 +100,17 @@ export default function FoodFormModal({
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
             id="food-category"
-            label="Category"
+            label="Category *"
             value={category}
             options={categories}
             onChange={(e) => setCategory(e.target.value)}
           />
           <Input
             id="food-price"
-            label="Price ($) *"
+            label="Price *"
             type="number"
             step="0.01"
-            min="0"
+            min="0.01"
             placeholder="12.99"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
@@ -124,47 +121,34 @@ export default function FoodFormModal({
         <Input
           id="food-description"
           label="Description"
-          placeholder="Fresh pizza with tomato and cheese..."
+          placeholder="Fresh pizza with mozzarella and basil..."
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Select
-            id="food-availability"
-            label="Availability"
-            value={available}
-            options={[
-              { value: "available", label: "Available" },
-              { value: "unavailable", label: "Unavailable" },
-            ]}
-            onChange={(e) => setAvailable(e.target.value)}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="food-image" className="text-[13px] font-semibold text-foreground">
+            Food Image
+          </label>
+          <input
+            id="food-image"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={pickImage}
+            className="w-full rounded-xl border border-border bg-surface-secondary px-3 py-2 text-[13px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white"
           />
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="food-image" className="text-[13px] font-semibold">
-              Image
-            </label>
-            <input
-              id="food-image"
-              type="file"
-              accept="image/png,image/jpeg"
-              onChange={pickImage}
-              className="w-full rounded-lg border border-border bg-surface-secondary px-2 py-1.5 text-[13px] text-muted file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white"
-            />
-            {errors.image ? (
-              <span className="text-xs text-danger">{errors.image}</span>
-            ) : (
-              <span className="text-xs text-muted">PNG or JPG, up to 5 MB</span>
-            )}
-          </div>
+          {errors.image ? (
+            <span className="text-xs text-danger">{errors.image}</span>
+          ) : (
+            <span className="text-xs text-muted">PNG, JPG, or WebP up to 5 MB</span>
+          )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex justify-end gap-3 pt-3 border-t border-border">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit">Save Food</Button>
+          <Button type="submit">{food ? "Save Changes" : "Create Dish"}</Button>
         </div>
       </form>
     </Modal>

@@ -15,6 +15,7 @@ export default function FoodCard({ food, onAdd, onViewDetails }: FoodCardProps) 
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
+    if (!food.available) return;
     onAdd(food);
     setAdded(true);
     setTimeout(() => setAdded(false), 1200);
@@ -24,7 +25,7 @@ export default function FoodCard({ food, onAdd, onViewDetails }: FoodCardProps) 
     <article
       className={cn(
         "group flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-surface shadow-xs transition-all duration-200 hover:-translate-y-1 hover:shadow-md",
-        !food.available && "opacity-60"
+        !food.available && "opacity-80 border-border/60"
       )}
     >
       {/* Food Image */}
@@ -35,26 +36,51 @@ export default function FoodCard({ food, onAdd, onViewDetails }: FoodCardProps) 
         <img
           src={food.imageUrl || "/default-food.png"}
           alt={food.name}
-          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className={cn(
+            "size-full object-cover transition-transform duration-300 group-hover:scale-105",
+            !food.available && "grayscale"
+          )}
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = "/default-food.png";
           }}
         />
+
         {food.category && (
           <div className="absolute top-2.5 left-2.5 rounded-full bg-black/60 px-2.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs capitalize">
             {food.category}
           </div>
         )}
+
+        <div className="absolute top-2.5 right-2.5">
+          {food.available ? (
+            <span className="flex items-center gap-1 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+              <span className="size-1.5 rounded-full bg-white" />
+              Available
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 rounded-full bg-rose-600/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+              <span className="size-1.5 rounded-full bg-white" />
+              Unavailable
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Card Content */}
       <div className="p-4 flex flex-1 flex-col justify-between">
-        <h3
-          onClick={() => onViewDetails && onViewDetails(food)}
-          className="text-sm sm:text-base font-bold text-foreground line-clamp-1 cursor-pointer hover:text-orange-500 transition-colors"
-        >
-          {food.name}
-        </h3>
+        <div>
+          <h3
+            onClick={() => onViewDetails && onViewDetails(food)}
+            className="text-sm sm:text-base font-bold text-foreground line-clamp-1 cursor-pointer hover:text-primary transition-colors"
+          >
+            {food.name}
+          </h3>
+          {food.description && (
+            <p className="mt-1 text-xs text-muted line-clamp-2">
+              {food.description}
+            </p>
+          )}
+        </div>
 
         <div className="mt-4 pt-3 space-y-2 border-t border-border/60">
           {/* Full-width Add to Cart button */}
@@ -63,32 +89,39 @@ export default function FoodCard({ food, onAdd, onViewDetails }: FoodCardProps) 
             onClick={handleAdd}
             disabled={!food.available}
             aria-label={`${t("addToCart")}: ${food.name}`}
-            className="w-full flex items-center justify-center gap-1.5 rounded-full bg-orange-500 hover:bg-orange-600 disabled:bg-muted py-2 text-xs font-bold text-white shadow-xs transition-all active:scale-95"
+            className={cn(
+              "w-full flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold shadow-xs transition-all",
+              food.available
+                ? "bg-primary hover:bg-primary-hover text-white active:scale-95 cursor-pointer"
+                : "bg-surface-secondary text-muted border border-border cursor-not-allowed opacity-80"
+            )}
           >
             {added ? (
               <>
                 <span>✓</span>
                 <span>Added to Cart</span>
               </>
-            ) : (
+            ) : food.available ? (
               <>
                 <span>+</span>
                 <span>{t("addToCart")}</span>
               </>
+            ) : (
+              <span>Unavailable</span>
             )}
           </button>
 
           {/* Row below Add to Cart: Price on left, View Details on right */}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-sm sm:text-base font-black text-orange-500">
-              {food.available ? formatCurrency(food.price) : t("unavailable")}
+            <span className="text-sm sm:text-base font-black text-foreground">
+              {formatCurrency(food.price)}
             </span>
 
             {onViewDetails && (
               <button
                 type="button"
                 onClick={() => onViewDetails(food)}
-                className="rounded-full border border-border bg-surface-secondary px-3 py-1 text-[11px] font-semibold text-foreground hover:border-orange-500 hover:text-orange-500 transition-colors"
+                className="rounded-full border border-border bg-surface-secondary px-3 py-1 text-[11px] font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
               >
                 {t("viewDetails")}
               </button>

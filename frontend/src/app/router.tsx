@@ -12,6 +12,7 @@ import RegisterPage from "../features/auth/pages/RegisterPage";
 
 import HomePage from "../features/menu/pages/HomePage";
 import MenuPage from "../features/menu/pages/MenuPage";
+import StaffMenuPage from "../features/menu/pages/StaffMenuPage";
 import CartPage from "../features/cart/pages/CartPage";
 import MyOrdersPage from "../features/orders/pages/MyOrdersPage";
 import OrderTrackingPage from "../features/orders/pages/OrderTrackingPage";
@@ -49,9 +50,11 @@ const customerNav: NavItem[] = [
 const staffNav: NavItem[] = [
   { label: "Dashboard", to: PATHS.staff.dashboard },
   { label: "Orders", to: PATHS.staff.orders },
+  { label: "Menu & Availability", to: PATHS.staff.menu },
   { label: "Tables", to: PATHS.staff.tables },
   { label: "Inventory", to: PATHS.staff.inventory },
   { label: "Payments", to: PATHS.staff.payments },
+  { label: "Profile", to: PATHS.staff.profile },
 ];
 
 const adminNav: NavItem[] = [
@@ -64,6 +67,7 @@ const adminNav: NavItem[] = [
   { label: "Reports", to: PATHS.admin.reports },
   { label: "Users", to: PATHS.admin.users },
   { label: "Settings", to: PATHS.admin.settings },
+  { label: "Profile", to: PATHS.admin.profile },
 ];
 
 /* ---------- Route table ---------- */
@@ -119,9 +123,11 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to={PATHS.staff.dashboard} replace /> },
               { path: PATHS.staff.dashboard, element: <StaffDashboardPage /> },
               { path: PATHS.staff.orders, element: <OrdersPage role="staff" /> },
+              { path: PATHS.staff.menu, element: <StaffMenuPage /> },
               { path: PATHS.staff.tables, element: <TablesPage role="staff" /> },
               { path: PATHS.staff.inventory, element: <InventoryPage role="staff" /> },
               { path: PATHS.staff.payments, element: <PaymentsPage role="staff" /> },
+              { path: PATHS.staff.profile, element: <ProfilePage /> },
             ],
           },
         ],
@@ -144,6 +150,7 @@ export const router = createBrowserRouter([
               { path: PATHS.admin.reports, element: <ReportsPage /> },
               { path: PATHS.admin.users, element: <UsersPage /> },
               { path: PATHS.admin.settings, element: <SettingsPage /> },
+              { path: PATHS.admin.profile, element: <ProfilePage /> },
             ],
           },
         ],
@@ -151,5 +158,6 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // Fallback 404
   { path: "*", element: <NotFoundPage /> },
 ]);

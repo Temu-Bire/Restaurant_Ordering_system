@@ -1,4 +1,4 @@
-import { createContext, useState, type ReactNode } from "react";
+import { createContext, useState, useEffect, type ReactNode } from "react";
 import type { FoodItem } from "../../menu/types";
 
 export interface CartItem extends FoodItem {
@@ -9,7 +9,7 @@ interface CartContextType {
   items: CartItem[];
   count: number;
   subtotal: number;
-  addItem: (food: FoodItem) => void;
+  addItem: (food: FoodItem) => boolean;
   increase: (id: string) => void;
   decrease: (id: string) => void;
   removeItem: (id: string) => void;
@@ -18,10 +18,32 @@ interface CartContextType {
 
 export const CartContext = createContext<CartContextType | null>(null);
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+const CART_STORAGE_KEY = "restrogo_cart";
 
-  const addItem = (food: FoodItem) =>
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>(() => {
+    try {
+      const stored = sessionStorage.getItem(CART_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      /* ignore storage quota errors */
+    }
+  }, [items]);
+
+  const addItem = (food: FoodItem): boolean => {
+    // Validate availability: Cannot add unavailable food to cart
+    if (!food.available) {
+      return false;
+    }
+
     setItems((prev) => {
       const existing = prev.find((i) => i.id === food.id);
       if (existing) {
@@ -31,6 +53,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...food, quantity: 1 }];
     });
+    return true;
+  };
 
   const increase = (id: string) =>
     setItems((prev) =>
@@ -48,7 +72,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = (id: string) =>
     setItems((prev) => prev.filter((i) => i.id !== id));
 
-  const clear = () => setItems([]);
+  const clear = () => {
+    setItems([]);
+    try {
+      sessionStorage.removeItem(CART_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const count = items.reduce((sum, i) => sum + i.quantity, 0);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);

@@ -20,13 +20,20 @@ export interface AdminDashboardData {
   customers: number;
   popularItems: number;
   pendingOrders: number;
+  totalOrders?: number;
+  totalMenuItems?: number;
+  availableFoodItems?: number;
+  unavailableFoodItems?: number;
+  recentOrders?: Order[];
   lowStock: { id: string; name: string; stock: number; minimum: number }[];
 }
 
 export interface StaffDashboardData {
   pending: number;
-  completed: number;
+  confirmed: number;
   preparing: number;
+  ready: number;
+  completed: number;
   occupiedTables: number;
   recentOrders: Order[];
   tables: RestaurantTable[];

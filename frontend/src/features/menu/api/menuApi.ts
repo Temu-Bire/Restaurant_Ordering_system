@@ -25,6 +25,14 @@ export async function createCategory(name: string): Promise<ApiCategory> {
   return api.post<ApiCategory>("/categories", { name });
 }
 
+export async function updateCategory(id: string, name: string): Promise<ApiCategory> {
+  return api.patch<ApiCategory>(`/categories/${id}`, { name });
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await api.delete(`/categories/${id}`);
+}
+
 export async function listFoods(): Promise<ApiFood[]> {
   return api.get<ApiFood[]>("/menu");
 }
@@ -34,7 +42,6 @@ export async function createFood(body: {
   description?: string;
   price: number;
   categoryId: string;
-  isAvailable: boolean;
 }): Promise<ApiFood> {
   return api.post<ApiFood>("/menu", body);
 }
@@ -46,10 +53,16 @@ export async function updateFood(
     description: string;
     price: number;
     categoryId: string;
-    isAvailable: boolean;
   }>
 ): Promise<ApiFood> {
   return api.patch<ApiFood>(`/menu/${id}`, body);
+}
+
+export async function updateFoodAvailability(
+  id: string,
+  isAvailable: boolean
+): Promise<ApiFood> {
+  return api.patch<ApiFood>(`/menu/${id}/availability`, { isAvailable });
 }
 
 export async function deleteFood(id: string): Promise<void> {

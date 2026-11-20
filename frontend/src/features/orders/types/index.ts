@@ -21,6 +21,8 @@ export interface Order {
   type: OrderType;
   status: OrderStatus;
   table?: string;
+  customerName?: string;
+  customerPhone?: string;
   total: number;
   lines: OrderLine[];
   payment: { method: PaymentMethod; paid: boolean };
