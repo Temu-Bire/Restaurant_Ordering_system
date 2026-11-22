@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { Camera, Trash2, Upload, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Camera, Trash2, Upload, AlertCircle, CheckCircle2, Home, Briefcase, MapPin } from "lucide-react";
+import ConfirmDialog from "../../../shared/components/ui/ConfirmDialog";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<DeliveryAddress | null>(null);
+  const [addressToDelete, setAddressToDelete] = useState<DeliveryAddress | null>(null);
   const [addressNotice, setAddressNotice] = useState("");
 
   // Avatar upload state
@@ -149,15 +151,17 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleDeleteAddress(id: string) {
-    if (!window.confirm("Are you sure you want to delete this delivery address?")) return;
+  async function confirmDeleteAddress() {
+    if (!addressToDelete) return;
     try {
-      await deleteAddress(id);
-      setAddresses((prev) => prev.filter((a) => a.id !== id));
+      await deleteAddress(addressToDelete.id);
+      setAddresses((prev) => prev.filter((a) => a.id !== addressToDelete.id));
       setAddressNotice("Address deleted.");
       setTimeout(() => setAddressNotice(""), 3000);
     } catch (err: unknown) {
       console.error("Failed to delete address", err);
+    } finally {
+      setAddressToDelete(null);
     }
   }
 
@@ -314,21 +318,23 @@ export default function ProfilePage() {
             />
             <Input
               id="address"
-              label="Default City / Area"
-              placeholder="e.g. Bole, Addis Ababa"
+              label="Default City or Area"
+              placeholder="e.g. Bole"
               value={info.address}
               onChange={setInfoField("address")}
             />
 
             {infoMessage && (
-              <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
-                ✓ {infoMessage}
-              </p>
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
+                <CheckCircle2 className="size-4 shrink-0" />
+                <span>{infoMessage}</span>
+              </div>
             )}
             {infoError && (
-              <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-2.5 text-xs font-semibold text-danger">
-                ⚠ {infoError}
-              </p>
+              <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-2.5 text-xs font-semibold text-danger">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>{infoError}</span>
+              </div>
             )}
 
             <div className="flex items-center justify-between pt-2">
@@ -403,14 +409,16 @@ export default function ProfilePage() {
             />
 
             {passwordMessage && (
-              <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
-                ✓ {passwordMessage}
-              </p>
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
+                <CheckCircle2 className="size-4 shrink-0" />
+                <span>{passwordMessage}</span>
+              </div>
             )}
             {passwordError && (
-              <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-2.5 text-xs font-semibold text-danger">
-                ⚠ {passwordError}
-              </p>
+              <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-2.5 text-xs font-semibold text-danger">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>{passwordError}</span>
+              </div>
             )}
 
             <div className="flex items-center justify-between pt-2">
@@ -445,8 +453,9 @@ export default function ProfilePage() {
             className="rounded-2xl shadow-xs"
           >
             {addressNotice && (
-              <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
-                ✓ {addressNotice}
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
+                <CheckCircle2 className="size-4 shrink-0" />
+                <span>{addressNotice}</span>
               </div>
             )}
 
@@ -462,8 +471,10 @@ export default function ProfilePage() {
                     setAddressToEdit(null);
                     setAddressModalOpen(true);
                   }}
+                  className="inline-flex items-center gap-1.5"
                 >
-                  📍 Pin Your First Location
+                  <MapPin className="size-3.5" />
+                  <span>Add Delivery Address</span>
                 </Button>
               </div>
             ) : (
@@ -476,8 +487,14 @@ export default function ProfilePage() {
                     <div>
                       <div className="flex items-center justify-between font-bold text-foreground mb-1">
                         <span className="capitalize flex items-center gap-1.5">
-                          {addr.label === "home" ? "🏠" : addr.label === "work" ? "💼" : "📍"}{" "}
-                          {addr.label}
+                          {addr.label === "home" ? (
+                            <Home className="size-3.5 text-primary" />
+                          ) : addr.label === "work" ? (
+                            <Briefcase className="size-3.5 text-primary" />
+                          ) : (
+                            <MapPin className="size-3.5 text-primary" />
+                          )}
+                          <span>{addr.label}</span>
                         </span>
                         {addr.isDefault && (
                           <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
@@ -530,7 +547,7 @@ export default function ProfilePage() {
                         <span className="text-muted">•</span>
                         <button
                           type="button"
-                          onClick={() => handleDeleteAddress(addr.id)}
+                          onClick={() => setAddressToDelete(addr)}
                           className="font-bold text-danger hover:underline"
                         >
                           Delete
@@ -568,6 +585,15 @@ export default function ProfilePage() {
           return createAddress(data);
         }}
       />
+
+      {addressToDelete && (
+        <ConfirmDialog
+          title="Delete Delivery Address"
+          message={`Are you sure you want to delete this delivery address (${addressToDelete.street}, ${addressToDelete.area})?`}
+          onConfirm={confirmDeleteAddress}
+          onCancel={() => setAddressToDelete(null)}
+        />
+      )}
     </>
   );
 }

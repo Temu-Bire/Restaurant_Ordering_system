@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Crosshair, UtensilsCrossed, MapPin, AlertTriangle } from "lucide-react";
 import Button from "../../../shared/components/ui/Button";
 import Input from "../../../shared/components/ui/Input";
 import Modal from "../../../shared/components/ui/Modal";
@@ -99,9 +100,6 @@ export default function AddressFormModal({
     const x = (e.clientX - rect.left) / rect.width; // 0 to 1
     const y = (e.clientY - rect.top) / rect.height; // 0 to 1
 
-    // Map bounding box around Addis Ababa
-    // Top-left: ~9.08, 38.68
-    // Bottom-right: ~8.92, 38.86
     const minLat = 8.92;
     const maxLat = 9.08;
     const minLng = 38.68;
@@ -136,11 +134,11 @@ export default function AddressFormModal({
       return;
     }
     if (!street.trim()) {
-      setError("Street or road is required");
+      setError("Street name is required");
       return;
     }
     if (!area.trim()) {
-      setError("Area / neighborhood is required");
+      setError("Area is required");
       return;
     }
 
@@ -178,8 +176,9 @@ export default function AddressFormModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto px-1">
         {error && (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500">
-            ⚠ {error}
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500 flex items-center gap-2">
+            <AlertTriangle className="size-4 shrink-0 text-rose-500" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -187,15 +186,16 @@ export default function AddressFormModal({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-foreground">
-              📍 Select Location on Map (Click to place pin)
+              Select Location on Map
             </label>
             <button
               type="button"
               onClick={handleUseMyLocation}
               disabled={locating}
-              className="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1"
+              className="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1.5"
             >
-              🎯 {locating ? "Locating..." : "Use My Current GPS"}
+              <Crosshair className="size-3.5" />
+              <span>{locating ? "Locating..." : "Use Current GPS"}</span>
             </button>
           </div>
 
@@ -204,17 +204,17 @@ export default function AddressFormModal({
             className="relative h-44 w-full cursor-crosshair rounded-xl border border-border bg-slate-100 dark:bg-slate-900 overflow-hidden select-none shadow-inner"
             title="Click anywhere to reposition the delivery pin"
           >
-            {/* Styled Map Background Grid & Roads Representation */}
+            {/* Styled Map Background Grid */}
             <div className="absolute inset-0 opacity-40 bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-[size:24px_24px]" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
               <span className="text-4xl font-black tracking-widest text-foreground">ADDIS ABABA</span>
             </div>
 
             {/* Neighborhood markers */}
-            <span className="absolute top-4 left-6 text-[10px] font-bold text-muted pointer-events-none">Piazza / Arada</span>
+            <span className="absolute top-4 left-6 text-[10px] font-bold text-muted pointer-events-none">Piazza</span>
             <span className="absolute top-1/2 left-1/3 text-[10px] font-bold text-muted pointer-events-none">Kazanchis</span>
             <span className="absolute bottom-6 right-8 text-[10px] font-bold text-muted pointer-events-none">Bole Medhanialem</span>
-            <span className="absolute bottom-10 left-8 text-[10px] font-bold text-muted pointer-events-none">Sarbet / Mexico</span>
+            <span className="absolute bottom-10 left-8 text-[10px] font-bold text-muted pointer-events-none">Sarbet</span>
 
             {/* Restaurant Central Pin */}
             <div
@@ -225,8 +225,9 @@ export default function AddressFormModal({
               }}
             >
               <div className="flex flex-col items-center">
-                <span className="rounded-full bg-emerald-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-xs">
-                  🍽 Restaurant
+                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-xs inline-flex items-center gap-1">
+                  <UtensilsCrossed className="size-2.5" />
+                  <span>Restaurant</span>
                 </span>
               </div>
             </div>
@@ -237,10 +238,10 @@ export default function AddressFormModal({
               style={{ left: `${pinX}%`, top: `${pinY}%` }}
             >
               <div className="flex flex-col items-center animate-bounce">
-                <span className="rounded-full bg-rose-600 px-1.5 py-0.5 text-[9px] font-bold text-white shadow-md">
+                <span className="rounded-full bg-rose-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-md">
                   Delivery Pin
                 </span>
-                <span className="text-2xl drop-shadow">📍</span>
+                <MapPin className="size-6 text-rose-600 drop-shadow" />
               </div>
             </div>
           </div>
@@ -248,7 +249,7 @@ export default function AddressFormModal({
           <div className="flex items-center justify-between text-[11px] text-muted font-mono bg-surface-secondary/40 px-2.5 py-1.5 rounded-lg border border-border">
             <span>Lat: {latitude.toFixed(4)}</span>
             <span>Lng: {longitude.toFixed(4)}</span>
-            <span className="text-[10px] text-primary">Pin drag/click supported</span>
+            <span className="text-[10px] text-primary">Pin click supported</span>
           </div>
         </div>
 
@@ -259,9 +260,9 @@ export default function AddressFormModal({
             label="Address Label"
             value={label}
             options={[
-              { value: "home", label: "🏠 Home" },
-              { value: "work", label: "💼 Work" },
-              { value: "other", label: "📍 Other" },
+              { value: "home", label: "Home" },
+              { value: "work", label: "Work" },
+              { value: "other", label: "Other" },
             ]}
             onChange={(e) => setLabel(e.target.value as AddressLabel)}
           />
@@ -293,15 +294,15 @@ export default function AddressFormModal({
         <div className="grid grid-cols-2 gap-3">
           <Input
             id="area"
-            label="Area / Neighborhood *"
-            placeholder="e.g. Bole, Kazanchis, Piassa"
+            label="Area *"
+            placeholder="e.g. Bole"
             value={area}
             onChange={(e) => setArea(e.target.value)}
           />
           <Input
             id="street"
-            label="Street or Road *"
-            placeholder="e.g. Airport Road, Gabon St"
+            label="Street *"
+            placeholder="e.g. Airport Road"
             value={street}
             onChange={(e) => setStreet(e.target.value)}
           />
@@ -311,21 +312,21 @@ export default function AddressFormModal({
           <Input
             id="landmark"
             label="Nearby Landmark"
-            placeholder="Near Medhanialem Church"
+            placeholder="e.g. Medhanialem Church"
             value={landmark}
             onChange={(e) => setLandmark(e.target.value)}
           />
           <Input
             id="building"
-            label="Building Name/No"
-            placeholder="Abyssinia Plaza"
+            label="Building Name"
+            placeholder="e.g. Abyssinia Plaza"
             value={building}
             onChange={(e) => setBuilding(e.target.value)}
           />
           <Input
             id="apartment"
-            label="Apt / Floor"
-            placeholder="3rd Floor, #304"
+            label="Apartment or Floor"
+            placeholder="e.g. Floor 3"
             value={apartment}
             onChange={(e) => setApartment(e.target.value)}
           />
@@ -333,8 +334,8 @@ export default function AddressFormModal({
 
         <Input
           id="deliveryInstructions"
-          label="Delivery Instructions (Optional)"
-          placeholder="e.g. Call upon arrival at security gate"
+          label="Delivery Instructions"
+          placeholder="e.g. Call upon arrival"
           value={deliveryInstructions}
           onChange={(e) => setDeliveryInstructions(e.target.value)}
         />
