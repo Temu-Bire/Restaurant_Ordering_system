@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Printer } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
+import ArifLogo from "../../../shared/components/ui/ArifLogo";
 import { PAYMENT_LABEL, type Order } from "../../orders/types";
 import { getOrder } from "../../orders/api/ordersApi";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
@@ -56,10 +58,7 @@ export default function ReceiptPage() {
       <Card className="mx-auto max-w-md rounded-2xl shadow-sm">
         <div className="text-center">
           <div className="flex items-center justify-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary font-bold text-white shadow-xs">
-              R
-            </div>
-            <span className="text-xl font-bold tracking-tight">Arif Food</span>
+            <ArifLogo asLink={false} size="sm" />
           </div>
           <p className="mt-1 text-xs text-muted">
             {t("receipt")} · #{order.id} · {formatDate(order.date)}
@@ -109,8 +108,9 @@ export default function ReceiptPage() {
         </div>
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3 print:hidden">
-          <Button fullWidth onClick={() => window.print()}>
-            {t("printReceipt")}
+          <Button fullWidth onClick={() => window.print()} className="inline-flex items-center justify-center gap-2">
+            <Printer className="size-4" />
+            <span>{t("printReceipt")}</span>
           </Button>
           <Link
             to="/customer/menu"

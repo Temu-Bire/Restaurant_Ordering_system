@@ -1,3 +1,4 @@
+import { Check, XCircle } from "lucide-react";
 import { cn } from "../../../lib/cn";
 import type { OrderStatus, OrderType } from "../types";
 
@@ -60,8 +61,9 @@ export default function OrderStatusStepper({ status, type = "dine-in" }: OrderSt
 
   if (status === "cancelled") {
     return (
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-xs font-bold text-rose-500">
-        ✕ Order has been cancelled.
+      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-center text-xs font-bold text-rose-500 flex items-center justify-center gap-2">
+        <XCircle className="size-4 shrink-0" />
+        <span>Order has been cancelled.</span>
       </div>
     );
   }
@@ -84,7 +86,7 @@ export default function OrderStatusStepper({ status, type = "dine-in" }: OrderSt
                   : "bg-surface-secondary text-muted border border-border"
               )}
             >
-              {done ? "✓" : active ? "●" : i + 1}
+              {done ? <Check className="size-3.5" /> : i + 1}
             </span>
             <span
               className={cn(

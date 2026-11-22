@@ -72,7 +72,7 @@ export default function RecordPaymentForm({
       />
       <Input
         id="pay-amount"
-        label="Amount ($)"
+        label="Amount (ETB)"
         type="number"
         step="0.01"
         min="0"

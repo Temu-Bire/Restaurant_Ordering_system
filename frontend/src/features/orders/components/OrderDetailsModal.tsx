@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Utensils, ShoppingBag, Truck, CheckCircle2 } from "lucide-react";
+import { Utensils, ShoppingBag, Truck, CheckCircle2, Info, AlertTriangle } from "lucide-react";
 
 import Badge from "../../../shared/components/ui/Badge";
 import Button from "../../../shared/components/ui/Button";
@@ -149,7 +149,7 @@ export default function OrderDetailsModal({
   }
 
   return (
-    <Modal open onClose={onClose} title={readOnly ? "Order Details (Read-Only)" : "Order Fulfillment & Status"}>
+    <Modal open onClose={onClose} title={readOnly ? "Order Details" : "Order Fulfillment"}>
       <div className="space-y-4 max-h-[82vh] overflow-y-auto pr-1">
         {/* Header Badges */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
@@ -247,7 +247,10 @@ export default function OrderDetailsModal({
         {order.handover && (
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs space-y-1">
             <div className="flex items-center justify-between font-bold text-emerald-600 dark:text-emerald-400">
-              <span>✓ Handover Completed</span>
+              <span className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="size-4 shrink-0" />
+                <span>Handover Completed</span>
+              </span>
               <span>{new Date(order.handover.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <p className="text-foreground">
@@ -302,8 +305,9 @@ export default function OrderDetailsModal({
         {/* Staff Actions vs Read-Only Admin Controls */}
         {readOnly ? (
           <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
-            <span className="text-xs text-muted">
-              ℹ️ Read-only view. Order fulfillment is restricted to Staff.
+            <span className="text-xs text-muted flex items-center gap-1.5">
+              <Info className="size-3.5 text-muted shrink-0" />
+              <span>Read-only view. Order fulfillment is managed by Staff.</span>
             </span>
             <Button variant="secondary" onClick={onClose}>
               Close
@@ -312,8 +316,9 @@ export default function OrderDetailsModal({
         ) : (
           <div className="mt-4 space-y-3 border-t border-border pt-3">
             {handoverError && (
-              <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-500">
-                ⚠ {handoverError}
+              <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-500 flex items-center gap-2">
+                <AlertTriangle className="size-4 shrink-0 text-rose-500" />
+                <span>{handoverError}</span>
               </div>
             )}
 
@@ -338,7 +343,7 @@ export default function OrderDetailsModal({
                 <div className="pt-1">
                   <input
                     type="text"
-                    placeholder="Optional handover notes (e.g. Courier plate # / handed to guest)"
+                    placeholder="Optional handover notes (e.g. Courier plate 2-A3412)"
                     value={handoverNotes}
                     onChange={(e) => setHandoverNotes(e.target.value)}
                     className="w-full text-xs rounded-lg border border-border bg-surface px-2.5 py-1.5 text-foreground placeholder:text-muted focus:outline-hidden focus:ring-1 focus:ring-primary"

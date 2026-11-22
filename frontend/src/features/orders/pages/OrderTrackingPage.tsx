@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { UtensilsCrossed, ShoppingBag, Truck, Clock, CheckCircle2 } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -107,10 +108,16 @@ export default function OrderTrackingPage() {
         {/* Stepper Card */}
         <Card className="rounded-2xl shadow-xs">
           <div className="mb-6 text-center">
-            <span className="text-4xl">
-              {order.type === "dine-in" ? "🍽" : order.type === "takeaway" ? "🥡" : "🛵"}
-            </span>
-            <div className="mt-2 flex items-center justify-center gap-2">
+            <div className="flex size-14 mx-auto items-center justify-center rounded-2xl bg-surface-secondary text-primary shadow-xs">
+              {order.type === "dine-in" ? (
+                <UtensilsCrossed className="size-8" />
+              ) : order.type === "takeaway" ? (
+                <ShoppingBag className="size-8" />
+              ) : (
+                <Truck className="size-8" />
+              )}
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-2">
               <h2 className="text-lg sm:text-xl font-black text-foreground">
                 {ORDER_STATUS_LABEL[current] || current}
               </h2>
@@ -121,8 +128,9 @@ export default function OrderTrackingPage() {
                 Payment: {PAYMENT_STATUS_LABEL[order.payment.status ?? (isPaid ? "paid" : "unpaid")]}
               </Badge>
               {order.prepTimeMinutes && current !== "completed" && current !== "cancelled" && current !== "served" && current !== "delivered" && (
-                <span className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-muted font-semibold">
-                  ⏱ Prep Guidance: ~{order.prepTimeMinutes} mins
+                <span className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-muted font-semibold inline-flex items-center gap-1">
+                  <Clock className="size-3 text-amber-500" />
+                  <span>Prep Guidance: ~{order.prepTimeMinutes} mins</span>
                 </span>
               )}
             </div>
@@ -181,9 +189,10 @@ export default function OrderTrackingPage() {
                   <p className="text-muted">Distance from Restaurant: {order.deliveryDistanceKm} km</p>
                 )}
                 {order.handover ? (
-                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] mt-1">
-                    ✓ Handed over by {order.handover.staffName} at{" "}
-                    {new Date(order.handover.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2 text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] mt-1 flex items-center gap-1.5">
+                    <CheckCircle2 className="size-3.5 shrink-0" />
+                    <span>Handed over by {order.handover.staffName} at{" "}
+                    {new Date(order.handover.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 ) : (
                   <p className="text-[11px] text-muted italic">

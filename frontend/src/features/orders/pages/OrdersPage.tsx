@@ -127,7 +127,7 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
         title={t("navOrders")}
         description={
           role === "admin"
-            ? "View customer orders, fulfillment history, and sales (Read-Only)"
+            ? "View customer orders, fulfillment history, and sales"
             : "Incoming orders, kitchen preparation, and customer handovers"
         }
         search={{ value: search, onChange: setSearch }}
