@@ -17,6 +17,7 @@ interface ApiUser {
   email: string;
   role: string;
   isActive?: boolean;
+  avatarUrl?: string | null;
 }
 
 interface LoginResponse {
@@ -37,6 +38,7 @@ export function toUser(u: ApiUser): User {
     email: u.email,
     role: role as Role,
     active: u.isActive ?? true,
+    avatarUrl: u.avatarUrl ?? null,
   };
 }
 

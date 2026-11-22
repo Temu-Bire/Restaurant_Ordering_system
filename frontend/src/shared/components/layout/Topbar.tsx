@@ -2,6 +2,7 @@ import { useAuth } from "../../../features/auth/hooks/useAuth";
 import ThemeSwitcher from "../ui/ThemeSwitcher";
 import LanguageSwitcher from "../ui/LanguageSwitcher";
 import { useTranslation } from "../../hooks/useTranslation";
+import { resolveAvatarUrl } from "../../utils/resolveAvatarUrl";
 
 export interface SearchProps {
   value: string;
@@ -11,6 +12,7 @@ export interface SearchProps {
 export default function Topbar({ search }: { search?: SearchProps }) {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const avatarSrc = resolveAvatarUrl(user?.avatarUrl);
 
   return (
     <div className="flex flex-wrap items-center gap-2 print:hidden">
@@ -28,9 +30,13 @@ export default function Topbar({ search }: { search?: SearchProps }) {
       <ThemeSwitcher />
       <div
         title={user?.name ?? "User"}
-        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-xs font-bold text-primary"
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-xs font-bold text-primary overflow-hidden border border-border/50"
       >
-        {user?.name.charAt(0) ?? "U"}
+        {avatarSrc ? (
+          <img src={avatarSrc} alt={user?.name ?? "User"} className="size-full object-cover" />
+        ) : (
+          user?.name.charAt(0) ?? "U"
+        )}
       </div>
     </div>
   );

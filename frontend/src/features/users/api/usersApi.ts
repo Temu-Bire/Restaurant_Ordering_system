@@ -10,6 +10,7 @@ interface ApiUser {
   address: string | null;
   role: string;
   isActive: boolean;
+  avatarUrl?: string | null;
 }
 
 export interface Profile {
@@ -83,4 +84,16 @@ export async function updateProfile(input: Profile): Promise<User> {
 
 export async function changePassword(currentPassword: string, newPassword: string) {
   await api.post("/auth/password", { currentPassword, newPassword });
+}
+
+export async function uploadAvatar(file: File): Promise<User> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  const updated = await api.post<ApiUser>("/auth/me/avatar", formData);
+  return toUser(updated);
+}
+
+export async function removeAvatar(): Promise<User> {
+  const updated = await api.delete<ApiUser>("/auth/me/avatar");
+  return toUser(updated);
 }

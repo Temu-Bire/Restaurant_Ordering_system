@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: Role;
   active: boolean;
+  avatarUrl?: string | null;
 }
 
 export const ROLE_LABEL: Record<Role, string> = {

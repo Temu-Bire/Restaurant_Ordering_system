@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { Camera, Trash2, Upload, AlertCircle, CheckCircle2 } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -8,6 +9,7 @@ import Input from "../../../shared/components/ui/Input";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { useLogout } from "../../auth/hooks/useLogout";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
+import { resolveAvatarUrl } from "../../../shared/utils/resolveAvatarUrl";
 import * as usersApi from "../api/usersApi";
 import {
   listAddresses,
@@ -43,6 +45,57 @@ export default function ProfilePage() {
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<DeliveryAddress | null>(null);
   const [addressNotice, setAddressNotice] = useState("");
+
+  // Avatar upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarNotice, setAvatarNotice] = useState("");
+  const [avatarError, setAvatarError] = useState("");
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("File size exceeds 5MB limit");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setAvatarError("Only JPEG, PNG, and WebP images are allowed");
+      return;
+    }
+
+    setAvatarLoading(true);
+    setAvatarError("");
+    setAvatarNotice("");
+    try {
+      const updatedUser = await usersApi.uploadAvatar(file);
+      replaceUser(updatedUser);
+      setAvatarNotice("Profile photo updated successfully.");
+      setTimeout(() => setAvatarNotice(""), 4000);
+    } catch (err: unknown) {
+      setAvatarError(err instanceof Error ? err.message : "Failed to upload photo");
+    } finally {
+      setAvatarLoading(false);
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    setAvatarLoading(true);
+    setAvatarError("");
+    setAvatarNotice("");
+    try {
+      const updatedUser = await usersApi.removeAvatar();
+      replaceUser(updatedUser);
+      setAvatarNotice("Profile photo removed.");
+      setTimeout(() => setAvatarNotice(""), 4000);
+    } catch (err: unknown) {
+      setAvatarError(err instanceof Error ? err.message : "Failed to remove photo");
+    } finally {
+      setAvatarLoading(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -115,23 +168,96 @@ export default function ProfilePage() {
         description="Update your personal contact details, delivery addresses, and account security"
       />
 
-      <div className="mb-5 flex items-center justify-between rounded-2xl border border-border bg-surface p-4 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="size-12 rounded-full bg-primary/20 text-primary font-black flex items-center justify-center text-lg">
-            {user?.name?.[0]?.toUpperCase() ?? "U"}
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-foreground">{user?.name}</h3>
-            <p className="text-xs text-muted">{user?.email}</p>
+      <div className="mb-5 rounded-2xl border border-border bg-surface p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {/* Avatar container */}
+            <div className="relative group size-16 sm:size-20 shrink-0 rounded-full overflow-hidden border-2 border-primary/20 bg-surface-secondary shadow-xs flex items-center justify-center">
+              {user?.avatarUrl ? (
+                <img
+                  src={resolveAvatarUrl(user.avatarUrl)!}
+                  alt={user?.name ?? "User"}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl font-black text-primary">
+                  {user?.name?.[0]?.toUpperCase() ?? "U"}
+                </span>
+              )}
+
+              {/* Hover overlay for quick upload */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarLoading}
+                className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer disabled:cursor-not-allowed"
+                title="Change Profile Photo"
+              >
+                <Camera className="size-5" />
+              </button>
+            </div>
+
+            {/* User Name & Details */}
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-foreground">{user?.name}</h3>
+                <Badge variant="active" className="uppercase font-bold tracking-wider text-[10px]">
+                  {user?.role}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted mt-0.5">{user?.email}</p>
+
+              {/* Photo Actions */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarLoading}
+                  className="inline-flex items-center gap-1.5 text-xs py-1 px-2.5 h-8"
+                >
+                  <Upload className="size-3.5" />
+                  <span>{avatarLoading ? "Updating..." : user?.avatarUrl ? "Change Photo" : "Upload Photo"}</span>
+                </Button>
+                {user?.avatarUrl && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    disabled={avatarLoading}
+                    className="inline-flex items-center gap-1.5 text-xs py-1 px-2.5 h-8 text-danger hover:text-danger"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Remove</span>
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted">Role:</span>
-          <Badge variant="active" className="uppercase font-bold tracking-wider text-xs">
-            {user?.role}
-          </Badge>
-        </div>
+        {/* Notifications */}
+        {avatarNotice && (
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
+            <CheckCircle2 className="size-4 shrink-0" />
+            <span>{avatarNotice}</span>
+          </div>
+        )}
+        {avatarError && (
+          <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-danger">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{avatarError}</span>
+          </div>
+        )}
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-2">

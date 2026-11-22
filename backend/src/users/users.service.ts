@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { compare, hash } from 'bcryptjs';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import { isPrismaError } from '../common/prisma-errors.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
@@ -40,8 +42,6 @@ export class UsersService {
     try {
       return await this.prisma.user.create({ data });
     } catch (error) {
-      // P2002 = unique constraint failed. Catching it is safe even when
-      // two sign-ups race, unlike "check first, then create"
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
@@ -116,13 +116,51 @@ export class UsersService {
     }
 
     try {
-      await this.prisma.user.delete({ where: { id } });
-    } catch (error) {
-      if (isPrismaError(error, 'P2003')) {
-        throw new ConflictException(
-          'This user has orders and cannot be deleted. Disable the account instead.',
-        );
+      await this.prisma.$transaction(async (tx) => {
+        // 1. Delete notifications for this user
+        await tx.notification.deleteMany({ where: { recipientUserId: id } });
+
+        // 2. Delete delivery addresses
+        await tx.address.deleteMany({ where: { userId: id } });
+
+        // 3. Clear staff / recorded references
+        await tx.order.updateMany({
+          where: { handoverStaffId: id },
+          data: { handoverStaffId: null },
+        });
+        await tx.payment.updateMany({
+          where: { recordedById: id },
+          data: { recordedById: null },
+        });
+        await tx.stockMovement.updateMany({
+          where: { userId: id },
+          data: { userId: null },
+        });
+
+        // 4. Delete user's own orders and order items
+        const customerOrders = await tx.order.findMany({
+          where: { customerId: id },
+          select: { id: true },
+        });
+        const orderIds = customerOrders.map((o) => o.id);
+
+        if (orderIds.length > 0) {
+          await tx.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+          await tx.payment.deleteMany({ where: { orderId: { in: orderIds } } });
+          await tx.order.deleteMany({ where: { id: { in: orderIds } } });
+        }
+
+        // Clean up direct customer payments if any
+        await tx.payment.deleteMany({ where: { customerId: id } });
+
+        // 5. Delete the user
+        await tx.user.delete({ where: { id } });
+      });
+
+      if (current.avatarUrl) {
+        await this.deleteAvatarFile(current.avatarUrl);
       }
+    } catch (error) {
       if (isPrismaError(error, 'P2025')) {
         throw new NotFoundException('User not found');
       }
@@ -150,6 +188,46 @@ export class UsersService {
     }
   }
 
+  async setAvatar(userId: string, file: Express.Multer.File) {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    const previousAvatar = user.avatarUrl;
+
+    try {
+      const updated = await this.prisma.user.update({
+        where: { id: userId },
+        data: { avatarUrl },
+      });
+
+      if (previousAvatar && previousAvatar !== avatarUrl) {
+        await this.deleteAvatarFile(previousAvatar);
+      }
+
+      return toPublicUser(updated);
+    } catch (error) {
+      await this.deleteAvatarFile(avatarUrl);
+      throw error;
+    }
+  }
+
+  async removeAvatar(userId: string) {
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.avatarUrl) {
+      await this.deleteAvatarFile(user.avatarUrl);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: null },
+    });
+
+    return toPublicUser(updated);
+  }
+
   async changePassword(id: string, dto: ChangePasswordDto) {
     const user = await this.findById(id);
     if (!user) throw new NotFoundException('User not found');
@@ -166,5 +244,11 @@ export class UsersService {
       where: { id },
       data: { password: await hash(dto.newPassword, 10) },
     });
+  }
+
+  private async deleteAvatarFile(imagePath: string | null) {
+    if (!imagePath) return;
+    const normalized = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+    await unlink(join(process.cwd(), normalized)).catch(() => undefined);
   }
 }

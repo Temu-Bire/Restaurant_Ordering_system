@@ -1,11 +1,13 @@
 import {
   ForbiddenException,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import { NotificationType, Role } from '@prisma/client';
 import { compare, hash, hashSync } from 'bcryptjs';
+import { NotificationService } from '../notifications/notifications.service.js';
 import { toPublicUser } from '../users/public-user.js';
 import { UsersService } from '../users/users.service.js';
 import { ChangePasswordDto } from '../users/dto/change-password.dto.js';
@@ -22,6 +24,7 @@ export class AuthService {
   constructor(
     private readonly users: UsersService,
     private readonly jwt: JwtService,
+    @Optional() private readonly notifications?: NotificationService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -32,6 +35,16 @@ export class AuthService {
       password: await hash(dto.password, 10),
       role: Role.CUSTOMER, // public sign-up is ALWAYS a customer
     });
+
+    if (this.notifications) {
+      void this.notifications.createForRole(Role.ADMIN, {
+        title: 'New User Registered',
+        message: `New customer registered: ${user.fullName} (${user.email}).`,
+        type: NotificationType.USER_REGISTRATION,
+        relatedEntityId: user.id,
+        idempotencyKey: `notif_user_reg_${user.id}`,
+      });
+    }
 
     return toPublicUser(user);
   }
@@ -66,5 +79,13 @@ export class AuthService {
 
   changePassword(userId: string, dto: ChangePasswordDto) {
     return this.users.changePassword(userId, dto);
+  }
+
+  setAvatar(userId: string, file: Express.Multer.File) {
+    return this.users.setAvatar(userId, file);
+  }
+
+  removeAvatar(userId: string) {
+    return this.users.removeAvatar(userId);
   }
 }

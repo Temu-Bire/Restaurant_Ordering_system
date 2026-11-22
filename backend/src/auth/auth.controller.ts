@@ -1,7 +1,21 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
+import { avatarUploadOptions } from '../users/avatar-upload.options.js';
 import { ChangePasswordDto } from '../users/dto/change-password.dto.js';
 import { UpdateProfileDto } from '../users/dto/update-profile.dto.js';
 import type { PublicUser } from '../users/public-user.js';
@@ -46,6 +60,34 @@ export class AuthController {
   @Patch('me')
   updateProfile(@CurrentUser() user: PublicUser, @Body() dto: UpdateProfileDto) {
     return this.auth.updateProfile(user.id, dto);
+  }
+
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['avatar'],
+      properties: { avatar: { type: 'string', format: 'binary' } },
+    },
+  })
+  @UseInterceptors(FileInterceptor('avatar', avatarUploadOptions))
+  @Post('me/avatar')
+  @Patch('me/avatar')
+  uploadAvatar(
+    @CurrentUser() user: PublicUser,
+    @UploadedFile() file: Express.Multer.File | undefined,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Attach an image file in the "avatar" field');
+    }
+    return this.auth.setAvatar(user.id, file);
+  }
+
+  @ApiBearerAuth()
+  @Delete('me/avatar')
+  removeAvatar(@CurrentUser() user: PublicUser) {
+    return this.auth.removeAvatar(user.id);
   }
 
   @ApiBearerAuth()

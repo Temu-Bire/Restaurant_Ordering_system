@@ -84,6 +84,7 @@ describe('AuthService', () => {
         email: 'jane@example.com',
         phone: '1234567890',
         address: null,
+        avatarUrl: null,
         role: Role.CUSTOMER,
         isActive: true,
       });

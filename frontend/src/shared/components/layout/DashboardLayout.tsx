@@ -57,7 +57,7 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
       {/* Sidebar: Desktop Sticky + Mobile Drawer */}
       <Sidebar
         items={items}
-        user={{ name: user.name, role: ROLE_LABEL[user.role] }}
+        user={{ name: user.name, role: ROLE_LABEL[user.role], avatarUrl: user.avatarUrl }}
         onLogout={logout}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
