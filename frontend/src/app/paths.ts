@@ -33,6 +33,7 @@ export const PATHS = {
     dashboard: "/admin/dashboard",
     orders: "/admin/orders",
     menu: "/admin/menu",
+    reviews: "/admin/reviews",
     tables: "/admin/tables",
     inventory: "/admin/inventory",
     payments: "/admin/payments",

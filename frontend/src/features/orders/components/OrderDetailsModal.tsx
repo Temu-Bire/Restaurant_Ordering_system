@@ -276,6 +276,11 @@ export default function OrderDetailsModal({
                   <span className="flex-1 text-[13px] font-bold text-foreground truncate">
                     {line.name}
                   </span>
+                  {line.review && (
+                    <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 shrink-0">
+                      ★ {line.review.rating}
+                    </span>
+                  )}
                   <span className="text-[13px] text-muted">×{line.quantity}</span>
                   <span className="w-20 text-right text-[13px] font-bold text-foreground font-mono">
                     {formatCurrency(line.price * line.quantity)}

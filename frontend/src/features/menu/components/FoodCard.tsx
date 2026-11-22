@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, Star } from "lucide-react";
 import { cn } from "../../../lib/cn";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
@@ -70,12 +70,20 @@ export default function FoodCard({ food, onAdd, onViewDetails }: FoodCardProps) 
       {/* Card Content */}
       <div className="p-4 flex flex-1 flex-col justify-between">
         <div>
-          <h3
-            onClick={() => onViewDetails && onViewDetails(food)}
-            className="text-sm sm:text-base font-bold text-foreground line-clamp-1 cursor-pointer hover:text-primary transition-colors"
-          >
-            {food.name}
-          </h3>
+          <div className="flex items-center justify-between gap-1">
+            <h3
+              onClick={() => onViewDetails && onViewDetails(food)}
+              className="text-sm sm:text-base font-bold text-foreground line-clamp-1 cursor-pointer hover:text-primary transition-colors flex-1"
+            >
+              {food.name}
+            </h3>
+            {food.rating !== undefined && food.rating > 0 && (
+              <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-400/10 px-1.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 shrink-0">
+                <Star className="size-3 fill-amber-400 text-amber-400" />
+                <span>{food.rating.toFixed(1)}</span>
+              </span>
+            )}
+          </div>
           {food.description && (
             <p className="mt-1 text-xs text-muted line-clamp-2">
               {food.description}

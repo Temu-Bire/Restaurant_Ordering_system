@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Printer } from "lucide-react";
+import { Printer, Star } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
 import ArifLogo from "../../../shared/components/ui/ArifLogo";
-import { PAYMENT_LABEL, type Order } from "../../orders/types";
+import ReviewModal from "../../reviews/components/ReviewModal";
+import { PAYMENT_LABEL, type Order, type OrderLine } from "../../orders/types";
 import { getOrder } from "../../orders/api/ordersApi";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
@@ -17,6 +18,7 @@ export default function ReceiptPage() {
   const { t } = useTranslation();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(Boolean(id));
+  const [reviewingLine, setReviewingLine] = useState<OrderLine | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -85,19 +87,41 @@ export default function ReceiptPage() {
         </dl>
 
         <ul className="my-4 divide-y divide-border">
-          {order.lines.map((line, idx) => (
-            <li
-              key={`${line.name}-${idx}`}
-              className="flex items-center justify-between py-2 text-[13px]"
-            >
-              <span>
-                {line.quantity} × {line.name}
-              </span>
-              <span className="font-semibold">
-                {formatCurrency(line.price * line.quantity)}
-              </span>
-            </li>
-          ))}
+          {order.lines.map((line, idx) => {
+            const isEligible = ["served", "picked_up", "delivered", "completed"].includes(order.status);
+
+            return (
+              <li
+                key={`${line.name}-${idx}`}
+                className="flex items-center justify-between py-2 text-[13px]"
+              >
+                <div>
+                  <span className="font-semibold text-foreground">
+                    {line.quantity} × {line.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold font-mono text-foreground">
+                    {formatCurrency(line.price * line.quantity)}
+                  </span>
+                  {isEligible && line.id && (
+                    <button
+                      type="button"
+                      onClick={() => setReviewingLine(line)}
+                      className={`print:hidden inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold transition-colors ${
+                        line.review
+                          ? "border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
+                          : "border border-primary/30 bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                      }`}
+                    >
+                      <Star className="size-3 fill-amber-400 text-amber-400" />
+                      <span>{line.review ? `${line.review.rating} ★ ${t("edit") || "Edit"}` : t("rateDish") || "Review"}</span>
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="border-t border-border pt-3">
@@ -120,6 +144,42 @@ export default function ReceiptPage() {
           </Link>
         </div>
       </Card>
+
+      {reviewingLine && (
+        <ReviewModal
+          isOpen={Boolean(reviewingLine)}
+          onClose={() => setReviewingLine(null)}
+          foodName={reviewingLine.name}
+          foodId={reviewingLine.foodId || ""}
+          orderId={order.id}
+          orderItemId={reviewingLine.id || ""}
+          initialReview={reviewingLine.review}
+          onReviewSaved={(savedReview) => {
+            setOrder((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                lines: prev.lines.map((l) =>
+                  l.id === reviewingLine.id ? { ...l, review: savedReview } : l
+                ),
+              };
+            });
+            setReviewingLine(null);
+          }}
+          onReviewDeleted={() => {
+            setOrder((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                lines: prev.lines.map((l) =>
+                  l.id === reviewingLine.id ? { ...l, review: undefined } : l
+                ),
+              };
+            });
+            setReviewingLine(null);
+          }}
+        />
+      )}
     </>
   );
 }

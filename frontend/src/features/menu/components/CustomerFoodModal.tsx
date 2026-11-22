@@ -2,6 +2,7 @@ import { AlertTriangle } from "lucide-react";
 import Modal from "../../../shared/components/ui/Modal";
 import Button from "../../../shared/components/ui/Button";
 import Badge from "../../../shared/components/ui/Badge";
+import FoodReviewsList from "../../reviews/components/FoodReviewsList";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type { FoodItem } from "../types";
@@ -59,6 +60,14 @@ export default function CustomerFoodModal({ food, onClose, onAdd }: CustomerFood
             <span>This item is currently unavailable and cannot be added to your order.</span>
           </div>
         )}
+
+        {/* Customer Reviews Section */}
+        <div className="pt-4 border-t border-border">
+          <h4 className="text-sm font-bold text-foreground mb-3">
+            {t("customerReviews") || "Customer Reviews"}
+          </h4>
+          <FoodReviewsList foodId={food.id} foodName={food.name} />
+        </div>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">

@@ -23,6 +23,7 @@ import StaffDashboardPage from "../features/reports/pages/StaffDashboardPage";
 
 import AdminDashboardPage from "../features/reports/pages/AdminDashboardPage";
 import MenuManagementPage from "../features/menu/pages/MenuManagementPage";
+import AdminReviewsPage from "../features/reviews/pages/AdminReviewsPage";
 import ReportsPage from "../features/reports/pages/ReportsPage";
 import UsersPage from "../features/users/pages/UsersPage";
 import SettingsPage from "../features/settings/pages/SettingsPage";
@@ -61,6 +62,7 @@ const adminNav: NavItem[] = [
   { label: "Dashboard", to: PATHS.admin.dashboard },
   { label: "Orders", to: PATHS.admin.orders },
   { label: "Menu", to: PATHS.admin.menu },
+  { label: "Reviews", to: PATHS.admin.reviews },
   { label: "Tables", to: PATHS.admin.tables },
   { label: "Inventory", to: PATHS.admin.inventory },
   { label: "Payments", to: PATHS.admin.payments },
@@ -144,6 +146,7 @@ export const router = createBrowserRouter([
               { path: PATHS.admin.dashboard, element: <AdminDashboardPage /> },
               { path: PATHS.admin.orders, element: <OrdersPage role="admin" /> },
               { path: PATHS.admin.menu, element: <MenuManagementPage /> },
+              { path: PATHS.admin.reviews, element: <AdminReviewsPage /> },
               { path: PATHS.admin.tables, element: <TablesPage role="admin" /> },
               { path: PATHS.admin.inventory, element: <InventoryPage role="admin" /> },
               { path: PATHS.admin.payments, element: <PaymentsPage role="admin" /> },

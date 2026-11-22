@@ -14,6 +14,7 @@ import {
   Home,
   LogOut,
   X,
+  Star,
 } from "lucide-react";
 import { cn } from "../../../lib/cn";
 import { useTranslation } from "../../hooks/useTranslation";
@@ -48,6 +49,7 @@ export const navTranslationMap: Record<string, TranslationKey> = {
   Reports: "navReports",
   Users: "navUsers",
   Settings: "navSettings",
+  Reviews: "navReviews",
   "Menu & Availability": "navMenuAvailability",
 };
 
@@ -64,6 +66,7 @@ const navIconMap: Record<string, React.ComponentType<{ className?: string }>> = 
   Inventory: Boxes,
   Payments: CreditCard,
   Reports: BarChart3,
+  Reviews: Star,
   Users,
   Settings,
 };

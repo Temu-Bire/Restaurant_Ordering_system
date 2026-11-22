@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { UtensilsCrossed, ShoppingBag, Truck, Clock, CheckCircle2 } from "lucide-react";
+import { UtensilsCrossed, ShoppingBag, Truck, Clock, CheckCircle2, Star } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
 import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
 import OrderStatusStepper from "../components/OrderStatusStepper";
+import ReviewModal from "../../reviews/components/ReviewModal";
+import type { OrderLine } from "../types";
 import {
   ORDER_STATUS_LABEL,
   ORDER_TYPE_LABEL,
@@ -26,6 +28,7 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<Order | null | undefined>(id ? undefined : null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
+  const [reviewingLine, setReviewingLine] = useState<OrderLine | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -207,19 +210,42 @@ export default function OrderTrackingPage() {
         {/* Order Details summary */}
         <Card title={t("itemsOrdered")} className="rounded-2xl shadow-xs">
           <ul className="divide-y divide-border">
-            {order.lines.map((line, idx) => (
-              <li
-                key={`${line.name}-${idx}`}
-                className="flex items-center justify-between py-2 text-[13px]"
-              >
-                <span>
-                  {line.quantity} × {line.name}
-                </span>
-                <span className="font-semibold text-foreground font-mono">
-                  {formatCurrency(line.price * line.quantity)}
-                </span>
-              </li>
-            ))}
+            {order.lines.map((line, idx) => {
+              const isEligible = ["served", "picked_up", "delivered", "completed"].includes(order.status);
+
+              return (
+                <li
+                  key={`${line.name}-${idx}`}
+                  className="flex items-center justify-between py-2 text-[13px]"
+                >
+                  <div>
+                    <span className="font-semibold text-foreground">
+                      {line.quantity} × {line.name}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-foreground font-mono">
+                      {formatCurrency(line.price * line.quantity)}
+                    </span>
+                    {isEligible && line.id && (
+                      <button
+                        type="button"
+                        onClick={() => setReviewingLine(line)}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold transition-colors ${
+                          line.review
+                            ? "border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
+                            : "border border-primary/30 bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                        }`}
+                      >
+                        <Star className="size-3 fill-amber-400 text-amber-400" />
+                        <span>{line.review ? `${line.review.rating} ★ ${t("edit") || "Edit"}` : t("rateDish") || "Review"}</span>
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="mt-4 border-t border-border pt-3 space-y-1 text-xs">
@@ -263,6 +289,30 @@ export default function OrderTrackingPage() {
           )}
         </div>
       </div>
+
+      {reviewingLine && reviewingLine.id && (
+        <ReviewModal
+          open
+          orderItemId={reviewingLine.id}
+          foodName={reviewingLine.name}
+          orderNumber={order ? parseInt(order.id.replace(/\D/g, ""), 10) || undefined : undefined}
+          initialReview={
+            reviewingLine.review
+              ? ({
+                  id: reviewingLine.review.id,
+                  rating: reviewingLine.review.rating,
+                  comment: reviewingLine.review.comment,
+                } as any)
+              : null
+          }
+          onClose={() => setReviewingLine(null)}
+          onSaved={() => {
+            if (id) {
+              getOrder(id).then(setOrder).catch(console.error);
+            }
+          }}
+        />
+      )}
     </>
   );
 }
