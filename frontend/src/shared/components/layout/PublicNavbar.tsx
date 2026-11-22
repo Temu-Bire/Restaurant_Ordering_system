@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Sun, Moon, ShoppingCart, Menu, X } from "lucide-react";
 import { HOME_BY_ROLE } from "../../../app/paths";
 import { useAuth } from "../../../features/auth/hooks/useAuth";
 import { useCart } from "../../../features/cart/hooks/useCart";
@@ -99,7 +100,7 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
         <div className="flex items-center gap-2.5 sm:gap-3">
           <LanguageSwitcher />
 
-          {/* Theme switcher: Moon/Sun circular button */}
+          {/* Theme switcher */}
           <button
             type="button"
             onClick={toggleTheme}
@@ -107,20 +108,9 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
             className="flex size-9 items-center justify-center rounded-full bg-white/10 text-stone-200 transition-colors hover:bg-white/20 hover:text-white"
           >
             {theme === "dark" ? (
-              /* Sun icon */
-              <svg className="size-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
+              <Sun className="size-4.5 text-amber-400" />
             ) : (
-              /* Moon icon */
-              <svg className="size-4.5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-              </svg>
+              <Moon className="size-4.5 text-stone-300" />
             )}
           </button>
 
@@ -138,15 +128,8 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
             }}
             className="flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-orange-600 active:scale-95"
           >
-            <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.2"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <span>Cart ({count})</span>
+            <ShoppingCart className="size-4" />
+            <span>{t("navCart")} ({count})</span>
           </button>
 
           {/* User Logged in / Guest Auth Buttons */}
@@ -184,11 +167,9 @@ export default function PublicNavbar({ onOpenAuth }: PublicNavbarProps) {
             className="flex size-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-stone-200 transition-colors hover:bg-white/20 md:hidden"
           >
             {mobileMenuOpen ? (
-              <span className="text-base font-bold">✕</span>
+              <X className="size-5" />
             ) : (
-              <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Menu className="size-5" />
             )}
           </button>
         </div>

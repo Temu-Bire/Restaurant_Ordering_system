@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Outlet, NavLink } from "react-router-dom";
+import { Menu, UtensilsCrossed, MoreHorizontal } from "lucide-react";
 
 import { PATHS } from "../../../app/paths";
 import { useAuth } from "../../../features/auth/hooks/useAuth";
@@ -7,7 +8,7 @@ import { useLogout } from "../../../features/auth/hooks/useLogout";
 import { useCart } from "../../../features/cart/hooks/useCart";
 import { useTranslation } from "../../hooks/useTranslation";
 import { ROLE_LABEL } from "../../types/user";
-import Sidebar, { type NavItem } from "./Sidebar";
+import Sidebar, { navTranslationMap, type NavItem } from "./Sidebar";
 import ThemeSwitcher from "../ui/ThemeSwitcher";
 import LanguageSwitcher from "../ui/LanguageSwitcher";
 
@@ -25,6 +26,11 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
     item.to === PATHS.customer.cart ? { ...item, badge: count } : item
   );
 
+  const getTranslatedLabel = (label: string) => {
+    const key = navTranslationMap[label];
+    return key ? t(key) : label;
+  };
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Mobile Top Header */}
@@ -34,17 +40,15 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
             type="button"
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Open navigation menu"
-            className="flex size-9 items-center justify-center rounded-xl border border-border bg-surface text-foreground hover:bg-surface-secondary"
+            className="flex size-9 items-center justify-center rounded-xl border border-border bg-surface text-foreground hover:bg-surface-secondary transition-colors"
           >
-            <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <Menu className="size-5" />
           </button>
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-lg bg-orange-500 text-xs font-bold text-white shadow-xs">
-              🍽️
+              <UtensilsCrossed className="size-4" />
             </span>
-            <span className="text-base font-bold tracking-tight">Arif Food</span>
+            <span className="text-base font-bold tracking-tight text-foreground">Arif Food</span>
           </div>
         </div>
 
@@ -88,7 +92,7 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
                 {item.badge}
               </span>
             ) : null}
-            <span className="truncate max-w-[64px] text-[11px]">{item.label}</span>
+            <span className="truncate max-w-[64px] text-[11px]">{getTranslatedLabel(item.label)}</span>
           </NavLink>
         ))}
 
@@ -98,7 +102,7 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
             onClick={() => setMobileMenuOpen(true)}
             className="flex flex-col items-center justify-center gap-1 py-1 px-3 text-[11px] font-medium text-muted hover:text-foreground"
           >
-            <span>•••</span>
+            <MoreHorizontal className="size-4" />
             <span>{t("filter")}</span>
           </button>
         )}

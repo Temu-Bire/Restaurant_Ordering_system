@@ -34,7 +34,7 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-const navTranslationMap: Record<string, TranslationKey> = {
+export const navTranslationMap: Record<string, TranslationKey> = {
   Home: "navHome",
   Menu: "navMenu",
   Orders: "navOrders",
@@ -48,6 +48,7 @@ const navTranslationMap: Record<string, TranslationKey> = {
   Reports: "navReports",
   Users: "navUsers",
   Settings: "navSettings",
+  "Menu & Availability": "navMenuAvailability",
 };
 
 const navIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
