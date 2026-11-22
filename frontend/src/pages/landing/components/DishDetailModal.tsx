@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import { type DishItem } from "./landingData";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
@@ -36,9 +37,7 @@ export default function DishDetailModal({
           aria-label="Close"
           className="absolute top-4 right-4 z-10 flex size-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-xs transition-colors hover:bg-orange-500"
         >
-          <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="size-4" />
         </button>
 
         {/* Dish Image */}
@@ -87,7 +86,7 @@ export default function DishDetailModal({
           {/* Price & Quantity & Add to Cart */}
           <div className="pt-2 flex items-center justify-between border-t border-border">
             <div>
-              <span className="text-xs text-muted block">Price</span>
+              <span className="text-xs text-muted block">{t("foodPrice")}</span>
               <span className="text-xl font-black text-orange-500">
                 {formatCurrency(dish.price * quantity)}
               </span>

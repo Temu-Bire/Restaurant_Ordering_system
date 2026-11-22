@@ -1,3 +1,4 @@
+import { Check, ShoppingCart, ArrowRight } from "lucide-react";
 import { type DishItem } from "./landingData";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
@@ -86,20 +87,13 @@ export default function PopularDishesSection({
                   >
                     {isAdded ? (
                       <>
-                        <span>✓</span>
-                        <span>Added to Cart</span>
+                        <Check className="size-3.5" />
+                        <span>{t("addedToCart")}</span>
                       </>
                     ) : (
                       <>
-                        <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2.5"
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                          />
-                        </svg>
-                        <span>Add to Cart</span>
+                        <ShoppingCart className="size-3.5" />
+                        <span>{t("addToCart")}</span>
                       </>
                     )}
                   </button>
@@ -133,7 +127,7 @@ export default function PopularDishesSection({
           className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-8 py-3 text-sm font-bold text-orange-500 transition-all hover:bg-orange-500 hover:text-white"
         >
           <span>{t("seeFullMenu")}</span>
-          <span>→</span>
+          <ArrowRight className="size-4" />
         </button>
       </div>
     </section>

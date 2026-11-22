@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Star, ArrowRight } from "lucide-react";
 import { HERO_SLIDES } from "./landingData";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
 
@@ -122,7 +123,7 @@ export default function HeroSection() {
           );
         })}
 
-        {/* Balanced Dark Overlay: Keeps images clear & vibrant while ensuring text is readable */}
+        {/* Balanced Dark Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/55 pointer-events-none" />
         <div className="absolute inset-0 bg-black/20 pointer-events-none" />
       </div>
@@ -132,9 +133,9 @@ export default function HeroSection() {
         type="button"
         onClick={handlePrev}
         aria-label="Previous background slide"
-        className="absolute left-3 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 text-2xl font-bold cursor-pointer"
+        className="absolute left-3 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 cursor-pointer"
       >
-        ‹
+        <ChevronLeft className="size-6" />
       </button>
 
       {/* Right Arrow Navigation Button */}
@@ -142,24 +143,19 @@ export default function HeroSection() {
         type="button"
         onClick={handleNext}
         aria-label="Next background slide"
-        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 text-2xl font-bold cursor-pointer"
+        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex size-12 sm:size-14 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md border border-white/20 shadow-2xl transition-all hover:bg-orange-500 hover:border-orange-500 hover:scale-110 active:scale-95 cursor-pointer"
       >
-        ›
+        <ChevronRight className="size-6" />
       </button>
 
       {/* Hero Content */}
       <div className="relative z-10 mx-auto max-w-4xl px-8 sm:px-14 text-center py-20 lg:py-28 space-y-6">        
-
         <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1] text-white drop-shadow-md">
-          Experience the{" "}
-          <span className="text-orange-400 drop-shadow-lg">
-            Authentic Taste
-          </span>{" "}
-          of Ethiopia
+          {t("heroTitle")}
         </h1>
 
         <p className="mx-auto max-w-2xl text-base sm:text-lg lg:text-xl text-stone-200 font-normal leading-relaxed drop-shadow">
-          Discover traditional Ethiopian flavors, freshly prepared with love and served with care.
+          {t("heroSubtitle")}
         </p>
 
         {/* Action Buttons */}
@@ -169,7 +165,7 @@ export default function HeroSection() {
             className="inline-flex items-center justify-center gap-2 rounded-full bg-orange-500 px-8 py-4 text-sm font-bold text-white shadow-xl shadow-orange-600/30 transition-all hover:bg-orange-600 hover:scale-105 active:scale-95"
           >
             <span>{t("exploreMenu")}</span>
-            <span className="text-base">→</span>
+            <ArrowRight className="size-4" />
           </a>
 
           <a
@@ -199,7 +195,6 @@ export default function HeroSection() {
                 />
               );
             })}
-            
           </div>
 
           <p className="text-xs text-orange-200 font-medium drop-shadow transition-all duration-300 max-w-md">
@@ -219,7 +214,10 @@ export default function HeroSection() {
             <p className="text-xs text-stone-300 mt-0.5">Berbere Spices</p>
           </div>
           <div>
-            <span className="text-2xl font-black text-orange-400">4.9 ★</span>
+            <span className="text-2xl font-black text-orange-400 inline-flex items-center gap-1">
+              <span>4.9</span>
+              <Star className="size-5 fill-orange-400 text-orange-400" />
+            </span>
             <p className="text-xs text-stone-300 mt-0.5">Customer Rating</p>
           </div>
         </div>
