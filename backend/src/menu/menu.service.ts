@@ -25,25 +25,57 @@ export class MenuService {
     this.appUrl = config.getOrThrow<string>('APP_URL').replace(/\/$/, '');
   }
 
-  private respond(food: FoodWithCategory) {
-    return toFoodResponse(food, this.appUrl);
+  private respond(
+    food: FoodWithCategory,
+    stats?: { rating: number; reviewCount: number },
+  ) {
+    return toFoodResponse(food, this.appUrl, stats);
   }
 
   async findAll() {
-    const foods = await this.prisma.food.findMany({
-      include: { category: true },
-      orderBy: { createdAt: 'asc' },
-    });
-    return foods.map((food) => this.respond(food));
+    const [foods, statsRaw] = await Promise.all([
+      this.prisma.food.findMany({
+        include: { category: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.review.groupBy({
+        by: ['foodId'],
+        where: { isHidden: false },
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
+    ]);
+
+    const statsMap = new Map(
+      statsRaw.map((s) => [
+        s.foodId,
+        {
+          rating: s._avg.rating ? Math.round(s._avg.rating * 10) / 10 : 0,
+          reviewCount: s._count.rating ?? 0,
+        },
+      ]),
+    );
+
+    return foods.map((food) => this.respond(food, statsMap.get(food.id)));
   }
 
   async findOne(id: string) {
-    const food = await this.prisma.food.findUnique({
-      where: { id },
-      include: { category: true },
-    });
+    const [food, stats] = await Promise.all([
+      this.prisma.food.findUnique({
+        where: { id },
+        include: { category: true },
+      }),
+      this.prisma.review.aggregate({
+        where: { foodId: id, isHidden: false },
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
+    ]);
     if (!food) throw new NotFoundException('Food item not found');
-    return this.respond(food);
+    return this.respond(food, {
+      rating: stats._avg.rating ? Math.round(stats._avg.rating * 10) / 10 : 0,
+      reviewCount: stats._count.rating ?? 0,
+    });
   }
 
   async create(dto: CreateFoodDto) {

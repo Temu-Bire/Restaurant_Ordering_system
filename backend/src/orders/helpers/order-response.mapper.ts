@@ -1,4 +1,4 @@
-import { Address, Order, OrderItem, Payment, RestaurantTable, User } from '@prisma/client';
+import { Address, Order, OrderItem, Payment, RestaurantTable, Review, User } from '@prisma/client';
 import {
   orderCode,
   toApiOrderStatus,
@@ -8,7 +8,7 @@ import {
 } from '../../common/api-enums.js';
 
 export type OrderRecord = Order & {
-  items: OrderItem[];
+  items: (OrderItem & { review?: Review | null })[];
   payment: Payment | null;
   table: RestaurantTable | null;
   customer?: Partial<User> | null;
@@ -17,7 +17,11 @@ export type OrderRecord = Order & {
 };
 
 export const orderInclude = {
-  items: true,
+  items: {
+    include: {
+      review: true,
+    },
+  },
   payment: true,
   table: true,
   address: true,
@@ -38,9 +42,16 @@ export const orderInclude = {
 } as const;
 
 export interface OrderItemLineResponse {
+  id: string;
+  foodId: string;
   name: string;
   quantity: number;
   price: number;
+  review?: {
+    id: string;
+    rating: number;
+    comment?: string | null;
+  } | null;
 }
 
 export interface OrderResponse {
@@ -106,9 +117,18 @@ export const toOrderResponse = (order: OrderRecord): OrderResponse => ({
   tax: order.tax.toNumber(),
   total: order.total.toNumber(),
   lines: order.items.map((item) => ({
+    id: item.id,
+    foodId: item.foodId,
     name: item.name,
     quantity: item.quantity,
     price: item.unitPrice.toNumber(),
+    review: item.review
+      ? {
+          id: item.review.id,
+          rating: item.review.rating,
+          comment: item.review.comment,
+        }
+      : null,
   })),
   handover: order.handoverAt
     ? {

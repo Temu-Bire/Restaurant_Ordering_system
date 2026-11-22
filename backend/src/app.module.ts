@@ -18,6 +18,7 @@ import { TablesModule } from './tables/tables.module.js';
 import { AddressesModule } from './addresses/addresses.module.js';
 import { DeliveryModule } from './delivery/delivery.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
     ReportsModule,
     AddressesModule,
     DeliveryModule,
+    ReviewsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
