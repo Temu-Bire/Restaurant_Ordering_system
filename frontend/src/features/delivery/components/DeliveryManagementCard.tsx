@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Plus, Pencil, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
+import ConfirmDialog from "../../../shared/components/ui/ConfirmDialog";
 import Input from "../../../shared/components/ui/Input";
 import Modal from "../../../shared/components/ui/Modal";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
@@ -33,6 +35,7 @@ export default function DeliveryManagementCard() {
   // Tier modal
   const [tierModalOpen, setTierModalOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<DeliveryTier | null>(null);
+  const [tierToDelete, setTierToDelete] = useState<DeliveryTier | null>(null);
   const [tierMin, setTierMin] = useState("0");
   const [tierMax, setTierMax] = useState("1");
   const [tierFee, setTierFee] = useState("30");
@@ -167,13 +170,18 @@ export default function DeliveryManagementCard() {
     }
   }
 
-  async function handleDeleteTier(id: string) {
-    if (!window.confirm("Are you sure you want to delete this delivery tier?")) return;
+  async function handleConfirmDeleteTier() {
+    if (!tierToDelete) return;
     try {
-      await deleteDeliveryTier(id);
-      setTiers((prev) => prev.filter((t) => t.id !== id));
+      await deleteDeliveryTier(tierToDelete.id);
+      setTiers((prev) => prev.filter((t) => t.id !== tierToDelete.id));
+      setTierToDelete(null);
+      setConfigNotice("Delivery fee tier deleted.");
+      setTimeout(() => setConfigNotice(""), 3000);
     } catch (err) {
       console.error("Failed to delete tier", err);
+      setConfigError(err instanceof Error ? err.message : "Failed to delete tier");
+      setTierToDelete(null);
     }
   }
 
@@ -193,13 +201,15 @@ export default function DeliveryManagementCard() {
     >
       <form onSubmit={handleSaveConfig} className="space-y-4">
         {configNotice && (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
-            ✓ {configNotice}
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
+            <CheckCircle2 className="size-4 shrink-0" />
+            <span>{configNotice}</span>
           </div>
         )}
         {configError && (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-danger">
-            ⚠ {configError}
+          <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-danger">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{configError}</span>
           </div>
         )}
 
@@ -283,8 +293,9 @@ export default function DeliveryManagementCard() {
             </h4>
             <p className="text-[11px] text-muted">Fees applied according to customer distance</p>
           </div>
-          <Button size="sm" onClick={openAddTier}>
-            + Add Fee Tier
+          <Button size="sm" onClick={openAddTier} className="inline-flex items-center gap-1.5">
+            <Plus className="size-4" />
+            <span>Add Fee Tier</span>
           </Button>
         </div>
 
@@ -310,17 +321,19 @@ export default function DeliveryManagementCard() {
                     <button
                       type="button"
                       onClick={() => openEditTier(t)}
-                      className="font-bold text-foreground hover:text-primary"
+                      className="inline-flex items-center gap-1 font-bold text-foreground hover:text-primary transition-colors"
                     >
-                      Edit
+                      <Pencil className="size-3" />
+                      <span>Edit</span>
                     </button>
                     <span className="text-muted">•</span>
                     <button
                       type="button"
-                      onClick={() => handleDeleteTier(t.id)}
-                      className="font-bold text-danger hover:underline"
+                      onClick={() => setTierToDelete(t)}
+                      className="inline-flex items-center gap-1 font-bold text-danger hover:underline transition-colors"
                     >
-                      Delete
+                      <Trash2 className="size-3" />
+                      <span>Delete</span>
                     </button>
                   </td>
                 </tr>
@@ -346,8 +359,9 @@ export default function DeliveryManagementCard() {
         >
           <form onSubmit={handleSaveTier} className="space-y-4">
             {tierError && (
-              <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-danger">
-                ⚠ {tierError}
+              <div className="flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-danger">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>{tierError}</span>
               </div>
             )}
 
@@ -396,6 +410,17 @@ export default function DeliveryManagementCard() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* Delete Tier Confirmation Modal */}
+      {tierToDelete && (
+        <ConfirmDialog
+          title="Delete Delivery Fee Tier"
+          message={`Are you sure you want to delete the delivery tier for ${tierToDelete.minDistance} km – ${tierToDelete.maxDistance} km (${formatCurrency(tierToDelete.fee)})? This action cannot be undone.`}
+          confirmLabel="Delete Tier"
+          onConfirm={handleConfirmDeleteTier}
+          onCancel={() => setTierToDelete(null)}
+        />
       )}
     </Card>
   );
