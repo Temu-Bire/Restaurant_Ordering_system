@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Plus, CheckCircle2 } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Button from "../../../shared/components/ui/Button";
@@ -201,8 +202,9 @@ export default function TablesPage({ role: propRole }: { role?: string } = {}) {
       />
 
       {notice && (
-        <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs font-semibold text-success">
-          ✓ {notice}
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs font-semibold text-success">
+          <CheckCircle2 className="size-4 shrink-0" />
+          <span>{notice}</span>
         </div>
       )}
 
@@ -222,7 +224,10 @@ export default function TablesPage({ role: propRole }: { role?: string } = {}) {
         </div>
 
         {role === "admin" && (
-          <Button onClick={() => setEditing("new")}>+ Add Table</Button>
+          <Button onClick={() => setEditing("new")} className="inline-flex items-center gap-1.5">
+            <Plus className="size-4" />
+            <span>Add Table</span>
+          </Button>
         )}
       </div>
 

@@ -1,6 +1,23 @@
 import { NavLink } from "react-router-dom";
+import {
+  LayoutDashboard,
+  UtensilsCrossed,
+  ShoppingBag,
+  ShoppingCart,
+  UserCircle,
+  Table,
+  Boxes,
+  CreditCard,
+  BarChart3,
+  Users,
+  Settings,
+  Home,
+  LogOut,
+  X,
+} from "lucide-react";
 import { cn } from "../../../lib/cn";
 import { useTranslation } from "../../hooks/useTranslation";
+import { resolveAvatarUrl } from "../../utils/resolveAvatarUrl";
 import type { TranslationKey } from "../../../i18n/translations";
 
 export interface NavItem {
@@ -11,7 +28,7 @@ export interface NavItem {
 
 interface SidebarProps {
   items: NavItem[];
-  user: { name: string; role: string };
+  user: { name: string; role: string; avatarUrl?: string | null };
   onLogout: () => void;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
@@ -33,6 +50,23 @@ const navTranslationMap: Record<string, TranslationKey> = {
   Settings: "navSettings",
 };
 
+const navIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Home,
+  Menu: UtensilsCrossed,
+  "Menu & Availability": UtensilsCrossed,
+  Orders: ShoppingBag,
+  "My Orders": ShoppingBag,
+  Cart: ShoppingCart,
+  Profile: UserCircle,
+  Dashboard: LayoutDashboard,
+  Tables: Table,
+  Inventory: Boxes,
+  Payments: CreditCard,
+  Reports: BarChart3,
+  Users,
+  Settings,
+};
+
 export default function Sidebar({
   items,
   user,
@@ -41,6 +75,7 @@ export default function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const { t } = useTranslation();
+  const avatarSrc = resolveAvatarUrl(user.avatarUrl);
 
   const getTranslatedLabel = (label: string) => {
     const key = navTranslationMap[label];
@@ -69,43 +104,53 @@ export default function Sidebar({
               className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-secondary hover:text-foreground md:hidden"
               aria-label="Close menu"
             >
-              ✕
+              <X className="size-5" />
             </button>
           )}
         </div>
 
         {/* Navigation links */}
         <nav aria-label="Main navigation" className="space-y-1">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={onCloseMobile}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all",
-                  isActive
-                    ? "bg-primary text-white shadow-xs font-semibold"
-                    : "text-foreground hover:bg-surface-secondary"
-                )
-              }
-            >
-              <span>{getTranslatedLabel(item.label)}</span>
-              {typeof item.badge === "number" && item.badge > 0 ? (
-                <span className="flex size-5 items-center justify-center rounded-full bg-danger text-[11px] font-bold text-white shadow-xs">
-                  {item.badge}
-                </span>
-              ) : null}
-            </NavLink>
-          ))}
+          {items.map((item) => {
+            const Icon = navIconMap[item.label] ?? LayoutDashboard;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={onCloseMobile}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all",
+                    isActive
+                      ? "bg-primary text-white shadow-xs font-semibold"
+                      : "text-foreground hover:bg-surface-secondary"
+                  )
+                }
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className="size-4 shrink-0" />
+                  <span>{getTranslatedLabel(item.label)}</span>
+                </div>
+                {typeof item.badge === "number" && item.badge > 0 ? (
+                  <span className="flex size-5 items-center justify-center rounded-full bg-danger text-[11px] font-bold text-white shadow-xs">
+                    {item.badge}
+                  </span>
+                ) : null}
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
 
       {/* User profile card & Logout */}
       <div className="border-t border-border px-2 pt-4">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-xs font-bold text-primary">
-            {user.name.charAt(0)}
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-xs font-bold text-primary overflow-hidden border border-border/50">
+            {avatarSrc ? (
+              <img src={avatarSrc} alt={user.name} className="size-full object-cover" />
+            ) : (
+              user.name.charAt(0)
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-bold leading-tight text-foreground">{user.name}</p>
@@ -114,9 +159,10 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onLogout}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10"
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-danger transition-colors hover:bg-danger/10"
           >
-            {t("navLogout")}
+            <LogOut className="size-3.5" />
+            <span>{t("navLogout")}</span>
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { Sparkles, CheckCircle2, Users, Pencil, Trash2 } from "lucide-react";
 import { cn } from "../../../lib/cn";
 import { TABLE_STATUS_LABEL, type RestaurantTable, type TableStatus } from "../types";
 
@@ -61,9 +62,10 @@ export default function TableTile({
               <button
                 type="button"
                 onClick={() => onChangeStatus("cleaning")}
-                className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-1 transition-colors"
+                className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold py-1 transition-colors inline-flex items-center justify-center gap-1"
               >
-                🧹 Mark Cleaning
+                <Sparkles className="size-3.5" />
+                <span>Mark Cleaning</span>
               </button>
             )}
 
@@ -71,9 +73,10 @@ export default function TableTile({
               <button
                 type="button"
                 onClick={() => onChangeStatus("available")}
-                className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold py-1 transition-colors"
+                className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold py-1 transition-colors inline-flex items-center justify-center gap-1"
               >
-                ✓ Mark Available
+                <CheckCircle2 className="size-3.5" />
+                <span>Mark Available</span>
               </button>
             )}
 
@@ -81,9 +84,10 @@ export default function TableTile({
               <button
                 type="button"
                 onClick={() => onChangeStatus("occupied")}
-                className="w-full rounded-lg bg-surface hover:bg-surface-secondary border border-border text-foreground text-[11px] font-bold py-1 transition-colors"
+                className="w-full rounded-lg bg-surface hover:bg-surface-secondary border border-border text-foreground text-[11px] font-bold py-1 transition-colors inline-flex items-center justify-center gap-1"
               >
-                👤 Seat Guests (Occupied)
+                <Users className="size-3.5" />
+                <span>Seat Guests (Occupied)</span>
               </button>
             )}
 
@@ -91,9 +95,10 @@ export default function TableTile({
               <button
                 type="button"
                 onClick={() => onChangeStatus("occupied")}
-                className="w-full rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold py-1 transition-colors"
+                className="w-full rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold py-1 transition-colors inline-flex items-center justify-center gap-1"
               >
-                Confirm Seated
+                <Users className="size-3.5" />
+                <span>Confirm Seated</span>
               </button>
             )}
           </div>
@@ -105,9 +110,10 @@ export default function TableTile({
               <button
                 type="button"
                 onClick={onEdit}
-                className="font-medium hover:text-foreground transition-colors"
+                className="font-medium hover:text-foreground transition-colors inline-flex items-center gap-1"
               >
-                ✎ Edit
+                <Pencil className="size-3" />
+                <span>Edit</span>
               </button>
             )}
             {onDelete && (
@@ -115,9 +121,10 @@ export default function TableTile({
                 type="button"
                 onClick={onDelete}
                 aria-label={`Delete ${table.name}`}
-                className="font-medium text-danger hover:opacity-80 transition-colors"
+                className="font-medium text-danger hover:opacity-80 transition-colors inline-flex items-center gap-1"
               >
-                🗑 Delete
+                <Trash2 className="size-3" />
+                <span>Delete</span>
               </button>
             )}
           </div>

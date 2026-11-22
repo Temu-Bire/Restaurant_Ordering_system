@@ -1,4 +1,14 @@
 import { useState, useEffect, type FormEvent } from "react";
+import {
+  Pencil,
+  Trash2,
+  Camera,
+  Plus,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  FolderCog,
+} from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -118,13 +128,15 @@ function ManageCategoriesModal({ categories, onClose, onRefresh }: ManageCategor
         <div className="space-y-6">
           {/* Notification alerts */}
           {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-danger">
-              {error}
+            <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-danger">
+              <AlertCircle className="size-4 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
           {success && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-success">
-              {success}
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-success">
+              <CheckCircle2 className="size-4 shrink-0" />
+              <span>{success}</span>
             </div>
           )}
 
@@ -198,18 +210,20 @@ function ManageCategoriesModal({ categories, onClose, onRefresh }: ManageCategor
                             setName(c.name);
                             setError("");
                           }}
-                          className="rounded-lg p-1.5 text-muted hover:bg-surface hover:text-foreground transition-colors text-xs font-medium"
+                          className="inline-flex items-center gap-1 rounded-lg p-1.5 text-muted hover:bg-surface hover:text-foreground transition-colors text-xs font-medium"
                           title="Edit Category Name"
                         >
-                          ✎ Edit
+                          <Pencil className="size-3" />
+                          <span>Edit</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeletingCat(c)}
-                          className="rounded-lg p-1.5 text-muted hover:bg-surface hover:text-danger transition-colors text-xs font-medium"
+                          className="inline-flex items-center gap-1 rounded-lg p-1.5 text-muted hover:bg-surface hover:text-danger transition-colors text-xs font-medium"
                           title="Delete Category"
                         >
-                          🗑 Delete
+                          <Trash2 className="size-3" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </>
@@ -373,11 +387,11 @@ export default function MenuManagementPage() {
             }}
           />
           <label
-            className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity text-[10px] font-semibold"
+            className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity text-[10px] font-semibold gap-0.5"
             title={`${t("uploadImage")}: ${f.name}`}
           >
-            <span className="text-sm">📷</span>
-            <span className="leading-tight">+ Image</span>
+            <Camera className="size-4" />
+            <span className="leading-tight flex items-center gap-0.5"><Plus className="size-2.5" /> Image</span>
             <input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -425,16 +439,18 @@ export default function MenuManagementPage() {
           <button
             onClick={() => setEditing(f)}
             aria-label={`Edit ${f.name}`}
-            className="rounded-lg px-2.5 py-1 text-xs font-semibold text-primary hover:bg-surface-secondary transition-colors"
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-primary hover:bg-surface-secondary transition-colors"
           >
-            ✎ Edit
+            <Pencil className="size-3" />
+            <span>Edit</span>
           </button>
           <button
             onClick={() => setToDelete(f)}
             aria-label={`Delete ${f.name}`}
-            className="rounded-lg px-2.5 py-1 text-xs font-semibold text-danger hover:bg-surface-secondary transition-colors"
+            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-danger hover:bg-surface-secondary transition-colors"
           >
-            🗑 Delete
+            <Trash2 className="size-3" />
+            <span>Delete</span>
           </button>
         </div>
       ),
@@ -451,15 +467,25 @@ export default function MenuManagementPage() {
 
       {feedbackMessage && (
         <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2.5 text-xs font-medium text-success">
-          <span>✓ {feedbackMessage}</span>
-          <button onClick={() => setFeedbackMessage("")} className="hover:opacity-75">✕</button>
+          <span className="flex items-center gap-2">
+            <CheckCircle2 className="size-4 shrink-0" />
+            {feedbackMessage}
+          </span>
+          <button onClick={() => setFeedbackMessage("")} className="hover:opacity-75" aria-label="Dismiss">
+            <X className="size-4" />
+          </button>
         </div>
       )}
 
       {errorMessage && (
         <div className="mb-4 flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-medium text-danger">
-          <span>⚠ {errorMessage}</span>
-          <button onClick={() => setErrorMessage("")} className="hover:opacity-75">✕</button>
+          <span className="flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            {errorMessage}
+          </span>
+          <button onClick={() => setErrorMessage("")} className="hover:opacity-75" aria-label="Dismiss">
+            <X className="size-4" />
+          </button>
         </div>
       )}
 
@@ -472,9 +498,13 @@ export default function MenuManagementPage() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setEditing("new")}>{t("addFoodItem")}</Button>
-          <Button variant="secondary" onClick={() => setManagingCategories(true)}>
-            Manage Categories
+          <Button onClick={() => setEditing("new")} className="inline-flex items-center gap-1.5">
+            <Plus className="size-4" />
+            <span>{t("addFoodItem")}</span>
+          </Button>
+          <Button variant="secondary" onClick={() => setManagingCategories(true)} className="inline-flex items-center gap-1.5">
+            <FolderCog className="size-4" />
+            <span>Manage Categories</span>
           </Button>
         </div>
       </div>

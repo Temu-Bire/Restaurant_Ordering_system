@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Utensils, ShoppingBag, Truck, CheckCircle2 } from "lucide-react";
 
 import Badge from "../../../shared/components/ui/Badge";
 import Button from "../../../shared/components/ui/Button";
@@ -100,27 +101,47 @@ export default function OrderDetailsModal({
   }
 
   // Determine handover button for Staff
-  let handoverButton: { label: string; action: () => void; variant?: "primary" | "secondary" } | null = null;
+  let handoverButton: { label: ReactNode; action: () => void; variant?: "primary" | "secondary" } | null = null;
   if (!readOnly) {
     if (order.type === "dine-in" && (order.status === "ready" || order.status === "preparing")) {
       handoverButton = {
-        label: "🍽 Confirm Served to Table",
+        label: (
+          <span className="inline-flex items-center gap-1.5">
+            <Utensils className="size-4" />
+            <span>Confirm Served to Table</span>
+          </span>
+        ),
         action: () => handleHandover(),
       };
     } else if (order.type === "takeaway" && order.status === "ready") {
       handoverButton = {
-        label: "🥡 Confirm Customer Pickup",
+        label: (
+          <span className="inline-flex items-center gap-1.5">
+            <ShoppingBag className="size-4" />
+            <span>Confirm Customer Pickup</span>
+          </span>
+        ),
         action: () => handleHandover(),
       };
     } else if (order.type === "delivery") {
       if (order.status === "ready") {
         handoverButton = {
-          label: "🛵 Handover to Courier (Out for Delivery)",
+          label: (
+            <span className="inline-flex items-center gap-1.5">
+              <Truck className="size-4" />
+              <span>Handover to Courier</span>
+            </span>
+          ),
           action: () => handleHandover(),
         };
       } else if (order.status === "out_for_delivery") {
         handoverButton = {
-          label: "✓ Confirm Final Handover (Delivered)",
+          label: (
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="size-4" />
+              <span>Confirm Final Delivery</span>
+            </span>
+          ),
           action: () => handleHandover(),
         };
       }

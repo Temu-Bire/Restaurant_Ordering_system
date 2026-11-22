@@ -1,4 +1,24 @@
 import { useState, useEffect } from "react";
+import {
+  Package,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Coins,
+  Tag,
+  History,
+  ChefHat,
+  Plus,
+  Trash,
+  SlidersHorizontal,
+  ClipboardCheck,
+  Pencil,
+  Pause,
+  Play,
+  Trash2,
+  MapPin,
+  AlertCircle,
+} from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -207,21 +227,23 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
       />
 
       {notice && (
-        <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs font-semibold text-success">
-          ✓ {notice}
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs font-semibold text-success">
+          <CheckCircle2 className="size-4 shrink-0" />
+          <span>{notice}</span>
         </div>
       )}
       {errorNotice && (
-        <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-danger">
-          ⚠ {errorNotice}
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-danger">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{errorNotice}</span>
         </div>
       )}
 
       {/* Stock Alerts Notice */}
       {(lowStockCount > 0 || outOfStockCount > 0) && (
         <div className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-semibold text-amber-700 dark:text-amber-400 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚠️</span>
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="size-5 shrink-0 text-amber-600" />
             <div>
               <p className="font-bold">
                 {outOfStockCount > 0 && `${outOfStockCount} items OUT OF STOCK. `}
@@ -245,19 +267,19 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
 
       {/* Metric Cards */}
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 mb-5">
-        <StatCard label="Total Items" value={items.length} tone="purple" icon="📦" />
-        <StatCard label="In Stock" value={inStockCount} tone="success" icon="✓" />
-        <StatCard label="Low Stock" value={lowStockCount} tone="primary" icon="⚠️" />
-        <StatCard label="Out of Stock" value={outOfStockCount} tone="danger" icon="✕" />
+        <StatCard label="Total Items" value={items.length} tone="purple" icon={<Package className="size-5" />} />
+        <StatCard label="In Stock" value={inStockCount} tone="success" icon={<CheckCircle2 className="size-5" />} />
+        <StatCard label="Low Stock" value={lowStockCount} tone="primary" icon={<AlertTriangle className="size-5" />} />
+        <StatCard label="Out of Stock" value={outOfStockCount} tone="danger" icon={<XCircle className="size-5" />} />
         {isAdmin ? (
           <StatCard
             label="Total Valuation"
             value={formatCurrency(totalValue)}
             tone="info"
-            icon="💰"
+            icon={<Coins className="size-5" />}
           />
         ) : (
-          <StatCard label="Active Items" value={items.filter((i) => i.status === "active").length} tone="info" icon="🏷" />
+          <StatCard label="Active Items" value={items.filter((i) => i.status === "active").length} tone="info" icon={<Tag className="size-5" />} />
         )}
       </div>
 
@@ -297,8 +319,10 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
               setSelectedIngredientForHistory(undefined);
               setHistoryOpen(true);
             }}
+            className="inline-flex items-center gap-1.5"
           >
-            📋 Movement History
+            <History className="size-4" />
+            <span>Movement History</span>
           </Button>
 
           {isAdmin && (
@@ -307,8 +331,10 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
                 variant={showRecipeEditor ? "outline" : "secondary"}
                 size="sm"
                 onClick={() => setShowRecipeEditor(!showRecipeEditor)}
+                className="inline-flex items-center gap-1.5"
               >
-                {showRecipeEditor ? "Hide Recipes" : "🍲 Recipe Editor"}
+                <ChefHat className="size-4" />
+                <span>{showRecipeEditor ? "Hide Recipes" : "Recipe Editor"}</span>
               </Button>
               <Button
                 size="sm"
@@ -316,8 +342,10 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
                   setEditingItem(null);
                   setItemFormOpen(true);
                 }}
+                className="inline-flex items-center gap-1.5"
               >
-                + Add Item
+                <Plus className="size-4" />
+                <span>Add Item</span>
               </Button>
             </>
           )}
@@ -429,8 +457,9 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
                         )}
                         <td className="py-3 px-3 text-muted">
                           {item.storageLocation ? (
-                            <span className="block truncate max-w-[120px] text-foreground font-medium">
-                              📍 {item.storageLocation}
+                            <span className="truncate max-w-[120px] text-foreground font-medium inline-flex items-center gap-1">
+                              <MapPin className="size-3 shrink-0 text-muted" />
+                              <span>{item.storageLocation}</span>
                             </span>
                           ) : (
                             <span className="text-[11px]">—</span>
@@ -453,34 +482,38 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
                               type="button"
                               title="Receive Stock"
                               onClick={() => setActionItem({ item, mode: "receive" })}
-                              className="rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 px-2 py-1 text-[11px] font-bold"
+                              className="inline-flex items-center gap-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 px-2 py-1 text-[11px] font-bold transition-colors"
                             >
-                              + Receive
+                              <Plus className="size-3" />
+                              <span>Receive</span>
                             </button>
                             <button
                               type="button"
                               title="Record Waste"
                               onClick={() => setActionItem({ item, mode: "waste" })}
-                              className="rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 px-2 py-1 text-[11px] font-bold"
+                              className="inline-flex items-center gap-0.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 px-2 py-1 text-[11px] font-bold transition-colors"
                             >
-                              - Waste
+                              <Trash className="size-3" />
+                              <span>Waste</span>
                             </button>
                             <button
                               type="button"
                               title="Stock Count"
                               onClick={() => setActionItem({ item, mode: "count" })}
-                              className="rounded-lg bg-surface-secondary text-foreground hover:bg-surface-secondary/80 px-2 py-1 text-[11px] font-bold border border-border"
+                              className="inline-flex items-center gap-0.5 rounded-lg bg-surface-secondary text-foreground hover:bg-surface-secondary/80 px-2 py-1 text-[11px] font-bold border border-border transition-colors"
                             >
-                              Count
+                              <ClipboardCheck className="size-3" />
+                              <span>Count</span>
                             </button>
                             {isAdmin && (
                               <button
                                 type="button"
                                 title="Manual Adjustment"
                                 onClick={() => setActionItem({ item, mode: "adjust" })}
-                                className="rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 px-2 py-1 text-[11px] font-bold"
+                                className="inline-flex items-center gap-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 px-2 py-1 text-[11px] font-bold transition-colors"
                               >
-                                Adjust
+                                <SlidersHorizontal className="size-3" />
+                                <span>Adjust</span>
                               </button>
                             )}
                             <button
@@ -490,9 +523,9 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
                                 setEditingItem(item);
                                 setItemFormOpen(true);
                               }}
-                              className="text-muted hover:text-foreground font-semibold px-1"
+                              className="text-muted hover:text-foreground font-semibold px-1 transition-colors"
                             >
-                              ✎
+                              <Pencil className="size-3.5" />
                             </button>
                             {isAdmin && (
                               <>
@@ -500,17 +533,17 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
                                   type="button"
                                   title={item.status === "active" ? "Disable item" : "Enable item"}
                                   onClick={() => handleToggleStatus(item)}
-                                  className="text-muted hover:text-foreground text-xs px-1"
+                                  className="text-muted hover:text-foreground text-xs px-1 transition-colors"
                                 >
-                                  {item.status === "active" ? "⏸" : "▶"}
+                                  {item.status === "active" ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
                                 </button>
                                 <button
                                   type="button"
                                   title="Delete item"
                                   onClick={() => handleDelete(item)}
-                                  className="text-danger hover:opacity-80 px-1 font-bold"
+                                  className="text-danger hover:opacity-80 px-1 font-bold transition-colors"
                                 >
-                                  🗑
+                                  <Trash2 className="size-3.5" />
                                 </button>
                               </>
                             )}

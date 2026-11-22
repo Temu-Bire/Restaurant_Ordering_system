@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Banknote, CreditCard, Smartphone, Printer, PlusCircle } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -79,12 +80,20 @@ export default function PaymentsPage({ role }: { role: "staff" | "admin" }) {
       className: "text-right",
       cell: (p) =>
         p.paid ? (
-          <button onClick={() => window.print()} className="font-semibold text-primary">
-            Print
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+          >
+            <Printer className="size-3.5" />
+            <span>Print</span>
           </button>
         ) : (
-          <button onClick={() => startRecord(p.orderId)} className="font-semibold text-primary">
-            Record
+          <button
+            onClick={() => startRecord(p.orderId)}
+            className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+          >
+            <PlusCircle className="size-3.5" />
+            <span>Record</span>
           </button>
         ),
     },
@@ -118,9 +127,9 @@ export default function PaymentsPage({ role }: { role: "staff" | "admin" }) {
 
       {role === "admin" && (
         <div className="mb-5 grid gap-4 sm:grid-cols-3">
-          <StatCard label="Today (Cash)" value={formatCurrency(totalFor("cash"))} icon="💵" tone="primary" />
-          <StatCard label="Today (Card)" value={formatCurrency(totalFor("card"))} icon="💳" tone="info" />
-          <StatCard label="Today (Mobile)" value={formatCurrency(totalFor("mobile"))} icon="📱" tone="purple" />
+          <StatCard label="Today (Cash)" value={formatCurrency(totalFor("cash"))} icon={<Banknote className="size-6" />} tone="primary" />
+          <StatCard label="Today (Card)" value={formatCurrency(totalFor("card"))} icon={<CreditCard className="size-6" />} tone="info" />
+          <StatCard label="Today (Mobile)" value={formatCurrency(totalFor("mobile"))} icon={<Smartphone className="size-6" />} tone="purple" />
         </div>
       )}
 

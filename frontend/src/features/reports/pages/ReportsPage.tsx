@@ -1,4 +1,22 @@
 import { useState, useEffect } from "react";
+import {
+  Banknote,
+  Receipt,
+  Package,
+  Star,
+  Truck,
+  Download,
+  Printer,
+  Utensils,
+  BarChart3,
+  CheckCircle2,
+  Zap,
+  XCircle,
+  Trash2,
+  AlertTriangle,
+  MapPin,
+  ShoppingBag,
+} from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -127,11 +145,11 @@ export default function ReportsPage() {
   ];
 
   const reportTabs: { value: ReportTab; label: string }[] = [
-    { value: "sales", label: "💰 Sales Reports" },
-    { value: "orders", label: "🧾 Order Reports" },
-    { value: "inventory", label: "📦 Inventory Reports" },
-    { value: "popular", label: "⭐ Popular Items" },
-    { value: "delivery", label: "🛵 Delivery Reports" },
+    { value: "sales", label: "Sales Reports" },
+    { value: "orders", label: "Order Reports" },
+    { value: "inventory", label: "Inventory Reports" },
+    { value: "popular", label: "Popular Items" },
+    { value: "delivery", label: "Delivery Reports" },
   ];
 
   return (
@@ -149,11 +167,24 @@ export default function ReportsPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={exportCSV} disabled={!data || loading}>
-              📥 Export CSV
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={exportCSV}
+              disabled={!data || loading}
+              className="inline-flex items-center gap-1.5"
+            >
+              <Download className="size-4" />
+              <span>Export CSV</span>
             </Button>
-            <Button variant="outline" size="sm" className="print:hidden" onClick={() => window.print()}>
-              🖨 Print / PDF
+            <Button
+              variant="outline"
+              size="sm"
+              className="print:hidden inline-flex items-center gap-1.5"
+              onClick={() => window.print()}
+            >
+              <Printer className="size-4" />
+              <span>Print / PDF</span>
             </Button>
           </div>
         </div>
@@ -282,25 +313,25 @@ export default function ReportsPage() {
                 <StatCard
                   label="Paid Revenue (Verified)"
                   value={formatCurrencyWhole(data.sales.paidRevenue)}
-                  icon="💰"
+                  icon={<Banknote className="size-6" />}
                   tone="primary"
                 />
                 <StatCard
                   label="Food & Beverage Sales"
                   value={formatCurrencyWhole(data.sales.foodSales)}
-                  icon="🍽"
+                  icon={<Utensils className="size-6" />}
                   tone="success"
                 />
                 <StatCard
                   label="Delivery Fees Collected"
                   value={formatCurrencyWhole(data.sales.deliveryFeesCollected)}
-                  icon="🛵"
+                  icon={<Truck className="size-6" />}
                   tone="info"
                 />
                 <StatCard
                   label="Average Order Value"
                   value={formatCurrency(data.sales.averageOrderValue)}
-                  icon="📊"
+                  icon={<BarChart3 className="size-6" />}
                   tone="purple"
                 />
               </div>
@@ -361,10 +392,10 @@ export default function ReportsPage() {
           {activeTab === "orders" && (
             <>
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                <StatCard label="Total Orders" value={data.orders.totalOrders} icon="🧾" tone="info" />
-                <StatCard label="Completed Orders" value={data.orders.completedOrders} icon="✅" tone="success" />
-                <StatCard label="Pending Orders" value={data.orders.pendingOrders} icon="⚡" tone="primary" />
-                <StatCard label="Cancelled Orders" value={data.orders.cancelledOrders} icon="✕" tone="danger" />
+                <StatCard label="Total Orders" value={data.orders.totalOrders} icon={<Receipt className="size-6" />} tone="info" />
+                <StatCard label="Completed Orders" value={data.orders.completedOrders} icon={<CheckCircle2 className="size-6" />} tone="success" />
+                <StatCard label="Pending Orders" value={data.orders.pendingOrders} icon={<Zap className="size-6" />} tone="primary" />
+                <StatCard label="Cancelled Orders" value={data.orders.cancelledOrders} icon={<XCircle className="size-6" />} tone="danger" />
               </div>
 
               <div className="grid items-start gap-6 lg:grid-cols-2">
@@ -387,8 +418,23 @@ export default function ReportsPage() {
                   <div className="space-y-3">
                     {data.orders.byType.map((t) => (
                       <div key={t.type} className="flex justify-between items-center py-2.5 border-b border-border/50 text-xs">
-                        <span className="font-bold text-foreground capitalize text-sm">
-                          {t.type === "dine-in" ? "🍽 Dine-in" : t.type === "takeaway" ? "🥡 Takeaway" : "🛵 Delivery"}
+                        <span className="font-bold text-foreground capitalize text-sm inline-flex items-center gap-1.5">
+                          {t.type === "dine-in" ? (
+                            <>
+                              <Utensils className="size-4 text-primary" />
+                              <span>Dine-in</span>
+                            </>
+                          ) : t.type === "takeaway" ? (
+                            <>
+                              <ShoppingBag className="size-4 text-amber-500" />
+                              <span>Takeaway</span>
+                            </>
+                          ) : (
+                            <>
+                              <Truck className="size-4 text-blue-500" />
+                              <span>Delivery</span>
+                            </>
+                          )}
                         </span>
                         <span className="font-bold font-mono text-primary text-sm">
                           {t.count} orders
@@ -408,25 +454,25 @@ export default function ReportsPage() {
                 <StatCard
                   label="Total Stock Valuation"
                   value={formatCurrencyWhole(data.inventory.totalInventoryValue)}
-                  icon="💰"
+                  icon={<Banknote className="size-6" />}
                   tone="primary"
                 />
                 <StatCard
                   label="Stock Received Value"
                   value={formatCurrencyWhole(data.inventory.stockReceivedValue)}
-                  icon="📦"
+                  icon={<Package className="size-6" />}
                   tone="success"
                 />
                 <StatCard
                   label="Waste / Spoilage Loss"
                   value={formatCurrencyWhole(data.inventory.wasteValue)}
-                  icon="🗑"
+                  icon={<Trash2 className="size-6" />}
                   tone="danger"
                 />
                 <StatCard
                   label="Low / Out of Stock Items"
                   value={`${data.inventory.lowStockCount + data.inventory.outOfStockCount} items`}
-                  icon="⚠️"
+                  icon={<AlertTriangle className="size-6" />}
                   tone="primary"
                 />
               </div>
@@ -508,7 +554,16 @@ export default function ReportsPage() {
           {/* ───────────────────────── TAB 4: POPULAR ITEMS ───────────────────────── */}
           {activeTab === "popular" && (
             <div className="grid items-start gap-6 lg:grid-cols-2">
-              <Card title="Top 10 Best-Selling Menu Items" className="rounded-2xl shadow-xs">
+              <Card
+                title="Top 10 Best-Selling Menu Items"
+                action={
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-500">
+                    <Star className="size-3.5 fill-amber-500" />
+                    <span>Best Sellers</span>
+                  </span>
+                }
+                className="rounded-2xl shadow-xs"
+              >
                 <div className="space-y-3">
                   {data.popularItems.bestSelling.map((item, idx) => (
                     <div key={item.name} className="flex justify-between items-center py-2.5 border-b border-border/50 text-xs">
@@ -556,19 +611,19 @@ export default function ReportsPage() {
                 <StatCard
                   label="Total Delivery Orders"
                   value={data.delivery.totalDeliveryOrders}
-                  icon="🛵"
+                  icon={<Truck className="size-6" />}
                   tone="primary"
                 />
                 <StatCard
                   label="Delivery Fees Collected"
                   value={formatCurrencyWhole(data.delivery.deliveryFeesCollected)}
-                  icon="💰"
+                  icon={<Banknote className="size-6" />}
                   tone="success"
                 />
                 <StatCard
                   label="Average Courier Distance"
                   value={`${data.delivery.averageDistanceKm} km`}
-                  icon="📍"
+                  icon={<MapPin className="size-6" />}
                   tone="info"
                 />
               </div>

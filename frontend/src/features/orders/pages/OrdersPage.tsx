@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AlertCircle, X } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -134,8 +135,13 @@ export default function OrdersPage({ role }: { role: "staff" | "admin" }) {
 
       {errorMessage && (
         <div className="mb-4 flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-xs font-medium text-danger">
-          <span>⚠ {errorMessage}</span>
-          <button onClick={() => setErrorMessage("")} className="hover:opacity-75">✕</button>
+          <span className="flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            {errorMessage}
+          </span>
+          <button onClick={() => setErrorMessage("")} className="hover:opacity-75" aria-label="Dismiss error">
+            <X className="size-4" />
+          </button>
         </div>
       )}
 

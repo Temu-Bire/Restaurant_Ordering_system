@@ -1,4 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
+import { CheckCircle2 } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Button from "../../../shared/components/ui/Button";
@@ -93,7 +94,12 @@ function RestaurantInfoForm({ initial, onSave }: { initial: Settings; onSave: (p
 
         <div className="flex items-center gap-3">
           <Button type="submit">Save</Button>
-          {saved && <span className="text-[13px] text-success">Settings saved.</span>}
+          {saved && (
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-success">
+              <CheckCircle2 className="size-4" />
+              <span>Settings saved.</span>
+            </span>
+          )}
         </div>
       </form>
     </Card>
@@ -205,7 +211,12 @@ function OperationsForm({ initial, onSave }: { initial: Settings; onSave: (p: Pa
 
         <div className="flex items-center gap-3">
           <Button type="submit">Save</Button>
-          {saved && <span className="text-[13px] text-success">Settings saved.</span>}
+          {saved && (
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-success">
+              <CheckCircle2 className="size-4" />
+              <span>Settings saved.</span>
+            </span>
+          )}
         </div>
       </form>
     </Card>

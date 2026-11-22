@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Plus, Pencil, Trash2, AlertCircle } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -108,17 +109,17 @@ export default function UsersPage() {
           <button
             onClick={() => setEditing(u)}
             aria-label={`Edit ${u.name}`}
-            className="hover:text-foreground"
+            className="hover:text-foreground transition-colors"
           >
-            ✎
+            <Pencil className="size-4" />
           </button>
           {u.role !== "admin" && (
             <button
               onClick={() => deleteUser(u)}
               aria-label={`Delete ${u.name}`}
-              className="hover:text-danger"
+              className="hover:text-danger transition-colors"
             >
-              🗑
+              <Trash2 className="size-4" />
             </button>
           )}
         </div>
@@ -135,9 +136,10 @@ export default function UsersPage() {
       />
 
       {loadError && (
-        <p className="mb-4 text-[13px] text-danger" role="alert">
-          {loadError}
-        </p>
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs font-semibold text-danger" role="alert">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>{loadError}</span>
+        </div>
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -151,7 +153,10 @@ export default function UsersPage() {
             { value: "admin", label: "Admins" },
           ]}
         />
-        <Button onClick={() => setEditing("new")}>+ Add User</Button>
+        <Button onClick={() => setEditing("new")} className="inline-flex items-center gap-1.5">
+          <Plus className="size-4" />
+          <span>Add User</span>
+        </Button>
       </div>
 
       <Card>

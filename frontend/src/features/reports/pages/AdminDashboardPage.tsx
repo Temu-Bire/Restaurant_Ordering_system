@@ -1,5 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import {
+  BarChart3,
+  Package,
+  AlertTriangle,
+  Zap,
+  Flame,
+  Banknote,
+  Receipt,
+  CheckCircle2,
+  UtensilsCrossed,
+  ShoppingBag,
+  Truck,
+  XCircle,
+} from "lucide-react";
 
 import AreaChart from "../components/AreaChart";
 import PageHeader from "../../../shared/components/layout/PageHeader";
@@ -50,10 +64,16 @@ export default function AdminDashboardPage() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Link to="/admin/reports">
-            <Button size="sm">📊 View Full Admin Reports →</Button>
+            <Button size="sm" className="inline-flex items-center gap-1.5">
+              <BarChart3 className="size-4" />
+              <span>View Full Admin Reports →</span>
+            </Button>
           </Link>
           <Link to="/admin/inventory">
-            <Button variant="secondary" size="sm">📦 Manage Inventory</Button>
+            <Button variant="secondary" size="sm" className="inline-flex items-center gap-1.5">
+              <Package className="size-4" />
+              <span>Manage Inventory</span>
+            </Button>
           </Link>
         </div>
 
@@ -72,9 +92,12 @@ export default function AdminDashboardPage() {
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {inventory.outOfStockCount > 0 && (
             <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-600 dark:text-rose-400 flex items-center justify-between">
-              <div>
-                <p className="font-bold">⚠️ {inventory.outOfStockCount} Items Out of Stock</p>
-                <p className="text-[11px] opacity-80">Immediate restocking required for recipes</p>
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="size-4 shrink-0 text-rose-500 mt-0.5" />
+                <div>
+                  <p className="font-bold">{inventory.outOfStockCount} Items Out of Stock</p>
+                  <p className="text-[11px] opacity-80">Immediate restocking required for recipes</p>
+                </div>
               </div>
               <Link to="/admin/inventory" className="font-bold underline text-xs">
                 Restock →
@@ -84,9 +107,12 @@ export default function AdminDashboardPage() {
 
           {inventory.lowStockCount > 0 && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between">
-              <div>
-                <p className="font-bold">⚡ {inventory.lowStockCount} Items Low on Stock</p>
-                <p className="text-[11px] opacity-80">Approaching minimum reorder threshold</p>
+              <div className="flex items-start gap-2">
+                <Zap className="size-4 shrink-0 text-amber-500 mt-0.5" />
+                <div>
+                  <p className="font-bold">{inventory.lowStockCount} Items Low on Stock</p>
+                  <p className="text-[11px] opacity-80">Approaching minimum reorder threshold</p>
+                </div>
               </div>
               <Link to="/admin/inventory" className="font-bold underline text-xs">
                 Review →
@@ -95,9 +121,12 @@ export default function AdminDashboardPage() {
           )}
 
           <div className="rounded-xl border border-primary/30 bg-primary/10 p-3.5 text-xs text-foreground flex items-center justify-between">
-            <div>
-              <p className="font-bold">🍳 {today.activeOrders} Orders In Progress</p>
-              <p className="text-[11px] text-muted">Kitchen preparation and fulfillment active</p>
+            <div className="flex items-start gap-2">
+              <Flame className="size-4 shrink-0 text-primary mt-0.5" />
+              <div>
+                <p className="font-bold">{today.activeOrders} Orders In Progress</p>
+                <p className="text-[11px] text-muted">Kitchen preparation and fulfillment active</p>
+              </div>
             </div>
             <Link to="/admin/orders" className="font-bold text-primary underline text-xs">
               Live Orders →
@@ -111,27 +140,27 @@ export default function AdminDashboardPage() {
         <StatCard
           label="Today's Paid Revenue"
           value={formatCurrencyWhole(today.paidRevenue)}
-          icon="💰"
+          icon={<Banknote className="size-6" />}
           tone="primary"
           trend={{ value: `${report.revenueTrend}%`, positive: report.revenueTrend >= 0 }}
         />
         <StatCard
           label="Today's Total Orders"
           value={today.totalOrders.toLocaleString("en-US")}
-          icon="🧾"
+          icon={<Receipt className="size-6" />}
           tone="info"
           trend={{ value: `${report.ordersTrend}%`, positive: report.ordersTrend >= 0 }}
         />
         <StatCard
           label="Active Kitchen Orders"
           value={today.activeOrders}
-          icon="🍳"
+          icon={<Flame className="size-6" />}
           tone="purple"
         />
         <StatCard
           label="Completed Orders Today"
           value={today.completedOrders}
-          icon="✅"
+          icon={<CheckCircle2 className="size-6" />}
           tone="success"
         />
       </div>
@@ -163,18 +192,18 @@ export default function AdminDashboardPage() {
               </h4>
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-xl border border-border bg-surface-secondary/40 p-3 text-center">
-                  <span className="text-xl">🍽</span>
-                  <p className="text-xs font-semibold text-muted mt-1">Dine-in</p>
+                  <UtensilsCrossed className="size-5 mx-auto text-primary mb-1" />
+                  <p className="text-xs font-semibold text-muted">Dine-in</p>
                   <p className="text-base font-black text-foreground">{today.ordersByType.dineIn}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-surface-secondary/40 p-3 text-center">
-                  <span className="text-xl">🥡</span>
-                  <p className="text-xs font-semibold text-muted mt-1">Takeaway</p>
+                  <ShoppingBag className="size-5 mx-auto text-amber-500 mb-1" />
+                  <p className="text-xs font-semibold text-muted">Takeaway</p>
                   <p className="text-base font-black text-foreground">{today.ordersByType.takeaway}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-surface-secondary/40 p-3 text-center">
-                  <span className="text-xl">🛵</span>
-                  <p className="text-xs font-semibold text-muted mt-1">Delivery</p>
+                  <Truck className="size-5 mx-auto text-blue-500 mb-1" />
+                  <p className="text-xs font-semibold text-muted">Delivery</p>
                   <p className="text-base font-black text-foreground">{today.ordersByType.delivery}</p>
                 </div>
               </div>
@@ -309,13 +338,19 @@ export default function AdminDashboardPage() {
               <ul className="space-y-2 text-xs">
                 {inventory.outOfStockItems.map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-rose-500">
-                    <span className="font-bold truncate max-w-[160px]">✕ {item.name}</span>
+                    <span className="font-bold truncate max-w-[160px] inline-flex items-center gap-1.5">
+                      <XCircle className="size-3.5 shrink-0" />
+                      <span>{item.name}</span>
+                    </span>
                     <span className="font-bold">OUT OF STOCK</span>
                   </li>
                 ))}
                 {inventory.lowStockItems.slice(0, 4).map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-amber-600 dark:text-amber-400">
-                    <span className="font-semibold truncate max-w-[160px]">⚠️ {item.name}</span>
+                    <span className="font-semibold truncate max-w-[160px] inline-flex items-center gap-1.5">
+                      <AlertTriangle className="size-3.5 shrink-0" />
+                      <span>{item.name}</span>
+                    </span>
                     <span>{item.stock} / {item.min} {item.unit}</span>
                   </li>
                 ))}

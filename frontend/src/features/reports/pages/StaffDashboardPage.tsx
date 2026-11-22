@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Zap, Flame, Utensils, Truck, CheckCircle2, AlertTriangle } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Card from "../../../shared/components/ui/Card";
@@ -105,7 +106,7 @@ export default function StaffDashboardPage() {
       {(stockAlerts.outOfStock.length > 0 || stockAlerts.lowStock.length > 0) && (
         <div className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs font-semibold text-amber-700 dark:text-amber-400 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span>⚠️</span>
+            <AlertTriangle className="size-4 shrink-0 text-amber-600" />
             <div>
               <span className="font-bold">Kitchen Supply Notice: </span>
               {stockAlerts.outOfStock.length > 0 && (
@@ -132,31 +133,31 @@ export default function StaffDashboardPage() {
           label="Action Required"
           value={counts.actionRequired}
           tone="primary"
-          icon="⚡"
+          icon={<Zap className="size-5" />}
         />
         <StatCard
           label="In Preparation"
           value={counts.preparing}
           tone="purple"
-          icon="🍳"
+          icon={<Flame className="size-5" />}
         />
         <StatCard
           label="Ready for Serving"
           value={counts.readyForServingOrPickup}
           tone="info"
-          icon="🍽"
+          icon={<Utensils className="size-5" />}
         />
         <StatCard
           label="Awaiting Handover"
           value={counts.awaitingDeliveryHandover}
           tone="primary"
-          icon="🛵"
+          icon={<Truck className="size-5" />}
         />
         <StatCard
           label="Completed Today"
           value={counts.completedToday}
           tone="success"
-          icon="✅"
+          icon={<CheckCircle2 className="size-5" />}
         />
       </div>
 
