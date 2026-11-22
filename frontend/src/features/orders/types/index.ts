@@ -22,9 +22,16 @@ export type OrderType = "dine-in" | "takeaway" | "delivery";
 export type PaymentMethod = "cash" | "card" | "mobile";
 
 export interface OrderLine {
+  id?: string; // orderItemId
+  foodId?: string;
   name: string;
   quantity: number;
   price: number;
+  review?: {
+    id: string;
+    rating: number;
+    comment?: string | null;
+  } | null;
 }
 
 export interface Order {

@@ -9,6 +9,8 @@ export interface FoodItem {
   gradient?: string;
   available: boolean;
   imageUrl?: string | null;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export const CATEGORIES: { value: Category; label: string }[] = [

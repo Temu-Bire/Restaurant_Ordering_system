@@ -15,6 +15,8 @@ export interface ApiFood {
   isAvailable: boolean;
   categoryId: string;
   category: ApiCategory;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export async function listCategories(): Promise<ApiCategory[]> {
@@ -98,5 +100,7 @@ export function mapApiFoodToFoodItem(f: ApiFood): import("../types").FoodItem {
     gradient: "from-orange-400 to-orange-600",
     available: f.isAvailable,
     imageUrl: f.imageUrl ? f.imageUrl.replace(/^http:\/\/localhost:3000/, "") : "/default-food.png",
+    rating: f.rating ?? 0,
+    reviewCount: f.reviewCount ?? 0,
   };
 }
