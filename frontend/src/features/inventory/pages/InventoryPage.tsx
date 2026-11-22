@@ -26,6 +26,7 @@ import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
 import FilterTabs from "../../../shared/components/ui/FilterTabs";
 import Select from "../../../shared/components/ui/Select";
+import ConfirmDialog from "../../../shared/components/ui/ConfirmDialog";
 import StatCard from "../../../shared/components/ui/StatCard";
 import RecipeEditor from "../components/RecipeEditor";
 import StockBar from "../components/StockBar";
@@ -74,6 +75,7 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
   // Modals state
   const [itemFormOpen, setItemFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Ingredient | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<Ingredient | null>(null);
   const [actionItem, setActionItem] = useState<{ item: Ingredient; mode: StockActionMode } | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedIngredientForHistory, setSelectedIngredientForHistory] = useState<string | undefined>(undefined);
@@ -151,16 +153,22 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
     setTimeout(() => setNotice(""), 3000);
   }
 
-  async function handleDelete(item: Ingredient) {
-    if (!window.confirm(`Delete ${item.name}? This will remove it from inventory.`)) return;
+  function handleDelete(item: Ingredient) {
+    setItemToDelete(item);
+  }
+
+  async function confirmDeleteItem() {
+    if (!itemToDelete) return;
     try {
-      await deleteIngredient(item.id);
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-      setNotice(`Deleted ${item.name}`);
+      await deleteIngredient(itemToDelete.id);
+      setItems((prev) => prev.filter((i) => i.id !== itemToDelete.id));
+      setNotice(`Deleted ${itemToDelete.name}`);
       setTimeout(() => setNotice(""), 3000);
     } catch (err: unknown) {
       setErrorNotice(err instanceof Error ? err.message : "Failed to delete item");
       setTimeout(() => setErrorNotice(""), 4000);
+    } finally {
+      setItemToDelete(null);
     }
   }
 
@@ -288,7 +296,7 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
         <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
           <input
             type="text"
-            placeholder="Search items, SKU, or storage location..."
+            placeholder="Search inventory..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-64 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-hidden focus:ring-1 focus:ring-primary shadow-xs"
@@ -593,6 +601,15 @@ export default function InventoryPage({ role }: { role: "staff" | "admin" }) {
         ingredientId={selectedIngredientForHistory}
         onClose={() => setHistoryOpen(false)}
       />
+
+      {itemToDelete && (
+        <ConfirmDialog
+          title="Delete Inventory Item"
+          message={`Are you sure you want to delete ${itemToDelete.name}? This will permanently remove it from inventory.`}
+          onConfirm={confirmDeleteItem}
+          onCancel={() => setItemToDelete(null)}
+        />
+      )}
     </>
   );
 }

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { AlertTriangle, Info } from "lucide-react";
 import Button from "../../../shared/components/ui/Button";
 import Input from "../../../shared/components/ui/Input";
 import Modal from "../../../shared/components/ui/Modal";
 import Select from "../../../shared/components/ui/Select";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type {
   CreateInventoryItemInput,
   Ingredient,
@@ -25,6 +27,7 @@ export default function ItemFormModal({
   onClose,
   onSave,
 }: ItemFormModalProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [category, setCategory] = useState<InventoryCategory>("ingredients");
   const [sku, setSku] = useState("");
@@ -120,11 +123,11 @@ export default function ItemFormModal({
   }
 
   const categoryOptions = [
-    { value: "ingredients", label: "🥕 Ingredients" },
-    { value: "beverages", label: "🥤 Beverages" },
-    { value: "dry_goods", label: "🌾 Dry Goods" },
-    { value: "packaging", label: "📦 Packaging" },
-    { value: "supplies", label: "🧹 Supplies" },
+    { value: "ingredients", label: "Ingredients" },
+    { value: "beverages", label: "Beverages" },
+    { value: "dry_goods", label: "Dry Goods" },
+    { value: "packaging", label: "Packaging" },
+    { value: "supplies", label: "Supplies" },
   ];
 
   const unitOptions = [
@@ -147,8 +150,9 @@ export default function ItemFormModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4 max-h-[78vh] overflow-y-auto px-1">
         {error && (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500">
-            ⚠ {error}
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500 flex items-center gap-2">
+            <AlertTriangle className="size-4 shrink-0 text-rose-500" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -156,7 +160,7 @@ export default function ItemFormModal({
           <Input
             id="item-name"
             label="Item Name *"
-            placeholder="e.g. Flour, Coffee Beans, Olive Oil"
+            placeholder="e.g. Teff Flour"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -172,8 +176,8 @@ export default function ItemFormModal({
         <div className="grid grid-cols-2 gap-3">
           <Input
             id="item-sku"
-            label="SKU / Item Code"
-            placeholder="Auto-generated if left blank"
+            label="SKU Code"
+            placeholder="Auto-generated if blank"
             value={sku}
             onChange={(e) => setSku(e.target.value)}
           />
@@ -230,8 +234,9 @@ export default function ItemFormModal({
         </div>
 
         {isStaff && isEdit && (
-          <p className="text-[11px] text-muted italic">
-            ℹ️ Staff permissions allow editing name, category, and storage location. Threshold and cost modifications require Admin role.
+          <p className="text-[11px] text-muted italic flex items-center gap-1.5">
+            <Info className="size-3.5 text-info shrink-0" />
+            <span>Staff permissions allow editing name, category, and storage location. Threshold and cost modifications require Admin role.</span>
           </p>
         )}
 
@@ -246,7 +251,7 @@ export default function ItemFormModal({
           <Input
             id="item-location"
             label="Storage Location (Optional)"
-            placeholder="e.g. Walk-in Cooler, Dry Shelf 3"
+            placeholder="e.g. Walk-in Cooler"
             value={storageLocation}
             onChange={(e) => setStorageLocation(e.target.value)}
           />
@@ -275,17 +280,17 @@ export default function ItemFormModal({
                 onChange={() => setStatus("inactive")}
                 className="text-primary"
               />
-              Inactive / Disabled
+              Inactive
             </label>
           </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-3 border-t border-border">
           <Button variant="secondary" type="button" onClick={onClose} disabled={saving}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Item"}
+            {saving ? "Saving..." : isEdit ? t("save") : t("create")}
           </Button>
         </div>
       </form>

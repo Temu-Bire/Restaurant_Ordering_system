@@ -54,14 +54,14 @@ function TableFormModal({ table, onClose, onSave }: TableFormProps) {
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Input
           id="tname"
-          label="Table Name / Number *"
-          placeholder="Table 9"
+          label="Table Name *"
+          placeholder="e.g. Table 9"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <Input
           id="tseats"
-          label="Seating Capacity (Guests) *"
+          label="Seating Capacity *"
           type="number"
           min={1}
           value={seats}
@@ -70,8 +70,8 @@ function TableFormModal({ table, onClose, onSave }: TableFormProps) {
         />
         <Input
           id="tsection"
-          label="Section / Location (Optional)"
-          placeholder="e.g. Main Dining, Balcony, Window Side"
+          label="Section (Optional)"
+          placeholder="e.g. Main Dining"
           value={section}
           onChange={(e) => setSection(e.target.value)}
         />

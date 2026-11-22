@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 
 import Button from "../../../shared/components/ui/Button";
 import Card from "../../../shared/components/ui/Card";
@@ -80,7 +81,7 @@ function RecipeForm({ ingredients, saved, onSave }: RecipeFormProps) {
               aria-label={`Remove ${nameOf(line.ingredientId)}`}
               className="text-muted hover:text-danger"
             >
-              ✕
+              <X className="size-4" />
             </button>
           </li>
         ))}

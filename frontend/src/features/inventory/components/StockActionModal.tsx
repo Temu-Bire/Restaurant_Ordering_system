@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import Button from "../../../shared/components/ui/Button";
 import Input from "../../../shared/components/ui/Input";
 import Modal from "../../../shared/components/ui/Modal";
 import Select from "../../../shared/components/ui/Select";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type { Ingredient } from "../types";
 
 export type StockActionMode = "receive" | "waste" | "count" | "adjust";
@@ -28,6 +30,7 @@ export default function StockActionModal({
   onCount,
   onAdjust,
 }: StockActionModalProps) {
+  const { t } = useTranslation();
   const [quantity, setQuantity] = useState("");
   const [costPerUnit, setCostPerUnit] = useState(String(item.unitCost || ""));
   const [wasteReason, setWasteReason] = useState("Expired");
@@ -101,25 +104,26 @@ export default function StockActionModal({
 
   const titles: Record<StockActionMode, string> = {
     receive: `Receive Stock: ${item.name}`,
-    waste: `Record Waste / Spoilage: ${item.name}`,
-    count: `Physical Stock Count: ${item.name}`,
-    adjust: `Manual Stock Correction: ${item.name}`,
+    waste: `Record Waste: ${item.name}`,
+    count: `Physical Count: ${item.name}`,
+    adjust: `Stock Correction: ${item.name}`,
   };
 
   const wasteReasonOptions = [
-    { value: "Expired", label: "⏰ Expired / Past Shelf Life" },
-    { value: "Spoilage / Rot", label: "🍂 Spoilage / Rot" },
-    { value: "Spillage / Accident", label: "💧 Spillage / Kitchen Accident" },
-    { value: "Damage / Handling", label: "📦 Packaging or Handling Damage" },
-    { value: "Quality Defect", label: "🚫 Failed Quality Standards" },
+    { value: "Expired", label: "Expired" },
+    { value: "Spoilage", label: "Spoilage" },
+    { value: "Spillage", label: "Spillage" },
+    { value: "Damaged", label: "Damaged" },
+    { value: "Quality Defect", label: "Quality Defect" },
   ];
 
   return (
     <Modal open={open} onClose={onClose} title={titles[mode]}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-500">
-            ⚠ {error}
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-500 flex items-center gap-2">
+            <AlertTriangle className="size-4 shrink-0 text-rose-500" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -127,7 +131,7 @@ export default function StockActionModal({
         <div className="flex items-center justify-between rounded-xl border border-border bg-surface-secondary/40 p-3 text-xs">
           <div>
             <span className="font-bold text-foreground block">{item.name}</span>
-            <span className="text-muted">SKU: {item.sku} · Category: {item.category}</span>
+            <span className="text-muted">SKU: {item.sku || "N/A"} · Category: {item.category}</span>
           </div>
           <div className="text-right">
             <span className="text-muted block">Current Stock</span>
@@ -165,7 +169,7 @@ export default function StockActionModal({
             <Input
               id="receive-notes"
               label="Receiving Notes (Optional)"
-              placeholder="e.g. Fresh shipment delivered to pantry"
+              placeholder="e.g. Fresh shipment delivered"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -177,7 +181,7 @@ export default function StockActionModal({
           <div className="space-y-3">
             <Input
               id="waste-qty"
-              label={`Quantity Wasted / Spoiled (${item.unit}) *`}
+              label={`Quantity Wasted (${item.unit}) *`}
               type="number"
               step="0.01"
               min="0.01"
@@ -197,8 +201,8 @@ export default function StockActionModal({
 
             <Input
               id="waste-notes"
-              label="Detailed Notes (Optional)"
-              placeholder="e.g. Discovered mold in cold room batch"
+              label="Notes (Optional)"
+              placeholder="e.g. Discarded during morning inspection"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -210,36 +214,38 @@ export default function StockActionModal({
           <div className="space-y-3">
             <Input
               id="count-qty"
-              label={`Physical Counted Stock (${item.unit}) *`}
+              label={`Physically Counted Stock (${item.unit}) *`}
               type="number"
               step="0.01"
               min="0"
-              placeholder="Enter actual physical count"
+              placeholder={`Current: ${currentStock}`}
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
             />
 
-            {quantity !== "" && (
-              <div className="rounded-xl border border-border bg-surface-secondary/50 p-2.5 text-xs flex justify-between items-center">
-                <span className="text-muted">Stock Variance:</span>
-                <span
-                  className={`font-mono font-bold ${
-                    variance > 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : variance < 0
-                      ? "text-rose-500"
-                      : "text-foreground"
-                  }`}
-                >
-                  {variance > 0 ? `+${variance.toFixed(2)}` : variance.toFixed(2)} {item.unit}
-                </span>
+            {quantity.trim() !== "" && !Number.isNaN(countedNum) && (
+              <div className="rounded-xl border border-border bg-surface-secondary/50 p-3 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted">Recorded:</span>
+                  <span className="font-bold">{currentStock} {item.unit}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Counted:</span>
+                  <span className="font-bold">{countedNum} {item.unit}</span>
+                </div>
+                <div className="flex justify-between border-t border-border mt-1.5 pt-1.5 font-bold">
+                  <span>Variance:</span>
+                  <span className={variance >= 0 ? "text-emerald-500" : "text-rose-500"}>
+                    {variance > 0 ? `+${variance}` : variance} {item.unit}
+                  </span>
+                </div>
               </div>
             )}
 
             <Input
               id="count-notes"
               label="Audit Notes (Optional)"
-              placeholder="e.g. Weekly inventory count by kitchen lead"
+              placeholder="e.g. Monthly physical inventory"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
@@ -251,10 +257,11 @@ export default function StockActionModal({
           <div className="space-y-3">
             <Input
               id="adjust-qty"
-              label={`New Corrected Stock (${item.unit}) *`}
+              label={`Corrected Stock Level (${item.unit}) *`}
               type="number"
               step="0.01"
               min="0"
+              placeholder={`Current: ${currentStock}`}
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
             />
@@ -262,7 +269,7 @@ export default function StockActionModal({
             <Input
               id="adjust-reason"
               label="Correction Reason *"
-              placeholder="e.g. Correction after reconciliation"
+              placeholder="e.g. Audit correction"
               value={adjustmentReason}
               onChange={(e) => setAdjustmentReason(e.target.value)}
             />
@@ -271,10 +278,10 @@ export default function StockActionModal({
 
         <div className="flex justify-end gap-2 pt-3 border-t border-border">
           <Button variant="secondary" type="button" onClick={onClose} disabled={saving}>
-            Cancel
+            {t("cancel")}
           </Button>
           <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Confirm Movement"}
+            {saving ? "Saving..." : t("confirm")}
           </Button>
         </div>
       </form>

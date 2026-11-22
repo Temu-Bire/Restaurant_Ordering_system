@@ -4,6 +4,7 @@ import Button from "../../../shared/components/ui/Button";
 import Modal from "../../../shared/components/ui/Modal";
 import Select from "../../../shared/components/ui/Select";
 import { formatTimeAgo } from "../../../shared/utils/formatTimeAgo";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import { listStockMovements } from "../api/inventoryApi";
 import {
   MOVEMENT_TYPE_LABEL,
@@ -22,6 +23,7 @@ export default function StockMovementHistoryModal({
   ingredientId,
   onClose,
 }: StockMovementHistoryModalProps) {
+  const { t } = useTranslation();
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -51,11 +53,11 @@ export default function StockMovementHistoryModal({
 
   const typeOptions = [
     { value: "all", label: "All Movement Types" },
-    { value: "RECEIVE", label: "📦 Stock Received" },
-    { value: "WASTE", label: "🗑 Waste / Spoilage" },
-    { value: "COUNT", label: "📋 Physical Count" },
-    { value: "ADJUSTMENT", label: "🔧 Manual Correction" },
-    { value: "ORDER_CONSUMPTION", label: "🍲 Order Prepared" },
+    { value: "RECEIVE", label: "Stock Received" },
+    { value: "WASTE", label: "Waste Recorded" },
+    { value: "COUNT", label: "Physical Count" },
+    { value: "ADJUSTMENT", label: "Manual Correction" },
+    { value: "ORDER_CONSUMPTION", label: "Order Prepared" },
   ];
 
   const q = search.trim().toLowerCase();
@@ -70,7 +72,7 @@ export default function StockMovementHistoryModal({
   const badgeVariantForType: Record<MovementType, BadgeVariant> = {
     RECEIVE: "ok",
     WASTE: "low",
-    COUNT: "info" as any,
+    COUNT: "confirmed",
     ADJUSTMENT: "pending",
     ORDER_CONSUMPTION: "neutral",
   };
@@ -82,7 +84,7 @@ export default function StockMovementHistoryModal({
         <div className="flex flex-col sm:flex-row gap-2.5 items-center justify-between">
           <input
             type="text"
-            placeholder="Search by item, reason, or staff..."
+            placeholder="Search movements..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-64 rounded-xl border border-border bg-surface px-3 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-hidden focus:ring-1 focus:ring-primary"
@@ -106,7 +108,7 @@ export default function StockMovementHistoryModal({
                 <th className="py-2.5 px-3">Item</th>
                 <th className="py-2.5 px-3">Type</th>
                 <th className="py-2.5 px-3">Change</th>
-                <th className="py-2.5 px-3">Prev / New</th>
+                <th className="py-2.5 px-3">Previous to New</th>
                 <th className="py-2.5 px-3">Reason & User</th>
                 <th className="py-2.5 px-3 text-right">Time</th>
               </tr>
@@ -115,7 +117,7 @@ export default function StockMovementHistoryModal({
               {loading ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-muted">
-                    Loading stock movement logs...
+                    {t("loading")}
                   </td>
                 </tr>
               ) : visible.length === 0 ? (
@@ -176,7 +178,7 @@ export default function StockMovementHistoryModal({
 
         <div className="flex justify-end pt-2 border-t border-border">
           <Button variant="secondary" onClick={onClose}>
-            Close
+            {t("close")}
           </Button>
         </div>
       </div>
