@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "../../../lib/cn";
 
 type Tone = "primary" | "success" | "info" | "purple" | "danger";
@@ -27,7 +28,7 @@ export default function StatCard({
   trend,
 }: StatCardProps) {
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-border bg-surface p-5">
+    <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-5 shadow-xs">
       <div
         className={cn(
           "flex size-12 shrink-0 items-center justify-center rounded-xl text-lg",
@@ -43,11 +44,16 @@ export default function StatCard({
         {trend && (
           <p
             className={cn(
-              "mt-0.5 text-xs font-medium",
+              "mt-1 inline-flex items-center gap-1 text-xs font-semibold",
               trend.positive ? "text-success" : "text-danger"
             )}
           >
-            {trend.positive ? "▲" : "▼"} {trend.value}
+            {trend.positive ? (
+              <TrendingUp className="size-3.5" />
+            ) : (
+              <TrendingDown className="size-3.5" />
+            )}
+            <span>{trend.value}</span>
           </p>
         )}
       </div>
