@@ -148,12 +148,7 @@ export default function HeroSection() {
       </button>
 
       {/* Hero Content */}
-      <div className="relative z-10 mx-auto max-w-4xl px-8 sm:px-14 text-center py-20 lg:py-28 space-y-6">
-        {/* Dynamic Tag Badge with Smooth Fade */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/20 px-4 py-1.5 text-xs font-semibold text-orange-300 backdrop-blur-sm transition-all duration-300">
-          <span>✨</span>
-          <span>Authentic Ethiopian Cuisine · {activeSlideData.tag}</span>
-        </div>
+      <div className="relative z-10 mx-auto max-w-4xl px-8 sm:px-14 text-center py-20 lg:py-28 space-y-6">        
 
         <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.1] text-white drop-shadow-md">
           Experience the{" "}
@@ -204,9 +199,7 @@ export default function HeroSection() {
                 />
               );
             })}
-            <span className="text-[11px] font-semibold text-stone-300 pl-1">
-              0{currentSlide + 1} / 0{HERO_SLIDES.length}
-            </span>
+            
           </div>
 
           <p className="text-xs text-orange-200 font-medium drop-shadow transition-all duration-300 max-w-md">
