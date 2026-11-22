@@ -184,7 +184,7 @@ export default function ReportsPage() {
               onClick={() => window.print()}
             >
               <Printer className="size-4" />
-              <span>Print / PDF</span>
+              <span>Print Report</span>
             </Button>
           </div>
         </div>
@@ -464,13 +464,13 @@ export default function ReportsPage() {
                   tone="success"
                 />
                 <StatCard
-                  label="Waste / Spoilage Loss"
+                  label="Waste Loss"
                   value={formatCurrencyWhole(data.inventory.wasteValue)}
                   icon={<Trash2 className="size-6" />}
                   tone="danger"
                 />
                 <StatCard
-                  label="Low / Out of Stock Items"
+                  label="Low or Out of Stock Items"
                   value={`${data.inventory.lowStockCount + data.inventory.outOfStockCount} items`}
                   icon={<AlertTriangle className="size-6" />}
                   tone="primary"
@@ -523,7 +523,7 @@ export default function ReportsPage() {
                         <th className="py-2.5 px-3">Movement Type</th>
                         <th className="py-2.5 px-3">Quantity Changed</th>
                         <th className="py-2.5 px-3">Reason</th>
-                        <th className="py-2.5 px-3">Staff / System</th>
+                        <th className="py-2.5 px-3">Staff or System</th>
                         <th className="py-2.5 px-3 text-right">Date</th>
                       </tr>
                     </thead>

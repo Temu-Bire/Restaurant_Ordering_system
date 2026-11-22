@@ -301,7 +301,7 @@ export default function AdminDashboardPage() {
                 <span className="font-bold text-foreground">{delivery.totalToday}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-border">
-                <span className="text-muted">Active Couriers / Deliveries:</span>
+                <span className="text-muted">Active Deliveries:</span>
                 <span className="font-bold text-primary">{delivery.activeDeliveries}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-border">

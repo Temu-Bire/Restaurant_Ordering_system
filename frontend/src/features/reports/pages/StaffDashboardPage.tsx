@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Zap, Flame, Utensils, Truck, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Zap, Flame, Utensils, Truck, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Card from "../../../shared/components/ui/Card";
@@ -97,8 +97,9 @@ export default function StaffDashboardPage() {
       />
 
       {tableNotice && (
-        <div className="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
-          ✓ {tableNotice}
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-semibold text-success">
+          <CheckCircle2 className="size-4 shrink-0" />
+          <span>{tableNotice}</span>
         </div>
       )}
 
@@ -252,18 +253,20 @@ export default function StaffDashboardPage() {
                           <button
                             type="button"
                             onClick={() => handleQuickTableAction(tbl.id, "cleaning")}
-                            className="rounded bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 text-[10px] font-bold"
+                            className="inline-flex items-center gap-1 rounded bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 text-[10px] font-bold"
                           >
-                            🧹 Mark Cleaning
+                            <Sparkles className="size-3" />
+                            <span>Mark Cleaning</span>
                           </button>
                         )}
                         {tbl.status === "cleaning" && (
                           <button
                             type="button"
                             onClick={() => handleQuickTableAction(tbl.id, "available")}
-                            className="rounded bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 text-[10px] font-bold"
+                            className="inline-flex items-center gap-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 text-[10px] font-bold"
                           >
-                            ✓ Mark Available
+                            <CheckCircle2 className="size-3" />
+                            <span>Mark Available</span>
                           </button>
                         )}
                       </div>
