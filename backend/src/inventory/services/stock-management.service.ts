@@ -89,7 +89,7 @@ export class StockManagementService {
       const qty = new Prisma.Decimal(dto.quantity);
       if (item.stock.lessThan(qty)) {
         throw new BadRequestException(
-          `Cannot record waste of ${qty} ${item.unit}. Current stock is only ${item.stock} ${item.unit}.`,
+          `Cannot record waste of ${qty.toString()} ${item.unit}. Current stock is only ${item.stock.toString()} ${item.unit}.`,
         );
       }
 

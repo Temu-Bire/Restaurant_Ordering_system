@@ -35,7 +35,8 @@ export class ReceiptService {
           return `R-${retryResult[0].nextval.toString()}`;
         }
       } catch (innerError) {
-        this.logger.warn(`Failed to allocate receipt via database sequence: ${innerError}`);
+        const errorMsg = innerError instanceof Error ? innerError.message : String(innerError);
+        this.logger.warn(`Failed to allocate receipt via database sequence: ${errorMsg}`);
       }
     }
 

@@ -54,11 +54,10 @@ export class AnalyticsService {
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.ingredient.findMany({
-        where: {
-          ...(filters.category && filters.category !== 'all'
+        where:
+          filters.category && filters.category !== 'all'
             ? { category: filters.category.toUpperCase() as any }
-            : {}),
-        },
+            : {},
         orderBy: { name: 'asc' },
       }),
       this.prisma.stockMovement.findMany({
