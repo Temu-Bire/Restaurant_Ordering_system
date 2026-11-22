@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   OrderStatus,
@@ -11,6 +12,7 @@ import {
   TableStatus,
 } from '@prisma/client';
 import { StockManagementService } from '../../inventory/services/stock-management.service.js';
+import { NotificationService } from '../../notifications/notifications.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { HandoverOrderDto } from '../dto/handover-order.dto.js';
 import { UpdateOrderStatusDto } from '../dto/update-order-status.dto.js';
@@ -48,6 +50,7 @@ export class OrderLifecycleService {
     private readonly prisma: PrismaService,
     private readonly orderQuery: OrderQueryService,
     private readonly stockManagement: StockManagementService,
+    @Optional() private readonly notifications?: NotificationService,
   ) {}
 
   async updateStatus(
@@ -121,7 +124,7 @@ export class OrderLifecycleService {
   }
 
   async changeStatus(id: string, targetStatus: OrderStatus): Promise<OrderResponse> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id },
         include: { items: { include: { food: { include: { recipes: true } } } } },
@@ -130,7 +133,7 @@ export class OrderLifecycleService {
 
       if (order.status === targetStatus) {
         const current = await tx.order.findUnique({ where: { id }, include: orderInclude });
-        return toOrderResponse(current!);
+        return current!;
       }
 
       // Validate allowed transitions
@@ -176,7 +179,31 @@ export class OrderLifecycleService {
         include: orderInclude,
       });
 
-      return toOrderResponse(updated);
+      return updated;
     });
+
+    // Post-commit notifications
+    if (this.notifications && result?.customerId) {
+      void this.notifications.createForUser({
+        recipientUserId: result.customerId,
+        title: 'Order Status Update',
+        message: `Your order #${result.number} is now ${targetStatus}.`,
+        type: 'ORDER_STATUS_UPDATE' as any,
+        relatedEntityId: result.id,
+        idempotencyKey: `notif_status_${result.id}_${targetStatus}`,
+      });
+    }
+
+    if (this.notifications && targetStatus === OrderStatus.CANCELLED) {
+      void this.notifications.createForRole(Role.STAFF, {
+        title: 'Order Cancelled',
+        message: `Order #${result.number} was cancelled.`,
+        type: 'ORDER_CANCELLED' as any,
+        relatedEntityId: result.id,
+        idempotencyKey: `notif_cancel_staff_${result.id}`,
+      });
+    }
+
+    return toOrderResponse(result);
   }
 }

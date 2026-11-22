@@ -17,6 +17,7 @@ import { SettingsModule } from './settings/settings.module.js';
 import { TablesModule } from './tables/tables.module.js';
 import { AddressesModule } from './addresses/addresses.module.js';
 import { DeliveryModule } from './delivery/delivery.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { DeliveryModule } from './delivery/delivery.module.js';
     TablesModule,
     OrdersModule,
     PaymentsModule,
+    NotificationsModule,
     InventoryModule,
     ReportsModule,
     AddressesModule,

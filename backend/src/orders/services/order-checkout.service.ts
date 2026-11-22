@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import {
   OrderStatus,
@@ -9,9 +10,11 @@ import {
   PaymentMethod,
   PaymentStatus,
   Prisma,
+  Role,
   TableStatus,
 } from '@prisma/client';
 import { DeliveryService } from '../../delivery/delivery.service.js';
+import { NotificationService } from '../../notifications/notifications.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { SettingsService } from '../../settings/settings.service.js';
 import { TablesService } from '../../tables/tables.service.js';
@@ -34,6 +37,7 @@ export class OrderCheckoutService {
     private readonly settings: SettingsService,
     private readonly delivery: DeliveryService,
     private readonly tables: TablesService,
+    @Optional() private readonly notifications?: NotificationService,
   ) {}
 
   async create(customerId: string, dto: CreateOrderDto): Promise<OrderResponse> {
@@ -55,7 +59,7 @@ export class OrderCheckoutService {
     const totalQuantity = merged.reduce((acc, curr) => acc + curr.quantity, 0);
     const prepTimeMinutes = calculatePrepTimeMinutes(totalQuantity);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const foods = await tx.food.findMany({
         where: { id: { in: foodIds } },
         include: { recipes: true },
@@ -196,7 +200,7 @@ export class OrderCheckoutService {
               method: PaymentMethod.MOBILE,
               status: PaymentStatus.PENDING,
               paid: false,
-              provider: dto.paymentProvider || 'Telebirr',
+              provider: dto.paymentProvider || 'Chapa',
               transactionId: `TXN-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
             },
           },
@@ -204,7 +208,29 @@ export class OrderCheckoutService {
         include: orderInclude,
       });
 
-      return toOrderResponse(order);
+      return order;
     });
+
+    // Post-commit notifications
+    if (this.notifications) {
+      void this.notifications.createForUser({
+        recipientUserId: customerId,
+        title: 'Order Placed',
+        message: `Your order #${result.number} has been placed successfully. Total: ${result.total} ETB.`,
+        type: 'ORDER_CONFIRMATION' as any,
+        relatedEntityId: result.id,
+        idempotencyKey: `notif_order_create_${result.id}`,
+      });
+
+      void this.notifications.createForRole(Role.STAFF, {
+        title: 'New Order Received',
+        message: `New ${result.type.toLowerCase()} order #${result.number} received (${result.total} ETB).`,
+        type: 'NEW_ORDER' as any,
+        relatedEntityId: result.id,
+        idempotencyKey: `notif_new_order_staff_${result.id}`,
+      });
+    }
+
+    return toOrderResponse(result);
   }
 }

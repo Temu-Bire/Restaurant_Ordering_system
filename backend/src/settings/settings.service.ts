@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { OrderType, PaymentMethod, Prisma, Settings } from '@prisma/client';
+import { BadRequestException, Injectable, Optional } from '@nestjs/common';
+import { NotificationType, OrderType, PaymentMethod, Prisma, Role, Settings } from '@prisma/client';
 import { toApiOrderType, toApiPaymentMethod } from '../common/api-enums.js';
+import { NotificationService } from '../notifications/notifications.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { UpdateSettingsDto } from './dto/update-settings.dto.js';
 
@@ -34,7 +35,10 @@ export const toSettingsResponse = (settings: Settings) => {
 
 @Injectable()
 export class SettingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly notifications?: NotificationService,
+  ) {}
 
   async get() {
     const settings = await this.prisma.settings.upsert({
@@ -77,6 +81,15 @@ export class SettingsService {
         mobileEnabled: methods?.includes(PaymentMethod.MOBILE),
       },
     });
+
+    if (this.notifications) {
+      void this.notifications.createForRole(Role.ADMIN, {
+        title: 'System Settings Updated',
+        message: 'Restaurant system configuration was updated.',
+        type: NotificationType.SYSTEM_EVENT,
+        idempotencyKey: `notif_settings_update_${Date.now()}`,
+      });
+    }
 
     return toSettingsResponse(settings);
   }
