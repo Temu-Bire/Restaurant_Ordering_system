@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
-import { UtensilsCrossed, ShoppingBag, Truck, Clock, CheckCircle2, Star } from "lucide-react";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { UtensilsCrossed, ShoppingBag, Truck, Clock, CheckCircle2, Star, CreditCard } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Badge from "../../../shared/components/ui/Badge";
@@ -16,7 +16,7 @@ import {
   type Order,
   type OrderStatus,
 } from "../types";
-import { getOrder, cancelOrder } from "../api/ordersApi";
+import { getOrder, cancelOrder, verifyPayment } from "../api/ordersApi";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 
@@ -24,11 +24,24 @@ const CANCELLABLE: OrderStatus[] = ["pending", "confirmed"];
 
 export default function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useTranslation();
   const [order, setOrder] = useState<Order | null | undefined>(id ? undefined : null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
   const [reviewingLine, setReviewingLine] = useState<OrderLine | null>(null);
+
+  useEffect(() => {
+    const txRef = searchParams.get("tx_ref");
+    if (txRef && id) {
+      void verifyPayment(id, "SUCCESS", txRef)
+        .then(() => {
+          getOrder(id).then(setOrder).catch(console.error);
+        })
+        .catch(console.error);
+    }
+  }, [id, searchParams]);
 
   useEffect(() => {
     if (!id) return;
@@ -126,7 +139,7 @@ export default function OrderTrackingPage() {
               </h2>
             </div>
 
-            <div className="mt-2 flex items-center justify-center gap-2 text-xs">
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs">
               <Badge variant={isPaid ? "active" : "inactive"} className="font-bold">
                 Payment: {PAYMENT_STATUS_LABEL[order.payment.status ?? (isPaid ? "paid" : "unpaid")]}
               </Badge>
@@ -137,6 +150,31 @@ export default function OrderTrackingPage() {
                 </span>
               )}
             </div>
+
+            {!isPaid && current === "pending" && (
+              <div className="mt-3">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const checkoutUrl = order.payment?.checkoutUrl;
+                    const txRef = order.payment?.txRef || order.id;
+                    if (
+                      checkoutUrl &&
+                      checkoutUrl.startsWith("http") &&
+                      !checkoutUrl.includes(window.location.host)
+                    ) {
+                      window.location.href = checkoutUrl;
+                    } else {
+                      navigate(`/chapa-checkout/${txRef}`);
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold inline-flex items-center gap-1.5 shadow-xs"
+                >
+                  <CreditCard className="size-3.5" />
+                  <span>Pay with Chapa ({formatCurrency(order.total)})</span>
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="overflow-x-auto py-2">

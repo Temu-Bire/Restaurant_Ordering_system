@@ -17,6 +17,7 @@ import CartPage from "../features/cart/pages/CartPage";
 import MyOrdersPage from "../features/orders/pages/MyOrdersPage";
 import OrderTrackingPage from "../features/orders/pages/OrderTrackingPage";
 import ReceiptPage from "../features/payments/pages/ReceiptPage";
+import ChapaCheckoutPage from "../features/payments/pages/ChapaCheckoutPage";
 import ProfilePage from "../features/users/pages/ProfilePage";
 
 import StaffDashboardPage from "../features/reports/pages/StaffDashboardPage";
@@ -95,6 +96,7 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      { path: "/chapa-checkout/:txRef", element: <ChapaCheckoutPage /> },
       {
         element: <RoleRoute role="customer" />,
         children: [

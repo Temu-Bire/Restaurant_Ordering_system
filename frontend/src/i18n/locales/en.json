@@ -212,5 +212,11 @@
   "starVeryGood": "Very Good (4 Stars)",
   "starGood": "Good (3 Stars)",
   "starFair": "Fair (2 Stars)",
-  "starPoor": "Poor (1 Star)"
+  "starPoor": "Poor (1 Star)",
+  "previous": "Previous",
+  "next": "Next",
+  "page": "Page",
+  "order": "Order",
+  "optional": "Optional",
+  "submit": "Submit"
 }

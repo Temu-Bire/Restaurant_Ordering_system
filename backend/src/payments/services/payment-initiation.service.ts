@@ -29,6 +29,8 @@ export class PaymentInitiationService {
   async initiate(
     orderId: string,
     provider: string = 'Chapa',
+    actorId?: string,
+    actorRole?: string,
   ): Promise<PaymentResponse> {
     const number = orderNumberFromCode(orderId);
     const order = await this.prisma.order.findUnique({
@@ -37,6 +39,9 @@ export class PaymentInitiationService {
     });
 
     if (!order) throw new NotFoundException('Order not found');
+    if (actorRole === 'CUSTOMER' && actorId && order.customerId !== actorId) {
+      throw new BadRequestException('You can only initiate payment for your own orders');
+    }
     if (order.paymentStatus === PaymentStatus.PAID) {
       throw new BadRequestException('Order has already been paid');
     }
@@ -45,11 +50,11 @@ export class PaymentInitiationService {
     }
 
     const txRef = `ARIF-${order.number}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    const normalizedProvider = provider || 'Chapa';
+    const normalizedProvider = 'Chapa';
 
     let checkoutUrl: string | undefined = undefined;
 
-    if (normalizedProvider.toLowerCase() === 'chapa' && this.chapa) {
+    if (this.chapa) {
       const appUrl = this.config?.get<string>('appUrl') || 'http://localhost:3000';
       const frontendUrl =
         this.config?.get<string>('frontendUrl') || 'http://localhost:5173';
@@ -71,7 +76,7 @@ export class PaymentInitiationService {
         phoneNumber: customer?.phone || undefined,
         txRef,
         callbackUrl: `${appUrl}/api/payments/webhook/chapa`,
-        returnUrl: `${frontendUrl}/orders/${order.id}`,
+        returnUrl: `${frontendUrl}/customer/orders/${order.id}/track?tx_ref=${txRef}`,
         customization: {
           title: 'Arif Food Order Checkout',
           description: `Payment for Order #${order.number}`,

@@ -44,7 +44,7 @@ describe('PaymentInitiationService', () => {
   });
 
   it('should initialize payment and return payment response', async () => {
-    const result = await service.initiate('ORD-401', 'CBE Birr');
+    const result = await service.initiate('ORD-401', 'Chapa');
 
     expect(prisma.order.findUnique).toHaveBeenCalledWith({
       where: { number: 401 },
@@ -56,13 +56,13 @@ describe('PaymentInitiationService', () => {
           orderId: 'ord-1',
           method: PaymentMethod.MOBILE,
           status: PaymentStatus.PENDING,
-          provider: 'CBE Birr',
+          provider: 'Chapa',
         }),
       }),
     );
     expect(result.amount).toBe(250);
     expect(result.orderId).toBe('ORD-401');
-    expect(result.provider).toBe('CBE Birr');
+    expect(result.provider).toBe('Chapa');
   });
 
   it('should reject initiation if order is already paid', async () => {

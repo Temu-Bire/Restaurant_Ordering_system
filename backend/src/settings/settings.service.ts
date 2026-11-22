@@ -14,11 +14,7 @@ export const toSettingsResponse = (settings: Settings) => {
     settings.deliveryEnabled ? OrderType.DELIVERY : null,
   ].flatMap((type) => (type ? [toApiOrderType(type)] : []));
 
-  const paymentMethods = [
-    settings.cashEnabled ? PaymentMethod.CASH : null,
-    settings.cardEnabled ? PaymentMethod.CARD : null,
-    settings.mobileEnabled ? PaymentMethod.MOBILE : null,
-  ].flatMap((method) => (method ? [toApiPaymentMethod(method)] : []));
+  const paymentMethods = [toApiPaymentMethod(PaymentMethod.MOBILE)];
 
   return {
     name: settings.name,
@@ -76,9 +72,9 @@ export class SettingsService {
         dineInEnabled: orderTypes?.includes(OrderType.DINE_IN),
         takeawayEnabled: orderTypes?.includes(OrderType.TAKEAWAY),
         deliveryEnabled: orderTypes?.includes(OrderType.DELIVERY),
-        cashEnabled: true,
-        cardEnabled: methods?.includes(PaymentMethod.CARD),
-        mobileEnabled: methods?.includes(PaymentMethod.MOBILE),
+        cashEnabled: false,
+        cardEnabled: false,
+        mobileEnabled: true,
       },
     });
 

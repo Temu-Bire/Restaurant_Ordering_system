@@ -92,8 +92,13 @@ export class PaymentsService {
     }
   }
 
-  async initiate(orderId: string, provider: string = 'Chapa'): Promise<PaymentResponse> {
-    return this.paymentInitiation.initiate(orderId, provider);
+  async initiate(
+    orderId: string,
+    provider: string = 'Chapa',
+    actorId?: string,
+    actorRole?: string,
+  ): Promise<PaymentResponse> {
+    return this.paymentInitiation.initiate(orderId, provider, actorId, actorRole);
   }
 
   async verify(

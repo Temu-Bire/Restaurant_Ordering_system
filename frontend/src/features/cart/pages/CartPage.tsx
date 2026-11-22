@@ -10,6 +10,7 @@ import {
   Home,
   Briefcase,
   CheckCircle2,
+  CreditCard,
 } from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
@@ -20,7 +21,7 @@ import OptionPicker from "../../../shared/components/ui/OptionPicker";
 import Modal from "../../../shared/components/ui/Modal";
 import { useCart } from "../hooks/useCart";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
-import { createOrder, type VerifyPaymentResponse } from "../../orders/api/ordersApi";
+import { createOrder } from "../../orders/api/ordersApi";
 import { listTables } from "../../tables/api/tablesApi";
 import { listAddresses, createAddress } from "../../addresses/api/addressesApi";
 import { getDeliveryQuote } from "../../delivery/api/deliveryApi";
@@ -31,7 +32,6 @@ import type { OrderType } from "../../orders/types";
 import { cn } from "../../../lib/cn";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import AddressFormModal from "../../addresses/components/AddressFormModal";
-import MobilePaymentModal from "../components/MobilePaymentModal";
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -39,7 +39,6 @@ export default function CartPage() {
   const { items, count, subtotal, increase, decrease, removeItem, clear } = useCart();
 
   const [orderType, setOrderType] = useState<OrderType>("dine-in");
-  const [mobileProvider, setMobileProvider] = useState<string>("Telebirr");
 
   // Dine-in party size and auto-table assignment
   const [partySize, setPartySize] = useState<number>(2);
@@ -61,19 +60,10 @@ export default function CartPage() {
   const [submitError, setSubmitError] = useState("");
   const [reviewing, setReviewing] = useState(false);
 
-  // Active created order waiting for payment verification
-  const [pendingOrder, setPendingOrder] = useState<{ id: string; total: number } | null>(null);
-
   const orderTypeOptions: { value: OrderType; label: string }[] = [
     { value: "dine-in", label: "Dine-in" },
     { value: "takeaway", label: "Takeaway" },
     { value: "delivery", label: "Delivery" },
-  ];
-
-  const mobileProviderOptions = [
-    { value: "Telebirr", label: "Telebirr" },
-    { value: "CBE Birr", label: "CBE Birr" },
-    { value: "Chapa", label: "Chapa" },
   ];
 
   useEffect(() => {
@@ -185,13 +175,30 @@ export default function CartPage() {
         addressId: orderType === "delivery" ? selectedAddressId : undefined,
         pickupInstructions: orderType === "takeaway" ? pickupInstructions : undefined,
         paymentMethod: "mobile",
-        paymentProvider: mobileProvider,
+        paymentProvider: "Chapa",
         items: items.map((item) => ({ foodId: item.id, quantity: item.quantity })),
       });
 
       setReviewing(false);
-      // Open the Mobile Payment Modal
-      setPendingOrder({ id: order.id, total: order.total });
+      clear();
+
+      const checkoutUrl = order.payment?.checkoutUrl;
+      const txRef = order.payment?.txRef || order.id;
+
+      if (checkoutUrl) {
+        if (checkoutUrl.startsWith("http") && !checkoutUrl.includes(window.location.host)) {
+          window.location.href = checkoutUrl;
+        } else {
+          try {
+            const parsed = new URL(checkoutUrl, window.location.origin);
+            navigate(`${parsed.pathname}${parsed.search}`);
+          } catch {
+            navigate(`/chapa-checkout/${txRef}`);
+          }
+        }
+      } else {
+        navigate(`/chapa-checkout/${txRef}`);
+      }
     } catch (err: unknown) {
       console.error("Order creation failed", err);
       const msg = err instanceof Error ? err.message : "Failed to place order. Try again.";
@@ -200,23 +207,6 @@ export default function CartPage() {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  function handlePaymentSuccess(res: VerifyPaymentResponse) {
-    clear();
-    const targetOrderId = pendingOrder?.id ?? res.payment.orderId;
-    setPendingOrder(null);
-    navigate(`/customer/orders/${targetOrderId}/track`);
-  }
-
-  function handlePaymentFailed(msg: string) {
-    setSubmitError(msg);
-    setPendingOrder(null);
-  }
-
-  function handlePaymentCancelled() {
-    setSubmitError("Payment was cancelled and temporary table hold was released. You can retry anytime.");
-    setPendingOrder(null);
   }
 
   if (items.length === 0) {
@@ -548,17 +538,26 @@ export default function CartPage() {
             </div>
           </Card>
 
-          {/* Payment Method - Mobile Payment Only */}
-          <Card title="Payment Method (Mobile Only)" className="rounded-2xl shadow-xs">
-            <p className="text-xs text-muted mb-3">
-              We exclusively support secure mobile payments. Table holds and kitchen preparation are confirmed upon mobile verification.
-            </p>
-
-            <OptionPicker
-              options={mobileProviderOptions}
-              value={mobileProvider}
-              onChange={setMobileProvider}
-            />
+          {/* Payment Method - Mobile Payment via Chapa Only */}
+          <Card title="Payment Method (Chapa Gateway)" className="rounded-2xl shadow-xs">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-surface shadow-xs border border-border">
+                  <CreditCard className="size-5 text-emerald-600" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-foreground">Mobile Payment (Chapa)</span>
+                    <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">
+                      Secured
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted">
+                    Telebirr, CBE Birr, AwashBirr & Bank Cards supported
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {submitError && (
               <p className="mt-3 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs text-danger font-semibold">
@@ -569,7 +568,7 @@ export default function CartPage() {
             <Button
               fullWidth
               size="lg"
-              className="mt-5 font-bold"
+              className="mt-5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
               disabled={
                 submitting ||
                 unavailableInCart.length > 0 ||
@@ -578,7 +577,7 @@ export default function CartPage() {
               }
               onClick={handleReviewClick}
             >
-              Review & Place Order
+              Review & Pay with Chapa
             </Button>
           </Card>
         </div>
@@ -639,7 +638,7 @@ export default function CartPage() {
 
               <div className="flex justify-between font-semibold border-t border-border pt-1.5">
                 <span className="text-muted">Payment:</span>
-                <span className="text-foreground font-bold">Mobile ({mobileProvider})</span>
+                <span className="text-foreground font-bold">Mobile (Chapa)</span>
               </div>
             </div>
 
@@ -688,25 +687,12 @@ export default function CartPage() {
               <Button variant="secondary" onClick={() => setReviewing(false)}>
                 Back to Edit
               </Button>
-              <Button disabled={submitting} onClick={handleProceedToPayment}>
-                {submitting ? "Initiating..." : `Proceed to Pay with ${mobileProvider}`}
+              <Button disabled={submitting} onClick={handleProceedToPayment} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                {submitting ? "Initiating..." : "Proceed to Pay with Chapa"}
               </Button>
             </div>
           </div>
         </Modal>
-      )}
-
-      {/* Mobile Payment Gateway Modal */}
-      {pendingOrder && (
-        <MobilePaymentModal
-          open
-          orderId={pendingOrder.id}
-          totalAmount={pendingOrder.total}
-          provider={mobileProvider}
-          onSuccess={handlePaymentSuccess}
-          onFailed={handlePaymentFailed}
-          onCancel={handlePaymentCancelled}
-        />
       )}
 
       {/* Address Form Modal */}

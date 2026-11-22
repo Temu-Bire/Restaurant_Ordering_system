@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { DeliveryModule } from '../delivery/delivery.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { PaymentsModule } from '../payments/payments.module.js';
 import { SettingsModule } from '../settings/settings.module.js';
 import { TablesModule } from '../tables/tables.module.js';
 import { OrdersController } from './orders.controller.js';
@@ -18,6 +19,7 @@ import { OrdersService } from './services/orders.service.js';
     TablesModule,
     InventoryModule,
     NotificationsModule,
+    PaymentsModule,
   ],
   controllers: [OrdersController],
   providers: [

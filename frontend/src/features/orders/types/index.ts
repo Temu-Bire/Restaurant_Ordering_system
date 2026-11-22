@@ -67,6 +67,8 @@ export interface Order {
     paid: boolean;
     provider?: string;
     transactionId?: string;
+    txRef?: string;
+    checkoutUrl?: string;
   };
 }
 
@@ -79,7 +81,7 @@ export const ORDER_TYPE_LABEL: Record<OrderType, string> = {
 export const PAYMENT_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
   card: "Card",
-  mobile: "Mobile Payment",
+  mobile: "Mobile (Chapa)",
 };
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
@@ -109,9 +111,9 @@ export const orderTypeOptions = (
   Object.keys(ORDER_TYPE_LABEL) as OrderType[]
 ).map((value) => ({ value, label: ORDER_TYPE_LABEL[value] }));
 
-export const paymentOptions = (
-  Object.keys(PAYMENT_LABEL) as PaymentMethod[]
-).map((value) => ({ value, label: PAYMENT_LABEL[value] }));
+export const paymentOptions = [
+  { value: "mobile" as PaymentMethod, label: "Mobile (Chapa)" },
+];
 
 export const statusOptions = (
   [

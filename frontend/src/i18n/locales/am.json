@@ -212,5 +212,11 @@
   "starVeryGood": "በጣም ጥሩ (4 ኮከቦች)",
   "starGood": "ጥሩ (3 ኮከቦች)",
   "starFair": "መካከለኛ (2 ኮከቦች)",
-  "starPoor": "ደካማ (1 ኮከብ)"
+  "starPoor": "ደካማ (1 ኮከብ)",
+  "previous": "ቀዳሚ",
+  "next": "ቀጣይ",
+  "page": "ገጽ",
+  "order": "ትዕዛዝ",
+  "optional": "አስገዳጅ ያልሆነ",
+  "submit": "አስገባ"
 }

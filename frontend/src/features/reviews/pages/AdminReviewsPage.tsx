@@ -121,7 +121,7 @@ export default function AdminReviewsPage() {
           label={t("hiddenReviews") || "Hidden Reviews"}
           value={stats.hiddenReviewsCount}
           icon={<ShieldAlert className="size-6" />}
-          tone={stats.hiddenReviewsCount > 0 ? "danger" : "default"}
+          tone={stats.hiddenReviewsCount > 0 ? "danger" : undefined}
         />
       </div>
 

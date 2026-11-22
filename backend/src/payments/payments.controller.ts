@@ -56,8 +56,9 @@ export class PaymentsController {
   initiate(
     @Param('orderId') orderId: string,
     @Body('provider') provider?: string,
+    @CurrentUser() user?: PublicUser,
   ) {
-    return this.payments.initiate(orderId, provider);
+    return this.payments.initiate(orderId, provider, user?.id, user?.role);
   }
 
   @Public()

@@ -44,10 +44,22 @@ export class OrderQueryService {
 
   async findRecord(id: string): Promise<OrderRecord> {
     const number = orderNumberFromCode(id);
-    const order = await this.prisma.order.findUnique({
-      where: number === null ? { id } : { number },
-      include: orderInclude,
-    });
+    let order: OrderRecord | null = null;
+
+    if (number !== null) {
+      order = await this.prisma.order.findUnique({
+        where: { number },
+        include: orderInclude,
+      });
+    } else {
+      order = await this.prisma.order.findFirst({
+        where: {
+          OR: [{ id }, { payment: { txRef: id } }],
+        },
+        include: orderInclude,
+      });
+    }
+
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }

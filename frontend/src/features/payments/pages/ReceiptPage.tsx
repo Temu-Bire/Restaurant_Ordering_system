@@ -145,37 +145,25 @@ export default function ReceiptPage() {
         </div>
       </Card>
 
-      {reviewingLine && (
+      {reviewingLine && reviewingLine.id && (
         <ReviewModal
-          isOpen={Boolean(reviewingLine)}
-          onClose={() => setReviewingLine(null)}
+          open
+          orderItemId={reviewingLine.id}
           foodName={reviewingLine.name}
-          foodId={reviewingLine.foodId || ""}
-          orderId={order.id}
-          orderItemId={reviewingLine.id || ""}
-          initialReview={reviewingLine.review}
-          onReviewSaved={(savedReview) => {
-            setOrder((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                lines: prev.lines.map((l) =>
-                  l.id === reviewingLine.id ? { ...l, review: savedReview } : l
-                ),
-              };
-            });
-            setReviewingLine(null);
-          }}
-          onReviewDeleted={() => {
-            setOrder((prev) => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                lines: prev.lines.map((l) =>
-                  l.id === reviewingLine.id ? { ...l, review: undefined } : l
-                ),
-              };
-            });
+          initialReview={
+            reviewingLine.review
+              ? ({
+                  id: reviewingLine.review.id,
+                  rating: reviewingLine.review.rating,
+                  comment: reviewingLine.review.comment,
+                } as any)
+              : null
+          }
+          onClose={() => setReviewingLine(null)}
+          onSaved={() => {
+            if (id) {
+              getOrder(id).then(setOrder).catch(console.error);
+            }
             setReviewingLine(null);
           }}
         />

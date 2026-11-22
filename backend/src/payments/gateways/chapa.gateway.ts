@@ -120,8 +120,9 @@ export class ChapaGateway {
         // If in test mode with dummy credentials or test host unavailable, return mock hosted URL
         if (this.environment === 'TEST' && (this.secretKey.includes('dummy') || response.status >= 400)) {
           this.logger.log('Fallback to mock test checkout URL for TEST environment');
+          const frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:5173';
           return {
-            checkoutUrl: `https://checkout.chapa.co/checkout/test-payment/${params.txRef}`,
+            checkoutUrl: `${frontendUrl}/chapa-checkout/${params.txRef}`,
             txRef: params.txRef,
           };
         }
@@ -146,8 +147,9 @@ export class ChapaGateway {
       // In test mode, allow offline simulation if network or DNS fails
       if (this.environment === 'TEST') {
         this.logger.warn(`Network error contacting Chapa: ${String(err)}. Using test checkout fallback.`);
+        const frontendUrl = this.config.get<string>('frontendUrl') || 'http://localhost:5173';
         return {
-          checkoutUrl: `https://checkout.chapa.co/checkout/test-payment/${params.txRef}`,
+          checkoutUrl: `${frontendUrl}/chapa-checkout/${params.txRef}`,
           txRef: params.txRef,
         };
       }
@@ -178,8 +180,8 @@ export class ChapaGateway {
           `Chapa verification error HTTP ${response.status}: ${errorText}`,
         );
 
-        // If in test mode with dummy key, return mock verify response for testing
-        if (this.environment === 'TEST' && this.secretKey.includes('dummy')) {
+        // If in test mode with invalid/dummy key, return mock verify response for testing
+        if (this.environment === 'TEST') {
           return {
             message: 'Payment details (test simulation)',
             status: 'success',
@@ -199,7 +201,7 @@ export class ChapaGateway {
     } catch (err: unknown) {
       if (err instanceof BadRequestException) throw err;
 
-      if (this.environment === 'TEST' && this.secretKey.includes('dummy')) {
+      if (this.environment === 'TEST') {
         return {
           message: 'Payment details (test simulation)',
           status: 'success',

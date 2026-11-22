@@ -55,7 +55,9 @@ export class PaymentVerificationService {
   ): Promise<VerifyPaymentResult> {
     const number = orderNumberFromCode(paymentIdOrOrderId);
 
-    return this.prisma.$transaction(async (tx) => {
+    const notificationTasks: (() => Promise<unknown>)[] = [];
+
+    const result = await this.prisma.$transaction(async (tx) => {
       // Fetch payment and associated order INSIDE the transaction to prevent race conditions
       const payment = await tx.payment.findFirst({
         where: {
@@ -118,7 +120,12 @@ export class PaymentVerificationService {
           }
         } catch (err) {
           if (err instanceof BadRequestException) throw err;
-          this.logger.warn(`Chapa gateway check returned error, continuing with outcome: ${String(err)}`);
+          if (this.chapa.getEnvironment() === 'TEST') {
+            this.logger.log(`Chapa TEST environment: proceeding with outcome ${outcome}`);
+          } else {
+            this.logger.error(`Chapa gateway check returned error in LIVE mode: ${String(err)}`);
+            throw new BadRequestException('Payment gateway verification failed');
+          }
         }
       }
 
@@ -250,54 +257,64 @@ export class PaymentVerificationService {
         },
       });
 
-      // Post-commit notifications if service is available
+      // Queue post-commit notifications to run after transaction commits
       if (this.notifications) {
         if (isSuccess) {
           if (order.customerId) {
-            void this.notifications.createForUser({
-              recipientUserId: order.customerId,
-              title: 'Payment Confirmed',
-              message: `Your payment of ${order.total} ETB for Order #${order.number} was confirmed.`,
+            notificationTasks.push(() =>
+              this.notifications!.createForUser({
+                recipientUserId: order.customerId!,
+                title: 'Payment Confirmed',
+                message: `Your payment of ${order.total} ETB for Order #${order.number} was confirmed.`,
+                type: NotificationType.PAYMENT_SUCCESS,
+                relatedEntityId: order.id,
+                idempotencyKey: `notif_pay_succ_cust_${payment.id}`,
+              }),
+            );
+          }
+
+          notificationTasks.push(() =>
+            this.notifications!.createForRole(Role.STAFF, {
+              title: 'Payment Received',
+              message: `Payment of ${order.total} ETB confirmed for Order #${order.number}.`,
               type: NotificationType.PAYMENT_SUCCESS,
               relatedEntityId: order.id,
-              idempotencyKey: `notif_pay_succ_cust_${payment.id}`,
-            });
-          }
-
-          void this.notifications.createForRole(Role.STAFF, {
-            title: 'Payment Received',
-            message: `Payment of ${order.total} ETB confirmed for Order #${order.number}.`,
-            type: NotificationType.PAYMENT_SUCCESS,
-            relatedEntityId: order.id,
-            idempotencyKey: `notif_pay_succ_staff_${payment.id}`,
-          });
+              idempotencyKey: `notif_pay_succ_staff_${payment.id}`,
+            }),
+          );
         } else {
           if (order.customerId) {
-            void this.notifications.createForUser({
-              recipientUserId: order.customerId,
-              title: 'Payment Failed',
-              message: `Payment for Order #${order.number} was not completed (${outcome}).`,
-              type: NotificationType.PAYMENT_FAILURE,
-              relatedEntityId: order.id,
-              idempotencyKey: `notif_pay_fail_cust_${payment.id}`,
-            });
+            notificationTasks.push(() =>
+              this.notifications!.createForUser({
+                recipientUserId: order.customerId!,
+                title: 'Payment Failed',
+                message: `Payment for Order #${order.number} was not completed (${outcome}).`,
+                type: NotificationType.PAYMENT_FAILURE,
+                relatedEntityId: order.id,
+                idempotencyKey: `notif_pay_fail_cust_${payment.id}`,
+              }),
+            );
           }
 
-          void this.notifications.createForRole(Role.STAFF, {
-            title: 'Order Cancelled (Payment Failed)',
-            message: `Order #${order.number} cancelled due to payment outcome: ${outcome}.`,
-            type: NotificationType.ORDER_CANCELLED,
-            relatedEntityId: order.id,
-            idempotencyKey: `notif_order_cancel_staff_${payment.id}`,
-          });
+          notificationTasks.push(() =>
+            this.notifications!.createForRole(Role.STAFF, {
+              title: 'Order Cancelled (Payment Failed)',
+              message: `Order #${order.number} cancelled due to payment outcome: ${outcome}.`,
+              type: NotificationType.ORDER_CANCELLED,
+              relatedEntityId: order.id,
+              idempotencyKey: `notif_order_cancel_staff_${payment.id}`,
+            }),
+          );
 
-          void this.notifications.createForRole(Role.ADMIN, {
-            title: 'Payment Issue Reported',
-            message: `Payment failed for Order #${order.number}. Outcome: ${outcome}.`,
-            type: NotificationType.PAYMENT_ISSUE,
-            relatedEntityId: order.id,
-            idempotencyKey: `notif_pay_issue_admin_${payment.id}`,
-          });
+          notificationTasks.push(() =>
+            this.notifications!.createForRole(Role.ADMIN, {
+              title: 'Payment Issue Reported',
+              message: `Payment failed for Order #${order.number}. Outcome: ${outcome}.`,
+              type: NotificationType.PAYMENT_ISSUE,
+              relatedEntityId: order.id,
+              idempotencyKey: `notif_pay_issue_admin_${payment.id}`,
+            }),
+          );
         }
       }
 
@@ -308,7 +325,21 @@ export class PaymentVerificationService {
         paymentStatus: toApiPaymentStatus(targetPaymentStatus),
         payment: toPaymentResponse(updatedPayment),
       };
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     });
+
+    // Execute post-commit notifications safely
+    for (const task of notificationTasks) {
+      try {
+        await task();
+      } catch (err) {
+        this.logger.warn(`Failed to dispatch notification: ${String(err)}`);
+      }
+    }
+
+    return result;
   }
 
   /**

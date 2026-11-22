@@ -18,7 +18,7 @@ export class ReceiptService {
     try {
       // Primary mechanism: PostgreSQL sequence nextval
       const result = await db.$queryRaw<{ nextval: string | number | bigint }[]>`
-        SELECT nextval('receipt_number_seq') AS nextval
+        SELECT nextval('receipt_number_seq')::text AS nextval
       `;
 
       if (result && result.length > 0 && result[0]?.nextval !== undefined) {

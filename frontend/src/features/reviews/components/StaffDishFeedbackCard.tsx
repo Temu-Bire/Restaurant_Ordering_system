@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, TrendingUp, AlertCircle, MessageSquare } from "lucide-react";
+import { TrendingUp, AlertCircle } from "lucide-react";
 import Card from "../../../shared/components/ui/Card";
 import Modal from "../../../shared/components/ui/Modal";
 import StarRating from "./StarRating";

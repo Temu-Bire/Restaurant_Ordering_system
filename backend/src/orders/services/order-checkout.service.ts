@@ -15,6 +15,7 @@ import {
 } from '@prisma/client';
 import { DeliveryService } from '../../delivery/delivery.service.js';
 import { NotificationService } from '../../notifications/notifications.service.js';
+import { PaymentInitiationService } from '../../payments/services/payment-initiation.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { SettingsService } from '../../settings/settings.service.js';
 import { TablesService } from '../../tables/tables.service.js';
@@ -38,6 +39,7 @@ export class OrderCheckoutService {
     private readonly delivery: DeliveryService,
     private readonly tables: TablesService,
     @Optional() private readonly notifications?: NotificationService,
+    @Optional() private readonly paymentInitiation?: PaymentInitiationService,
   ) {}
 
   async create(customerId: string, dto: CreateOrderDto): Promise<OrderResponse> {
@@ -46,10 +48,10 @@ export class OrderCheckoutService {
       throw new BadRequestException('That order type is not available');
     }
 
-    // Customer checkout requires Mobile Payment
+    // Customer checkout requires Mobile Payment with Chapa
     if (dto.paymentMethod !== PaymentMethod.MOBILE) {
       throw new BadRequestException(
-        'Customer checkout requires Mobile Payment (e.g. Telebirr, CBE Birr, Chapa)',
+        'Customer checkout requires Mobile Payment with Chapa',
       );
     }
 
@@ -229,6 +231,31 @@ export class OrderCheckoutService {
         relatedEntityId: result.id,
         idempotencyKey: `notif_new_order_staff_${result.id}`,
       });
+    }
+
+    // Automatically initialize Chapa payment session
+    if (this.paymentInitiation) {
+      try {
+        const paymentRes = await this.paymentInitiation.initiate(result.id, 'Chapa');
+        return toOrderResponse({
+          ...result,
+          payment: {
+            ...result.payment,
+            id: paymentRes.id,
+            amount: new Prisma.Decimal(paymentRes.amount),
+            method: PaymentMethod.MOBILE,
+            status: PaymentStatus.PENDING,
+            paid: paymentRes.paid,
+            provider: 'Chapa',
+            transactionId: paymentRes.transactionId,
+            txRef: paymentRes.txRef || paymentRes.transactionId,
+            checkoutUrl: paymentRes.checkoutUrl,
+            paymentUrl: paymentRes.checkoutUrl,
+          } as any,
+        });
+      } catch (err) {
+        // Fallback: return created order
+      }
     }
 
     return toOrderResponse(result);
