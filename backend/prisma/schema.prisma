@@ -37,6 +37,8 @@ model User {
   notifications  Notification[]
   handoverOrders Order[]         @relation("HandoverStaff")
   stockMovements StockMovement[]
+  reviews          Review[]
+  moderatedReviews Review[]        @relation("ModeratedReviews")
 }
 
 // ───────────────────────── Delivery Addresses ─────────────────────────
@@ -85,6 +87,7 @@ model Food {
   category    Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   orderItems  OrderItem[]
   recipes     RecipeLine[]
+  reviews     Review[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -157,6 +160,7 @@ model Order {
   handoverNotes       String?
   items               OrderItem[]
   payment             Payment?
+  reviews             Review[]
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
@@ -175,9 +179,38 @@ model OrderItem {
   name      String
   unitPrice Decimal @db.Decimal(10, 2)
   quantity  Int
+  review    Review?
 
   @@index([orderId])
   @@index([foodId])
+}
+
+// ───────────────────────── Food Reviews & Ratings ─────────────────────────
+
+model Review {
+  id               String    @id @default(uuid())
+  foodId           String
+  food             Food      @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  orderId          String
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItemId      String    @unique
+  orderItem        OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating           Int       // 1 to 5 stars
+  comment          String?
+  isHidden         Boolean   @default(false)
+  moderationReason String?
+  moderatedById    String?
+  moderatedBy      User?     @relation("ModeratedReviews", fields: [moderatedById], references: [id], onDelete: SetNull)
+  moderatedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([foodId, isHidden])
+  @@index([userId])
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 // ───────────────────────── FR-04: Payments ─────────────────────────
