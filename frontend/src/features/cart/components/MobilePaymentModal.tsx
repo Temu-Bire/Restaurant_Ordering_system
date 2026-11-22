@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Smartphone, Building2, CreditCard, Clock, AlertTriangle } from "lucide-react";
 import Button from "../../../shared/components/ui/Button";
 import Modal from "../../../shared/components/ui/Modal";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
@@ -47,24 +48,24 @@ export default function MobilePaymentModal({
   const seconds = secondsRemaining % 60;
   const timerDisplay = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-  const providerThemes: Record<string, { bg: string; text: string; badge: string; icon: string }> = {
+  const providerThemes: Record<string, { bg: string; text: string; badge: string; icon: ReactNode }> = {
     Telebirr: {
       bg: "bg-amber-500/10 border-amber-500/30",
       text: "text-amber-600 dark:text-amber-400",
       badge: "bg-amber-500 text-white",
-      icon: "📱",
+      icon: <Smartphone className="size-6 text-amber-500" />,
     },
     "CBE Birr": {
       bg: "bg-purple-500/10 border-purple-500/30",
       text: "text-purple-600 dark:text-purple-400",
       badge: "bg-purple-600 text-white",
-      icon: "🏦",
+      icon: <Building2 className="size-6 text-purple-600" />,
     },
     Chapa: {
       bg: "bg-emerald-500/10 border-emerald-500/30",
       text: "text-emerald-600 dark:text-emerald-400",
       badge: "bg-emerald-600 text-white",
-      icon: "💳",
+      icon: <CreditCard className="size-6 text-emerald-600" />,
     },
   };
 
@@ -101,9 +102,11 @@ export default function MobilePaymentModal({
     <Modal open={open} onClose={() => {}} title="Mobile Payment Gateway">
       <div className="space-y-4">
         {/* Provider Header Banner */}
-        <div className={`flex items-center justify-between rounded-xl border p-4 ${theme.bg}`}>
+        <div className={`flex items-center justify-between rounded-2xl border p-4 ${theme.bg}`}>
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{theme.icon}</span>
+            <div className="flex size-10 items-center justify-center rounded-xl bg-surface shadow-xs">
+              {theme.icon}
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="font-bold text-foreground text-sm">{provider} Payment</h4>
@@ -122,28 +125,30 @@ export default function MobilePaymentModal({
         </div>
 
         {/* Temporary Hold Countdown Notice */}
-        <div className="flex items-center justify-between rounded-lg border border-border bg-surface-secondary/40 px-3 py-2 text-xs">
+        <div className="flex items-center justify-between rounded-xl border border-border bg-surface-secondary/40 px-3.5 py-2 text-xs">
           <span className="text-muted flex items-center gap-1.5">
-            ⏱ Temporary Table/Order Hold:
+            <Clock className="size-3.5 text-amber-500" />
+            <span>Temporary Order Hold:</span>
           </span>
           <span className="font-mono font-bold text-amber-500">{timerDisplay}</span>
         </div>
 
         {errorMessage && (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500">
-            ⚠ {errorMessage}
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500 flex items-center gap-2">
+            <AlertTriangle className="size-4 shrink-0 text-rose-500" />
+            <span>{errorMessage}</span>
           </div>
         )}
 
         {/* Payment authorization form */}
-        <div className="space-y-3 rounded-xl border border-border p-4 bg-surface">
+        <div className="space-y-3 rounded-2xl border border-border p-4 bg-surface">
           <p className="text-xs text-muted">
-            A payment request was sent to your <strong>{provider}</strong> account. Please authorize the transaction or enter your simulated confirmation PIN:
+            A payment request was sent to your <strong>{provider}</strong> account. Please authorize the transaction or enter your confirmation PIN:
           </p>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground">
-              {provider} PIN / Transaction Code
+              {provider} PIN or Code
             </label>
             <input
               type="password"
@@ -156,7 +161,7 @@ export default function MobilePaymentModal({
           </div>
 
           <p className="text-[11px] text-muted text-center">
-            Once authorized, your table reservation and kitchen ticket will be confirmed instantly.
+            Once authorized, your table reservation and order ticket will be confirmed instantly.
           </p>
         </div>
 
@@ -169,7 +174,7 @@ export default function MobilePaymentModal({
             onClick={() => handleVerify("SUCCESS")}
             className="font-bold"
           >
-            {processing ? "Verifying with " + provider + "..." : "✓ Authorize & Confirm Payment"}
+            {processing ? `Verifying with ${provider}...` : "Authorize Payment"}
           </Button>
 
           <div className="grid grid-cols-2 gap-2 pt-1">
@@ -189,7 +194,7 @@ export default function MobilePaymentModal({
               onClick={() => handleVerify("FAILED")}
               className="text-xs text-rose-500 border-rose-500/30 hover:bg-rose-500/10"
             >
-              Simulate Payment Failure
+              Simulate Failure
             </Button>
           </div>
         </div>

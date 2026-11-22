@@ -4,6 +4,7 @@ import Button from "../../../shared/components/ui/Button";
 import Input from "../../../shared/components/ui/Input";
 import Modal from "../../../shared/components/ui/Modal";
 import Select from "../../../shared/components/ui/Select";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type { Category, FoodItem } from "../types";
 
 export interface FoodFormData {
@@ -29,6 +30,7 @@ export default function FoodFormModal({
   onClose,
   onSave,
 }: FoodFormModalProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState(food?.name ?? "");
   const [price, setPrice] = useState(food ? String(food.price) : "");
   const [category, setCategory] = useState(
@@ -90,8 +92,8 @@ export default function FoodFormModal({
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Input
           id="food-name"
-          label="Food Name *"
-          placeholder="e.g. Margherita Pizza"
+          label={`${t("foodName")} *`}
+          placeholder="e.g. Doro Wot"
           value={name}
           onChange={(e) => setName(e.target.value)}
           error={errors.name}
@@ -100,18 +102,18 @@ export default function FoodFormModal({
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
             id="food-category"
-            label="Category *"
+            label={`${t("foodCategory")} *`}
             value={category}
             options={categories}
             onChange={(e) => setCategory(e.target.value)}
           />
           <Input
             id="food-price"
-            label="Price *"
+            label={`${t("foodPrice")} *`}
             type="number"
             step="0.01"
             min="0.01"
-            placeholder="12.99"
+            placeholder="250.00"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             error={errors.price}
@@ -121,21 +123,21 @@ export default function FoodFormModal({
         <Input
           id="food-description"
           label="Description"
-          placeholder="Fresh pizza with mozzarella and basil..."
+          placeholder="Traditional savory stew with chicken and spices"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex w-full flex-col gap-1.5">
           <label htmlFor="food-image" className="text-[13px] font-semibold text-foreground">
-            Food Image
+            {t("image")}
           </label>
           <input
             id="food-image"
             type="file"
             accept="image/png,image/jpeg,image/webp"
             onChange={pickImage}
-            className="w-full rounded-xl border border-border bg-surface-secondary px-3 py-2 text-[13px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white"
+            className="w-full rounded-xl border border-border bg-surface-secondary px-3.5 py-2.5 text-[13px] text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white"
           />
           {errors.image ? (
             <span className="text-xs text-danger">{errors.image}</span>
@@ -146,9 +148,9 @@ export default function FoodFormModal({
 
         <div className="flex justify-end gap-3 pt-3 border-t border-border">
           <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
+            {t("cancel")}
           </Button>
-          <Button type="submit">{food ? "Save Changes" : "Create Dish"}</Button>
+          <Button type="submit">{food ? t("save") : t("create")}</Button>
         </div>
       </form>
     </Modal>

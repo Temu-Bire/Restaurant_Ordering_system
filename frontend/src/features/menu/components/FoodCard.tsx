@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check, Plus } from "lucide-react";
 import { cn } from "../../../lib/cn";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
 import { useTranslation } from "../../../shared/hooks/useTranslation";
@@ -55,12 +56,12 @@ export default function FoodCard({ food, onAdd, onViewDetails }: FoodCardProps) 
           {food.available ? (
             <span className="flex items-center gap-1 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
               <span className="size-1.5 rounded-full bg-white" />
-              Available
+              {t("active")}
             </span>
           ) : (
             <span className="flex items-center gap-1 rounded-full bg-rose-600/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
               <span className="size-1.5 rounded-full bg-white" />
-              Unavailable
+              {t("unavailable")}
             </span>
           )}
         </div>
@@ -98,16 +99,16 @@ export default function FoodCard({ food, onAdd, onViewDetails }: FoodCardProps) 
           >
             {added ? (
               <>
-                <span>✓</span>
-                <span>Added to Cart</span>
+                <Check className="size-3.5" />
+                <span>{t("addedToCart")}</span>
               </>
             ) : food.available ? (
               <>
-                <span>+</span>
+                <Plus className="size-3.5" />
                 <span>{t("addToCart")}</span>
               </>
             ) : (
-              <span>Unavailable</span>
+              <span>{t("unavailable")}</span>
             )}
           </button>
 

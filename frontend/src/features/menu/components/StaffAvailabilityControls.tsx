@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { X, CheckCircle, XCircle } from "lucide-react";
 import Input from "../../../shared/components/ui/Input";
 import FilterTabs from "../../../shared/components/ui/FilterTabs";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import {
   listFoods,
   listCategories,
@@ -17,6 +19,7 @@ interface StaffAvailabilityControlsProps {
 }
 
 export default function StaffAvailabilityControls({ compact = false }: StaffAvailabilityControlsProps) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [filter, setFilter] = useState("all");
@@ -90,7 +93,9 @@ export default function StaffAvailabilityControls({ compact = false }: StaffAvai
       {banner && (
         <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary">
           <span>{banner}</span>
-          <button onClick={() => setBanner(null)} className="hover:opacity-75">✕</button>
+          <button onClick={() => setBanner(null)} className="hover:opacity-75">
+            <X className="size-3.5" />
+          </button>
         </div>
       )}
 
@@ -107,7 +112,7 @@ export default function StaffAvailabilityControls({ compact = false }: StaffAvai
                 : "bg-surface-secondary text-muted hover:text-foreground"
             )}
           >
-            All ({items.length})
+            {t("all")} ({items.length})
           </button>
           <button
             type="button"
@@ -119,7 +124,7 @@ export default function StaffAvailabilityControls({ compact = false }: StaffAvai
                 : "bg-surface-secondary text-muted hover:text-foreground"
             )}
           >
-            Available ({availableCount})
+            {t("active")} ({availableCount})
           </button>
           <button
             type="button"
@@ -131,7 +136,7 @@ export default function StaffAvailabilityControls({ compact = false }: StaffAvai
                 : "bg-surface-secondary text-muted hover:text-foreground"
             )}
           >
-            Unavailable ({unavailableCount})
+            {t("unavailable")} ({unavailableCount})
           </button>
         </div>
 
@@ -153,10 +158,10 @@ export default function StaffAvailabilityControls({ compact = false }: StaffAvai
       )}
 
       {loading ? (
-        <div className="py-8 text-center text-sm text-muted">Loading menu items...</div>
+        <div className="py-8 text-center text-sm text-muted">{t("loading")}</div>
       ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-border bg-surface py-10 text-center text-sm text-muted">
-          No menu items match the filter.
+          {t("noDishesFound")}
         </div>
       ) : (
         <div className={cn("grid gap-3", compact ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3")}>
@@ -200,12 +205,22 @@ export default function StaffAvailabilityControls({ compact = false }: StaffAvai
                         ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                         : "bg-rose-500 hover:bg-rose-600 text-white"
                     )}
-                    title={f.available ? "Click to mark as Unavailable" : "Click to mark as Available"}
+                    title={f.available ? "Mark as Unavailable" : "Mark as Available"}
                   >
-                    <span>{f.available ? "● Available" : "○ Unavailable"}</span>
+                    {f.available ? (
+                      <>
+                        <CheckCircle className="size-3" />
+                        <span>{t("active")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="size-3" />
+                        <span>{t("unavailable")}</span>
+                      </>
+                    )}
                   </button>
                   <span className="text-[10px] text-muted">
-                    {f.available ? "Click to hide" : "Click to restore"}
+                    {f.available ? "Click to disable" : "Click to enable"}
                   </span>
                 </div>
               </div>

@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  UtensilsCrossed,
+  Trash2,
+  AlertTriangle,
+  Sparkles,
+  Lock,
+  MapPin,
+  Home,
+  Briefcase,
+  CheckCircle2,
+} from "lucide-react";
 
 import PageHeader from "../../../shared/components/layout/PageHeader";
 import Button from "../../../shared/components/ui/Button";
@@ -54,15 +65,15 @@ export default function CartPage() {
   const [pendingOrder, setPendingOrder] = useState<{ id: string; total: number } | null>(null);
 
   const orderTypeOptions: { value: OrderType; label: string }[] = [
-    { value: "dine-in", label: "🍽 Dine-in" },
-    { value: "takeaway", label: "🥡 Takeaway" },
-    { value: "delivery", label: "🛵 Delivery" },
+    { value: "dine-in", label: "Dine-in" },
+    { value: "takeaway", label: "Takeaway" },
+    { value: "delivery", label: "Delivery" },
   ];
 
   const mobileProviderOptions = [
-    { value: "Telebirr", label: "📱 Telebirr" },
-    { value: "CBE Birr", label: "🏦 CBE Birr" },
-    { value: "Chapa", label: "💳 Chapa" },
+    { value: "Telebirr", label: "Telebirr" },
+    { value: "CBE Birr", label: "CBE Birr" },
+    { value: "Chapa", label: "Chapa" },
   ];
 
   useEffect(() => {
@@ -110,7 +121,6 @@ export default function CartPage() {
     (t) => (t.status === "available" || t.status === "free") && t.seats >= partySize
   );
   availableTables.sort((a, b) => {
-    // Exact match first
     if (a.seats === partySize && b.seats !== partySize) return -1;
     if (b.seats === partySize && a.seats !== partySize) return 1;
     return a.seats - b.seats;
@@ -234,10 +244,13 @@ export default function CartPage() {
       />
 
       {unavailableInCart.length > 0 && (
-        <div className="mb-5 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs font-semibold text-rose-500">
-          ⚠️ Some items in your cart became unavailable:{" "}
-          <span className="font-bold">{unavailableInCart.map((i) => i.name).join(", ")}</span>.
-          Please remove them to proceed with your order.
+        <div className="mb-5 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs font-semibold text-rose-500 flex items-center gap-2">
+          <AlertTriangle className="size-4 shrink-0 text-rose-500" />
+          <span>
+            Some items in your cart became unavailable:{" "}
+            <span className="font-bold">{unavailableInCart.map((i) => i.name).join(", ")}</span>.
+            Please remove them to proceed with your order.
+          </span>
         </div>
       )}
 
@@ -251,11 +264,11 @@ export default function CartPage() {
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div
                       className={cn(
-                        "flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-xl shadow-xs",
+                        "flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-secondary text-primary shadow-xs",
                         item.gradient
                       )}
                     >
-                      🍲
+                      <UtensilsCrossed className="size-5" />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -263,7 +276,7 @@ export default function CartPage() {
                         <p className="truncate text-sm font-bold text-foreground">{item.name}</p>
                         {!item.available && (
                           <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-500">
-                            Unavailable
+                            {t("unavailable")}
                           </span>
                         )}
                       </div>
@@ -300,9 +313,9 @@ export default function CartPage() {
                       type="button"
                       onClick={() => removeItem(item.id)}
                       aria-label={`Remove ${item.name}`}
-                      className="p-1 text-muted hover:text-danger"
+                      className="p-1.5 text-muted hover:text-danger rounded-lg transition-colors"
                     >
-                      🗑
+                      <Trash2 className="size-4" />
                     </button>
                   </div>
                 </li>
@@ -357,7 +370,8 @@ export default function CartPage() {
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                        ✨ Auto-Assigned Best Table:
+                        <Sparkles className="size-3.5 text-emerald-500" />
+                        <span>Auto-Assigned Best Table:</span>
                       </span>
                       <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">
                         {assignedTable.seats} Seats
@@ -367,13 +381,15 @@ export default function CartPage() {
                     {assignedTable.section && (
                       <p className="text-[11px] text-muted">Section: {assignedTable.section}</p>
                     )}
-                    <p className="text-[11px] text-muted pt-1">
-                      🔒 Table will be held for 15 minutes during payment and confirmed upon success.
+                    <p className="text-[11px] text-muted pt-1 flex items-center gap-1">
+                      <Lock className="size-3 text-muted inline" />
+                      <span>Table will be held for 15 minutes during payment and confirmed upon success.</span>
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                    ⚠ No table is currently available for {partySize} guests. Please wait or try a different party size.
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                    <AlertTriangle className="size-4 shrink-0 text-amber-500" />
+                    <span>No table is currently available for {partySize} guests. Please wait or try a different party size.</span>
                   </div>
                 )}
 
@@ -398,7 +414,7 @@ export default function CartPage() {
 
                 <Input
                   id="pickupInstructions"
-                  label="Pickup Instructions / Notes"
+                  label="Pickup Instructions"
                   placeholder="e.g. Will pick up in 20 minutes"
                   value={pickupInstructions}
                   onChange={(e) => setPickupInstructions(e.target.value)}
@@ -424,7 +440,8 @@ export default function CartPage() {
                   <div className="text-center py-4 rounded-xl border border-dashed border-border p-3">
                     <p className="text-xs text-muted mb-2">No saved delivery addresses found.</p>
                     <Button size="sm" onClick={() => setAddressModalOpen(true)}>
-                      📍 Add Your Delivery Address
+                      <MapPin className="size-3.5 inline mr-1" />
+                      <span>Add Delivery Address</span>
                     </Button>
                   </div>
                 ) : (
@@ -445,8 +462,14 @@ export default function CartPage() {
                           >
                             <div className="flex items-center justify-between font-bold text-foreground">
                               <span className="capitalize flex items-center gap-1.5">
-                                {addr.label === "home" ? "🏠" : addr.label === "work" ? "💼" : "📍"}{" "}
-                                {addr.label} {addr.isDefault && "(Default)"}
+                                {addr.label === "home" ? (
+                                  <Home className="size-3.5 text-primary" />
+                                ) : addr.label === "work" ? (
+                                  <Briefcase className="size-3.5 text-primary" />
+                                ) : (
+                                  <MapPin className="size-3.5 text-primary" />
+                                )}
+                                <span>{addr.label} {addr.isDefault && "(Default)"}</span>
                               </span>
                               <span className="text-muted font-normal">{addr.phone}</span>
                             </div>
@@ -485,8 +508,9 @@ export default function CartPage() {
                             {formatCurrency(deliveryQuote.fee)}
                           </span>
                         </div>
-                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
-                          ✓ Address is within our {deliveryQuote.maxDistanceKm} km service boundary.
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="size-3.5 text-emerald-500" />
+                          <span>Address is within our {deliveryQuote.maxDistanceKm} km service boundary.</span>
                         </p>
                       </>
                     ) : (
@@ -554,7 +578,7 @@ export default function CartPage() {
               }
               onClick={handleReviewClick}
             >
-              Review & Place Order →
+              Review & Place Order
             </Button>
           </Card>
         </div>

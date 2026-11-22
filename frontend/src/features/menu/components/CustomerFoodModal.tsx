@@ -1,7 +1,9 @@
+import { AlertTriangle } from "lucide-react";
 import Modal from "../../../shared/components/ui/Modal";
 import Button from "../../../shared/components/ui/Button";
 import Badge from "../../../shared/components/ui/Badge";
 import { formatCurrency } from "../../../shared/utils/formatCurrency";
+import { useTranslation } from "../../../shared/hooks/useTranslation";
 import type { FoodItem } from "../types";
 
 interface CustomerFoodModalProps {
@@ -11,6 +13,7 @@ interface CustomerFoodModalProps {
 }
 
 export default function CustomerFoodModal({ food, onClose, onAdd }: CustomerFoodModalProps) {
+  const { t } = useTranslation();
   if (!food) return null;
 
   return (
@@ -31,7 +34,7 @@ export default function CustomerFoodModal({ food, onClose, onAdd }: CustomerFood
               {food.category}
             </span>
             <Badge variant={food.available ? "active" : "disabled"}>
-              {food.available ? "Available" : "Unavailable"}
+              {food.available ? t("active") : t("unavailable")}
             </Badge>
           </div>
         </div>
@@ -45,21 +48,22 @@ export default function CustomerFoodModal({ food, onClose, onAdd }: CustomerFood
             </span>
           </div>
           <p className="mt-2 text-sm text-muted leading-relaxed">
-            {food.description || "Freshly prepared by our culinary team with premium local ingredients."}
+            {food.description || "Freshly prepared with authentic ingredients and care."}
           </p>
         </div>
 
         {/* Availability notice if unavailable */}
         {!food.available && (
-          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500">
-            ⚠️ This item is currently unavailable and cannot be added to your order.
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-semibold text-rose-500 flex items-center gap-2">
+            <AlertTriangle className="size-4 shrink-0 text-rose-500" />
+            <span>This item is currently unavailable and cannot be added to your order.</span>
           </div>
         )}
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
           <Button variant="secondary" onClick={onClose}>
-            Close
+            {t("close")}
           </Button>
           <Button
             disabled={!food.available}
@@ -68,7 +72,7 @@ export default function CustomerFoodModal({ food, onClose, onAdd }: CustomerFood
               onClose();
             }}
           >
-            {food.available ? "+ Add to Cart" : "Unavailable"}
+            {food.available ? `+ ${t("addToCart")}` : t("unavailable")}
           </Button>
         </div>
       </div>
