@@ -76,6 +76,8 @@ export interface OrderResponse {
     paid: boolean;
     provider?: string;
     transactionId?: string;
+    txRef?: string;
+    checkoutUrl?: string;
   };
 }
 
@@ -122,5 +124,7 @@ export const toOrderResponse = (order: OrderRecord): OrderResponse => ({
     paid: order.payment?.paid ?? false,
     provider: order.payment?.provider ?? undefined,
     transactionId: order.payment?.transactionId ?? undefined,
+    txRef: order.payment?.txRef ?? undefined,
+    checkoutUrl: order.payment?.checkoutUrl ?? order.payment?.paymentUrl ?? undefined,
   },
 });

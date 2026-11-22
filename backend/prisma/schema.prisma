@@ -24,14 +24,17 @@ model User {
   email          String    @unique
   phone          String?
   address        String?
+  avatarUrl      String?
   password       String // bcrypt hash, never return it in API responses
   role           Role      @default(CUSTOMER)
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   orders         Order[]
-  payments       Payment[]
+  payments       Payment[]       @relation("CustomerPayments")
+  recordedPayments Payment[]     @relation("RecordedPayments")
   addresses      Address[]
+  notifications  Notification[]
   handoverOrders Order[]         @relation("HandoverStaff")
   stockMovements StockMovement[]
 }
@@ -184,18 +187,58 @@ model Payment {
   receipt       String?       @unique
   orderId       String        @unique
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerId    String?
+  customer      User?         @relation("CustomerPayments", fields: [customerId], references: [id], onDelete: SetNull)
   amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("ETB")
   method        PaymentMethod @default(MOBILE)
   status        PaymentStatus @default(UNPAID)
   paid          Boolean       @default(false)
   provider      String?       // e.g. "Telebirr", "CBE Birr", "Chapa"
   transactionId String?
+  txRef         String?       @unique
   paymentUrl    String?
+  checkoutUrl   String?
   verifiedAt    DateTime?
   recordedById  String?
-  recordedBy    User?         @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+  recordedBy    User?         @relation("RecordedPayments", fields: [recordedById], references: [id], onDelete: SetNull)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  @@index([txRef])
+  @@index([customerId])
+}
+
+// ───────────────────────── Notifications ─────────────────────────
+
+enum NotificationType {
+  ORDER_CONFIRMATION
+  ORDER_STATUS_UPDATE
+  PAYMENT_SUCCESS
+  PAYMENT_FAILURE
+  PAYMENT_ISSUE
+  NEW_ORDER
+  ORDER_CANCELLED
+  USER_REGISTRATION
+  SYSTEM_EVENT
+}
+
+model Notification {
+  id              String           @id @default(uuid())
+  recipientUserId String
+  recipient       User             @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+  title           String
+  message         String
+  type            NotificationType
+  relatedEntityId String?
+  isRead          Boolean          @default(false)
+  readAt          DateTime?
+  idempotencyKey  String?          @unique
+  createdAt       DateTime         @default(now())
+
+  @@index([recipientUserId, isRead])
+  @@index([recipientUserId, createdAt])
+  @@index([idempotencyKey])
 }
 
 // ───────────────────────── FR-05: Inventory ─────────────────────────

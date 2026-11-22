@@ -61,7 +61,9 @@ export class PaymentsService {
       const payment = await this.prisma.payment.upsert({
         where: { orderId: order.id },
         update: {
+          customerId: order.customerId,
           amount,
+          currency: 'ETB',
           method: dto.method,
           paid: dto.paid,
           status: dto.paid ? PaymentStatus.PAID : PaymentStatus.PENDING,
@@ -70,7 +72,9 @@ export class PaymentsService {
         },
         create: {
           orderId: order.id,
+          customerId: order.customerId,
           amount,
+          currency: 'ETB',
           method: dto.method,
           paid: dto.paid,
           status: dto.paid ? PaymentStatus.PAID : PaymentStatus.PENDING,
@@ -88,7 +92,7 @@ export class PaymentsService {
     }
   }
 
-  async initiate(orderId: string, provider: string = 'Telebirr'): Promise<PaymentResponse> {
+  async initiate(orderId: string, provider: string = 'Chapa'): Promise<PaymentResponse> {
     return this.paymentInitiation.initiate(orderId, provider);
   }
 
@@ -97,5 +101,9 @@ export class PaymentsService {
     dto: VerifyPaymentDto,
   ): Promise<VerifyPaymentResult> {
     return this.paymentVerification.verify(paymentIdOrOrderId, dto);
+  }
+
+  async handleWebhook(payload: any, signature?: string) {
+    return this.paymentVerification.handleWebhook(payload, signature);
   }
 }

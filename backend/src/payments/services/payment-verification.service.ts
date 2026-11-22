@@ -1,12 +1,16 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
+  NotificationType,
   OrderStatus,
   OrderType,
   PaymentStatus,
+  Role,
   TableStatus,
 } from '@prisma/client';
 import {
@@ -15,8 +19,10 @@ import {
   toApiPaymentStatus,
 } from '../../common/api-enums.js';
 import { StockManagementService } from '../../inventory/services/stock-management.service.js';
+import { NotificationService } from '../../notifications/notifications.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { PaymentVerificationOutcome, VerifyPaymentDto } from '../dto/verify-payment.dto.js';
+import { ChapaGateway } from '../gateways/chapa.gateway.js';
 import {
   PaymentResponse,
   toPaymentResponse,
@@ -33,10 +39,14 @@ export interface VerifyPaymentResult {
 
 @Injectable()
 export class PaymentVerificationService {
+  private readonly logger = new Logger(PaymentVerificationService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly stockManagement: StockManagementService,
     private readonly receiptService: ReceiptService,
+    @Optional() private readonly chapa?: ChapaGateway,
+    @Optional() private readonly notifications?: NotificationService,
   ) {}
 
   async verify(
@@ -52,6 +62,7 @@ export class PaymentVerificationService {
           OR: [
             { id: paymentIdOrOrderId },
             { orderId: paymentIdOrOrderId },
+            { txRef: paymentIdOrOrderId },
             ...(number !== null ? [{ order: { number } }] : []),
           ],
         },
@@ -70,15 +81,55 @@ export class PaymentVerificationService {
       }
 
       const order = payment.order;
-      const isSuccess = dto.outcome === PaymentVerificationOutcome.SUCCESS;
+      let outcome = dto.outcome;
+
+      // Server-side verification with Chapa API if provider is Chapa
+      const txRef = dto.transactionRef || payment.txRef;
+      if (
+        this.chapa &&
+        payment.provider?.toLowerCase() === 'chapa' &&
+        txRef &&
+        payment.status !== PaymentStatus.PAID
+      ) {
+        try {
+          const chapaRes = await this.chapa.verify(txRef);
+          if (chapaRes.data) {
+            if (chapaRes.data.currency && chapaRes.data.currency.toUpperCase() !== 'ETB') {
+              this.logger.warn(`Currency mismatch: expected ETB, received ${chapaRes.data.currency}`);
+              throw new BadRequestException('Invalid payment currency');
+            }
+
+            if (chapaRes.data.amount) {
+              const paidAmount = Number(chapaRes.data.amount);
+              const expectedAmount = payment.amount.toNumber();
+              if (paidAmount > 0 && Math.abs(paidAmount - expectedAmount) > 0.01) {
+                this.logger.warn(
+                  `Amount mismatch for ${txRef}: expected ${expectedAmount}, received ${paidAmount}`,
+                );
+                throw new BadRequestException('Payment amount does not match order total');
+              }
+            }
+
+            if (chapaRes.status === 'success' && chapaRes.data.status?.toLowerCase() === 'success') {
+              outcome = PaymentVerificationOutcome.SUCCESS;
+            } else if (chapaRes.data.status?.toLowerCase() === 'failed') {
+              outcome = PaymentVerificationOutcome.FAILED;
+            }
+          }
+        } catch (err) {
+          if (err instanceof BadRequestException) throw err;
+          this.logger.warn(`Chapa gateway check returned error, continuing with outcome: ${String(err)}`);
+        }
+      }
+
+      const isSuccess = outcome === PaymentVerificationOutcome.SUCCESS;
 
       // ── Idempotency & Terminal State Validation ──
       if (payment.status === PaymentStatus.PAID) {
         if (isSuccess) {
-          // Idempotent return: already paid, do not re-deduct stock or re-allocate receipt
           return {
             success: true,
-            outcome: dto.outcome,
+            outcome,
             orderStatus: toApiOrderStatus(order.status),
             paymentStatus: toApiPaymentStatus(payment.status),
             payment: toPaymentResponse({
@@ -88,20 +139,19 @@ export class PaymentVerificationService {
           };
         }
 
-        // Prevent late/conflicting callbacks from failing a paid order
         throw new BadRequestException(
           'Payment has already been marked as PAID and cannot be changed to FAILED or EXPIRED.',
         );
       }
 
-      // Handle duplicate non-success outcome idempotently
+      // Duplicate non-success outcome idempotency
       if (
-        (payment.status === PaymentStatus.FAILED && dto.outcome === PaymentVerificationOutcome.FAILED) ||
-        (payment.status === PaymentStatus.EXPIRED && dto.outcome === PaymentVerificationOutcome.EXPIRED)
+        (payment.status === PaymentStatus.FAILED && outcome === PaymentVerificationOutcome.FAILED) ||
+        (payment.status === PaymentStatus.EXPIRED && outcome === PaymentVerificationOutcome.EXPIRED)
       ) {
         return {
           success: false,
-          outcome: dto.outcome,
+          outcome,
           orderStatus: toApiOrderStatus(order.status),
           paymentStatus: toApiPaymentStatus(payment.status),
           payment: toPaymentResponse({
@@ -116,7 +166,6 @@ export class PaymentVerificationService {
       let targetOrderStatus: OrderStatus;
 
       if (isSuccess) {
-        // Concurrency-safe atomic receipt allocation
         if (!receipt) {
           receipt = await this.receiptService.nextReceipt(tx);
         }
@@ -135,7 +184,7 @@ export class PaymentVerificationService {
           );
         }
 
-        // Confirm table reservation for dine-in orders
+        // Occupy table for dine-in orders
         if (order.type === OrderType.DINE_IN && order.tableId) {
           await tx.restaurantTable.update({
             where: { id: order.tableId },
@@ -148,12 +197,12 @@ export class PaymentVerificationService {
         }
       } else {
         targetPaymentStatus =
-          dto.outcome === PaymentVerificationOutcome.EXPIRED
+          outcome === PaymentVerificationOutcome.EXPIRED
             ? PaymentStatus.EXPIRED
             : PaymentStatus.FAILED;
         targetOrderStatus = OrderStatus.CANCELLED;
 
-        // Release temporary table hold
+        // Release table hold
         if (order.tableId) {
           await tx.restaurantTable.update({
             where: { id: order.tableId },
@@ -165,7 +214,7 @@ export class PaymentVerificationService {
           });
         }
 
-        // Restore stock if it was previously deducted
+        // Restore stock if previously deducted
         if (order.stockAdjusted) {
           await this.stockManagement.adjustOrderStock(
             tx,
@@ -185,6 +234,7 @@ export class PaymentVerificationService {
           paid: isSuccess,
           receipt,
           transactionId: dto.transactionRef || payment.transactionId,
+          txRef: dto.transactionRef || payment.txRef,
           verifiedAt: isSuccess ? new Date() : null,
         },
         include: { order: { select: { number: true } } },
@@ -200,13 +250,101 @@ export class PaymentVerificationService {
         },
       });
 
+      // Post-commit notifications if service is available
+      if (this.notifications) {
+        if (isSuccess) {
+          if (order.customerId) {
+            void this.notifications.createForUser({
+              recipientUserId: order.customerId,
+              title: 'Payment Confirmed',
+              message: `Your payment of ${order.total} ETB for Order #${order.number} was confirmed.`,
+              type: NotificationType.PAYMENT_SUCCESS,
+              relatedEntityId: order.id,
+              idempotencyKey: `notif_pay_succ_cust_${payment.id}`,
+            });
+          }
+
+          void this.notifications.createForRole(Role.STAFF, {
+            title: 'Payment Received',
+            message: `Payment of ${order.total} ETB confirmed for Order #${order.number}.`,
+            type: NotificationType.PAYMENT_SUCCESS,
+            relatedEntityId: order.id,
+            idempotencyKey: `notif_pay_succ_staff_${payment.id}`,
+          });
+        } else {
+          if (order.customerId) {
+            void this.notifications.createForUser({
+              recipientUserId: order.customerId,
+              title: 'Payment Failed',
+              message: `Payment for Order #${order.number} was not completed (${outcome}).`,
+              type: NotificationType.PAYMENT_FAILURE,
+              relatedEntityId: order.id,
+              idempotencyKey: `notif_pay_fail_cust_${payment.id}`,
+            });
+          }
+
+          void this.notifications.createForRole(Role.STAFF, {
+            title: 'Order Cancelled (Payment Failed)',
+            message: `Order #${order.number} cancelled due to payment outcome: ${outcome}.`,
+            type: NotificationType.ORDER_CANCELLED,
+            relatedEntityId: order.id,
+            idempotencyKey: `notif_order_cancel_staff_${payment.id}`,
+          });
+
+          void this.notifications.createForRole(Role.ADMIN, {
+            title: 'Payment Issue Reported',
+            message: `Payment failed for Order #${order.number}. Outcome: ${outcome}.`,
+            type: NotificationType.PAYMENT_ISSUE,
+            relatedEntityId: order.id,
+            idempotencyKey: `notif_pay_issue_admin_${payment.id}`,
+          });
+        }
+      }
+
       return {
         success: isSuccess,
-        outcome: dto.outcome,
+        outcome,
         orderStatus: toApiOrderStatus(targetOrderStatus),
         paymentStatus: toApiPaymentStatus(targetPaymentStatus),
         payment: toPaymentResponse(updatedPayment),
       };
     });
+  }
+
+  /**
+   * Handle incoming Chapa Webhook
+   */
+  async handleWebhook(
+    payload: any,
+    signature?: string,
+  ): Promise<{ status: string; processed: boolean }> {
+    const txRef = payload?.tx_ref || payload?.data?.tx_ref;
+    if (!txRef) {
+      throw new BadRequestException('Webhook payload missing tx_ref');
+    }
+
+    if (signature && this.chapa) {
+      const isValid = this.chapa.verifyWebhookSignature(signature, payload);
+      if (!isValid) {
+        this.logger.warn(`Invalid Chapa webhook signature for txRef: ${txRef}`);
+        throw new BadRequestException('Invalid webhook signature');
+      }
+    }
+
+    const status = (payload?.status || payload?.data?.status || '').toLowerCase();
+    const outcome =
+      status === 'success'
+        ? PaymentVerificationOutcome.SUCCESS
+        : PaymentVerificationOutcome.FAILED;
+
+    const result = await this.verify(txRef, {
+      outcome,
+      transactionRef: txRef,
+    });
+
+    return {
+      status: 'ok',
+      processed: result.success,
+    };
   }
 }
