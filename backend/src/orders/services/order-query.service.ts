@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { OrderStatus, Prisma, Role } from '@prisma/client';
 import { orderNumberFromCode } from '../../common/api-enums.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
@@ -12,6 +12,14 @@ import {
   OrderResponse,
   toOrderResponse,
 } from '../helpers/order-response.mapper.js';
+
+export interface PaginatedOrdersResponse {
+  items: OrderResponse[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
 
 @Injectable()
 export class OrderQueryService {
@@ -25,6 +33,43 @@ export class OrderQueryService {
     return orders.map(toOrderResponse);
   }
 
+  async findAllPaginated(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<PaginatedOrdersResponse> {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, params.limit ?? 20));
+    const skip = (page - 1) * pageSize;
+
+    const where: Prisma.OrderWhereInput = {};
+    if (params.status) {
+      const apiStatus = params.status.toUpperCase() as OrderStatus;
+      if (Object.values(OrderStatus).includes(apiStatus)) {
+        where.status = apiStatus;
+      }
+    }
+
+    const [total, orders] = await Promise.all([
+      this.prisma.order.count({ where }),
+      this.prisma.order.findMany({
+        where,
+        include: orderInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+    ]);
+
+    return {
+      items: orders.map(toOrderResponse),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize) || 1,
+    };
+  }
+
   async findMine(customerId: string): Promise<OrderResponse[]> {
     const orders = await this.prisma.order.findMany({
       where: { customerId },
@@ -32,6 +77,36 @@ export class OrderQueryService {
       orderBy: { createdAt: 'desc' },
     });
     return orders.map(toOrderResponse);
+  }
+
+  async findMinePaginated(
+    customerId: string,
+    params: { page?: number; limit?: number },
+  ): Promise<PaginatedOrdersResponse> {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, params.limit ?? 20));
+    const skip = (page - 1) * pageSize;
+
+    const where: Prisma.OrderWhereInput = { customerId };
+
+    const [total, orders] = await Promise.all([
+      this.prisma.order.count({ where }),
+      this.prisma.order.findMany({
+        where,
+        include: orderInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+    ]);
+
+    return {
+      items: orders.map(toOrderResponse),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize) || 1,
+    };
   }
 
   async findOne(id: string, actor: { id: string; role: Role }): Promise<OrderResponse> {

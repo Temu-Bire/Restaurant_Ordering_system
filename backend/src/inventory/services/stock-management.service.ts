@@ -205,10 +205,19 @@ export class StockManagementService {
       }
     }
 
+    const ingredientIds = Array.from(needed.keys());
+    if (ingredientIds.length === 0) return;
+
+    // Batched database retrieval to prevent N+1 query roundtrips inside transaction
+    const ingredients = await tx.ingredient.findMany({
+      where: { id: { in: ingredientIds } },
+    });
+    const ingredientMap = new Map(ingredients.map((ing) => [ing.id, ing]));
+
     const modifiedIngredientIds: string[] = [];
 
     for (const [ingredientId, amount] of needed) {
-      const ingredient = await tx.ingredient.findUnique({ where: { id: ingredientId } });
+      const ingredient = ingredientMap.get(ingredientId);
       if (!ingredient) continue;
 
       const prevStock = ingredient.stock;

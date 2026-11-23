@@ -2,12 +2,16 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
   Optional,
 } from '@nestjs/common';
 import {
   OrderStatus,
   OrderType,
+  PaymentStatus,
   Role,
   TableStatus,
 } from '@prisma/client';
@@ -45,13 +49,60 @@ export const PERMITTED_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = 
 };
 
 @Injectable()
-export class OrderLifecycleService {
+export class OrderLifecycleService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(OrderLifecycleService.name);
+  private cleanupIntervalRef?: NodeJS.Timeout;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly orderQuery: OrderQueryService,
     private readonly stockManagement: StockManagementService,
     @Optional() private readonly notifications?: NotificationService,
   ) {}
+
+  onModuleInit() {
+    // Automatically poll and release expired holds every 2 minutes
+    this.cleanupIntervalRef = setInterval(() => {
+      this.cleanupExpiredHolds().catch((err) => {
+        this.logger.error(`Automated expired holds cleanup failed: ${err.message}`, err.stack);
+      });
+    }, 120_000);
+    this.logger.log('Automated expired holds cleanup scheduler initialized (2m interval)');
+  }
+
+  onModuleDestroy() {
+    if (this.cleanupIntervalRef) {
+      clearInterval(this.cleanupIntervalRef);
+      this.cleanupIntervalRef = undefined;
+    }
+  }
+
+  /**
+   * Release expired inventory and table holds for abandoned checkouts
+   */
+  async cleanupExpiredHolds(): Promise<number> {
+    const now = new Date();
+    const expiredOrders = await this.prisma.order.findMany({
+      where: {
+        status: OrderStatus.PENDING,
+        paymentStatus: PaymentStatus.PENDING,
+        heldUntil: { lt: now },
+      },
+      select: { id: true, number: true },
+    });
+
+    let cleaned = 0;
+    for (const order of expiredOrders) {
+      try {
+        await this.changeStatus(order.id, OrderStatus.CANCELLED);
+        this.logger.log(`Released expired reservation for order #${order.number}`);
+        cleaned++;
+      } catch (err) {
+        this.logger.warn(`Failed to release expired hold for order #${order.number}: ${String(err)}`);
+      }
+    }
+    return cleaned;
+  }
 
   async updateStatus(
     id: string,

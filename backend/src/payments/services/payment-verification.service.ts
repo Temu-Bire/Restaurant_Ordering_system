@@ -265,7 +265,7 @@ export class PaymentVerificationService {
               this.notifications!.createForUser({
                 recipientUserId: order.customerId!,
                 title: 'Payment Confirmed',
-                message: `Your payment of ${order.total} ETB for Order #${order.number} was confirmed.`,
+                message: `Your payment of ${order.total.toString()} ETB for Order #${order.number} was confirmed.`,
                 type: NotificationType.PAYMENT_SUCCESS,
                 relatedEntityId: order.id,
                 idempotencyKey: `notif_pay_succ_cust_${payment.id}`,
@@ -276,7 +276,7 @@ export class PaymentVerificationService {
           notificationTasks.push(() =>
             this.notifications!.createForRole(Role.STAFF, {
               title: 'Payment Received',
-              message: `Payment of ${order.total} ETB confirmed for Order #${order.number}.`,
+              message: `Payment of ${order.total.toString()} ETB confirmed for Order #${order.number}.`,
               type: NotificationType.PAYMENT_SUCCESS,
               relatedEntityId: order.id,
               idempotencyKey: `notif_pay_succ_staff_${payment.id}`,

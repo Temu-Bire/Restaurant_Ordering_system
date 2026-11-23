@@ -218,7 +218,7 @@ export class OrderCheckoutService {
       void this.notifications.createForUser({
         recipientUserId: customerId,
         title: 'Order Placed',
-        message: `Your order #${result.number} has been placed successfully. Total: ${result.total} ETB.`,
+        message: `Your order #${result.number} has been placed successfully. Total: ${result.total.toString()} ETB.`,
         type: 'ORDER_CONFIRMATION' as any,
         relatedEntityId: result.id,
         idempotencyKey: `notif_order_create_${result.id}`,
@@ -226,7 +226,7 @@ export class OrderCheckoutService {
 
       void this.notifications.createForRole(Role.STAFF, {
         title: 'New Order Received',
-        message: `New ${result.type.toLowerCase()} order #${result.number} received (${result.total} ETB).`,
+        message: `New ${result.type.toLowerCase()} order #${result.number} received (${result.total.toString()} ETB).`,
         type: 'NEW_ORDER' as any,
         relatedEntityId: result.id,
         idempotencyKey: `notif_new_order_staff_${result.id}`,
@@ -253,7 +253,7 @@ export class OrderCheckoutService {
             paymentUrl: paymentRes.checkoutUrl,
           } as any,
         });
-      } catch (err) {
+      } catch {
         // Fallback: return created order
       }
     }

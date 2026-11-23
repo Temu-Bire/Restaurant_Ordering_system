@@ -9,6 +9,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
@@ -62,6 +63,7 @@ export class PaymentsController {
   }
 
   @Public()
+  @SkipThrottle()
   @HttpCode(HttpStatus.OK)
   @Post('webhook/chapa')
   handleChapaWebhook(

@@ -8,7 +8,7 @@ import { UpdateOrderStatusDto } from '../dto/update-order-status.dto.js';
 import { OrderResponse } from '../helpers/order-response.mapper.js';
 import { OrderCheckoutService } from './order-checkout.service.js';
 import { OrderLifecycleService } from './order-lifecycle.service.js';
-import { OrderQueryService } from './order-query.service.js';
+import { OrderQueryService, PaginatedOrdersResponse } from './order-query.service.js';
 import { OrderTableService } from './order-table.service.js';
 
 @Injectable()
@@ -25,8 +25,23 @@ export class OrdersService {
     return this.orderQuery.findAll();
   }
 
+  async findAllPaginated(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<PaginatedOrdersResponse> {
+    return this.orderQuery.findAllPaginated(params);
+  }
+
   async findMine(customerId: string): Promise<OrderResponse[]> {
     return this.orderQuery.findMine(customerId);
+  }
+
+  async findMinePaginated(
+    customerId: string,
+    params: { page?: number; limit?: number },
+  ): Promise<PaginatedOrdersResponse> {
+    return this.orderQuery.findMinePaginated(customerId, params);
   }
 
   async findOne(id: string, actor: { id: string; role: Role }): Promise<OrderResponse> {
@@ -59,6 +74,10 @@ export class OrdersService {
 
   async assignTable(id: string, dto: AssignTableDto): Promise<OrderResponse> {
     return this.orderTable.assignTable(id, dto);
+  }
+
+  async cleanupExpiredHolds(): Promise<number> {
+    return this.orderLifecycle.cleanupExpiredHolds();
   }
 
   /**

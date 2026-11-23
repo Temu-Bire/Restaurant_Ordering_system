@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
@@ -25,13 +26,34 @@ export class OrdersController {
 
   @Roles(Role.STAFF, Role.ADMIN)
   @Get()
-  findAll() {
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    if (page !== undefined || limit !== undefined) {
+      return this.orders.findAllPaginated({
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+        status,
+      });
+    }
     return this.orders.findAll();
   }
 
   @Roles(Role.CUSTOMER)
   @Get('mine')
-  mine(@CurrentUser() user: PublicUser) {
+  mine(
+    @CurrentUser() user: PublicUser,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    if (page !== undefined || limit !== undefined) {
+      return this.orders.findMinePaginated(user.id, {
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+      });
+    }
     return this.orders.findMine(user.id);
   }
 
@@ -76,5 +98,11 @@ export class OrdersController {
   @Patch(':id/table')
   assignTable(@Param('id') id: string, @Body() dto: AssignTableDto) {
     return this.orders.assignTable(id, dto);
+  }
+
+  @Roles(Role.STAFF, Role.ADMIN)
+  @Post('cleanup-holds')
+  cleanupHolds() {
+    return this.orders.cleanupExpiredHolds();
   }
 }

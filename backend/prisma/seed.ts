@@ -228,7 +228,11 @@ const tableDefs = [
 async function main() {
   console.log('🇪🇹 Seeding bilingual Ethiopian restaurant database...');
 
-  const password = await hash('password123', 10);
+  const defaultPassword = process.env.SEED_DEFAULT_PASSWORD || 'password123';
+  if (process.env.NODE_ENV === 'production' && !process.env.SEED_DEFAULT_PASSWORD) {
+    console.warn('⚠️ WARNING: Using default password in production environment. Set SEED_DEFAULT_PASSWORD!');
+  }
+  const password = await hash(defaultPassword, 10);
 
   // 1. Settings
   console.log('-> Seeding Settings...');

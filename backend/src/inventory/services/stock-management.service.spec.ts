@@ -43,6 +43,7 @@ describe('StockManagementService', () => {
     const mockTx = {
       ingredient: {
         findUnique: vi.fn().mockResolvedValue(mockIngredient),
+        findMany: vi.fn().mockResolvedValue([mockIngredient]),
         update: vi.fn().mockImplementation(({ data }) => ({
           ...mockIngredient,
           stock: data.stock,
