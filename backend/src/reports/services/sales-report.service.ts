@@ -21,7 +21,7 @@ export class SalesReportService {
   async report(period: 'daily' | 'weekly' | 'monthly' = 'daily'): Promise<SalesReportResponse> {
     const range = getPeriodRange(period);
 
-    const [orders, previous] = await Promise.all([
+    const [orders, previousAggregate] = await Promise.all([
       this.prisma.order.findMany({
         where: {
           createdAt: { gte: range.start, lt: range.end },
@@ -30,18 +30,19 @@ export class SalesReportService {
         },
         include: { items: true },
       }),
-      this.prisma.order.findMany({
+      this.prisma.order.aggregate({
         where: {
           createdAt: { gte: range.previousStart, lt: range.start },
           paymentStatus: PaymentStatus.PAID,
           status: { not: OrderStatus.CANCELLED },
         },
-        select: { total: true },
+        _sum: { total: true },
+        _count: true,
       }),
     ]);
 
     const revenue = orders.reduce((sum, order) => sum + order.total.toNumber(), 0);
-    const previousRevenue = previous.reduce((sum, order) => sum + order.total.toNumber(), 0);
+    const previousRevenue = previousAggregate._sum.total?.toNumber() ?? 0;
 
     const sold = new Map<string, number>();
     for (const order of orders) {
@@ -67,7 +68,7 @@ export class SalesReportService {
       values,
       orders: orders.length,
       revenueTrend: calculateTrend(revenue, previousRevenue),
-      ordersTrend: calculateTrend(orders.length, previous.length),
+      ordersTrend: calculateTrend(orders.length, previousAggregate._count),
       popular,
     };
   }

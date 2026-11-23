@@ -11,6 +11,7 @@ describe('SalesReportService', () => {
     prisma = {
       order: {
         findMany: vi.fn(),
+        aggregate: vi.fn(),
       },
     };
     service = new SalesReportService(prisma as unknown as PrismaService);
@@ -30,13 +31,11 @@ describe('SalesReportService', () => {
       },
     ];
 
-    const mockPreviousOrders = [
-      { total: new Prisma.Decimal(100) },
-    ];
-
-    prisma.order.findMany
-      .mockResolvedValueOnce(mockCurrentOrders)
-      .mockResolvedValueOnce(mockPreviousOrders);
+    prisma.order.findMany.mockResolvedValueOnce(mockCurrentOrders);
+    prisma.order.aggregate.mockResolvedValueOnce({
+      _sum: { total: new Prisma.Decimal(100) },
+      _count: 1,
+    });
 
     const result = await service.report('daily');
 

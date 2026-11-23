@@ -11,6 +11,8 @@ import { ROLE_LABEL } from "../../types/user";
 import Sidebar, { navTranslationMap, type NavItem } from "./Sidebar";
 import ThemeSwitcher from "../ui/ThemeSwitcher";
 import LanguageSwitcher from "../ui/LanguageSwitcher";
+import NotificationCenter from "../../../features/notifications/components/NotificationCenter";
+import ErrorBoundary from "../feedback/ErrorBoundary";
 
 export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
   const { user } = useAuth();
@@ -53,6 +55,7 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <NotificationCenter />
           <LanguageSwitcher />
           <ThemeSwitcher />
         </div>
@@ -69,7 +72,15 @@ export default function DashboardLayout({ navItems }: { navItems: NavItem[] }) {
 
       {/* Main Content Area */}
       <main className="min-w-0 flex-1 p-4 pb-20 md:p-6 md:pb-6 lg:p-8">
-        <Outlet />
+        {/* Desktop Top Right Controls */}
+        <div className="hidden md:flex items-center justify-end gap-2 mb-4 print:hidden">
+          <NotificationCenter />
+          <LanguageSwitcher />
+          <ThemeSwitcher />
+        </div>
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Mobile Bottom Navigation Bar for quick access */}

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import DashboardLayout from "../shared/components/layout/DashboardLayout";
@@ -12,32 +13,51 @@ import RegisterPage from "../features/auth/pages/RegisterPage";
 
 import HomePage from "../features/menu/pages/HomePage";
 import MenuPage from "../features/menu/pages/MenuPage";
-import StaffMenuPage from "../features/menu/pages/StaffMenuPage";
 import CartPage from "../features/cart/pages/CartPage";
-import MyOrdersPage from "../features/orders/pages/MyOrdersPage";
-import OrderTrackingPage from "../features/orders/pages/OrderTrackingPage";
-import ReceiptPage from "../features/payments/pages/ReceiptPage";
-import ChapaCheckoutPage from "../features/payments/pages/ChapaCheckoutPage";
 import ProfilePage from "../features/users/pages/ProfilePage";
 
-import StaffDashboardPage from "../features/reports/pages/StaffDashboardPage";
+// Lazy-loaded customer secondary flows
+const MyOrdersPage = lazy(() => import("../features/orders/pages/MyOrdersPage"));
+const OrderTrackingPage = lazy(() => import("../features/orders/pages/OrderTrackingPage"));
+const ReceiptPage = lazy(() => import("../features/payments/pages/ReceiptPage"));
+const ChapaCheckoutPage = lazy(() => import("../features/payments/pages/ChapaCheckoutPage"));
 
-import AdminDashboardPage from "../features/reports/pages/AdminDashboardPage";
-import MenuManagementPage from "../features/menu/pages/MenuManagementPage";
-import AdminReviewsPage from "../features/reviews/pages/AdminReviewsPage";
-import ReportsPage from "../features/reports/pages/ReportsPage";
-import UsersPage from "../features/users/pages/UsersPage";
-import SettingsPage from "../features/settings/pages/SettingsPage";
+// Lazy-loaded staff pages
+const StaffDashboardPage = lazy(() => import("../features/reports/pages/StaffDashboardPage"));
+const StaffMenuPage = lazy(() => import("../features/menu/pages/StaffMenuPage"));
 
-import OrdersPage from "../features/orders/pages/OrdersPage";
-import TablesPage from "../features/tables/pages/TablesPage";
-import InventoryPage from "../features/inventory/pages/InventoryPage";
-import PaymentsPage from "../features/payments/pages/PaymentsPage";
+// Lazy-loaded admin pages
+const AdminDashboardPage = lazy(() => import("../features/reports/pages/AdminDashboardPage"));
+const MenuManagementPage = lazy(() => import("../features/menu/pages/MenuManagementPage"));
+const AdminReviewsPage = lazy(() => import("../features/reviews/pages/AdminReviewsPage"));
+const ReportsPage = lazy(() => import("../features/reports/pages/ReportsPage"));
+const UsersPage = lazy(() => import("../features/users/pages/UsersPage"));
+const SettingsPage = lazy(() => import("../features/settings/pages/SettingsPage"));
+
+// Lazy-loaded shared operational pages
+const OrdersPage = lazy(() => import("../features/orders/pages/OrdersPage"));
+const TablesPage = lazy(() => import("../features/tables/pages/TablesPage"));
+const InventoryPage = lazy(() => import("../features/inventory/pages/InventoryPage"));
+const PaymentsPage = lazy(() => import("../features/payments/pages/PaymentsPage"));
 
 import GuestRoute from "./guards/GuestRoute";
 import ProtectedRoute from "./guards/ProtectedRoute";
 import RoleRoute from "./guards/RoleRoute";
 import { PATHS } from "./paths";
+
+function LazyRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center p-8">
+          <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
 
 /* ---------- Sidebar menus (the customer menu lives in CustomerLayout) ---------- */
 
@@ -96,7 +116,7 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
-      { path: "/chapa-checkout/:txRef", element: <ChapaCheckoutPage /> },
+      { path: "/chapa-checkout/:txRef", element: <LazyRoute><ChapaCheckoutPage /></LazyRoute> },
       {
         element: <RoleRoute role="customer" />,
         children: [
@@ -108,9 +128,9 @@ export const router = createBrowserRouter([
               { path: PATHS.customer.home, element: <HomePage /> },
               { path: PATHS.customer.menu, element: <MenuPage /> },
               { path: PATHS.customer.cart, element: <CartPage /> },
-              { path: PATHS.customer.orders, element: <MyOrdersPage /> },
-              { path: PATHS.customer.track, element: <OrderTrackingPage /> },
-              { path: PATHS.customer.receipt, element: <ReceiptPage /> },
+              { path: PATHS.customer.orders, element: <LazyRoute><MyOrdersPage /></LazyRoute> },
+              { path: PATHS.customer.track, element: <LazyRoute><OrderTrackingPage /></LazyRoute> },
+              { path: PATHS.customer.receipt, element: <LazyRoute><ReceiptPage /></LazyRoute> },
               { path: PATHS.customer.profile, element: <ProfilePage /> },
             ],
           },
@@ -125,12 +145,12 @@ export const router = createBrowserRouter([
             element: <DashboardLayout navItems={staffNav} />,
             children: [
               { index: true, element: <Navigate to={PATHS.staff.dashboard} replace /> },
-              { path: PATHS.staff.dashboard, element: <StaffDashboardPage /> },
-              { path: PATHS.staff.orders, element: <OrdersPage role="staff" /> },
-              { path: PATHS.staff.menu, element: <StaffMenuPage /> },
-              { path: PATHS.staff.tables, element: <TablesPage role="staff" /> },
-              { path: PATHS.staff.inventory, element: <InventoryPage role="staff" /> },
-              { path: PATHS.staff.payments, element: <PaymentsPage role="staff" /> },
+              { path: PATHS.staff.dashboard, element: <LazyRoute><StaffDashboardPage /></LazyRoute> },
+              { path: PATHS.staff.orders, element: <LazyRoute><OrdersPage role="staff" /></LazyRoute> },
+              { path: PATHS.staff.menu, element: <LazyRoute><StaffMenuPage /></LazyRoute> },
+              { path: PATHS.staff.tables, element: <LazyRoute><TablesPage role="staff" /></LazyRoute> },
+              { path: PATHS.staff.inventory, element: <LazyRoute><InventoryPage role="staff" /></LazyRoute> },
+              { path: PATHS.staff.payments, element: <LazyRoute><PaymentsPage role="staff" /></LazyRoute> },
               { path: PATHS.staff.profile, element: <ProfilePage /> },
             ],
           },
@@ -145,16 +165,16 @@ export const router = createBrowserRouter([
             element: <DashboardLayout navItems={adminNav} />,
             children: [
               { index: true, element: <Navigate to={PATHS.admin.dashboard} replace /> },
-              { path: PATHS.admin.dashboard, element: <AdminDashboardPage /> },
-              { path: PATHS.admin.orders, element: <OrdersPage role="admin" /> },
-              { path: PATHS.admin.menu, element: <MenuManagementPage /> },
-              { path: PATHS.admin.reviews, element: <AdminReviewsPage /> },
-              { path: PATHS.admin.tables, element: <TablesPage role="admin" /> },
-              { path: PATHS.admin.inventory, element: <InventoryPage role="admin" /> },
-              { path: PATHS.admin.payments, element: <PaymentsPage role="admin" /> },
-              { path: PATHS.admin.reports, element: <ReportsPage /> },
-              { path: PATHS.admin.users, element: <UsersPage /> },
-              { path: PATHS.admin.settings, element: <SettingsPage /> },
+              { path: PATHS.admin.dashboard, element: <LazyRoute><AdminDashboardPage /></LazyRoute> },
+              { path: PATHS.admin.orders, element: <LazyRoute><OrdersPage role="admin" /></LazyRoute> },
+              { path: PATHS.admin.menu, element: <LazyRoute><MenuManagementPage /></LazyRoute> },
+              { path: PATHS.admin.reviews, element: <LazyRoute><AdminReviewsPage /></LazyRoute> },
+              { path: PATHS.admin.tables, element: <LazyRoute><TablesPage role="admin" /></LazyRoute> },
+              { path: PATHS.admin.inventory, element: <LazyRoute><InventoryPage role="admin" /></LazyRoute> },
+              { path: PATHS.admin.payments, element: <LazyRoute><PaymentsPage role="admin" /></LazyRoute> },
+              { path: PATHS.admin.reports, element: <LazyRoute><ReportsPage /></LazyRoute> },
+              { path: PATHS.admin.users, element: <LazyRoute><UsersPage /></LazyRoute> },
+              { path: PATHS.admin.settings, element: <LazyRoute><SettingsPage /></LazyRoute> },
               { path: PATHS.admin.profile, element: <ProfilePage /> },
             ],
           },
