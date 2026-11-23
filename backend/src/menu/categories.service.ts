@@ -12,16 +12,33 @@ const select = { id: true, name: true };
 
 @Injectable()
 export class CategoriesService {
+  private cachedCategories: { id: string; name: string }[] | null = null;
+  private cacheExpiresAt = 0;
+
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.category.findMany({
+  private invalidateCache() {
+    this.cachedCategories = null;
+    this.cacheExpiresAt = 0;
+  }
+
+  async findAll() {
+    const now = Date.now();
+    if (this.cachedCategories && this.cacheExpiresAt > now) {
+      return this.cachedCategories;
+    }
+
+    const categories = await this.prisma.category.findMany({
       select,
       orderBy: { createdAt: 'asc' },
     });
+    this.cachedCategories = categories;
+    this.cacheExpiresAt = now + 60_000; // 60s cache
+    return categories;
   }
 
   async create(dto: CreateCategoryDto) {
+    this.invalidateCache();
     // "pizza" and "Pizza" count as the same category
     const existing = await this.prisma.category.findFirst({
       where: { name: { equals: dto.name, mode: 'insensitive' } },
@@ -42,6 +59,7 @@ export class CategoriesService {
   }
 
   async update(id: string, dto: UpdateCategoryDto) {
+    this.invalidateCache();
     const existing = await this.prisma.category.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Category not found');
 
@@ -70,6 +88,7 @@ export class CategoriesService {
   }
 
   async remove(id: string) {
+    this.invalidateCache();
     const existing = await this.prisma.category.findUnique({
       where: { id },
       include: { foods: { select: { id: true } } },

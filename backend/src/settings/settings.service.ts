@@ -31,21 +31,35 @@ export const toSettingsResponse = (settings: Settings) => {
 
 @Injectable()
 export class SettingsService {
+  private cachedSettings: ReturnType<typeof toSettingsResponse> | null = null;
+  private cacheExpiresAt = 0;
+
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly notifications?: NotificationService,
   ) {}
 
   async get() {
+    const now = Date.now();
+    if (this.cachedSettings && this.cacheExpiresAt > now) {
+      return this.cachedSettings;
+    }
+
     const settings = await this.prisma.settings.upsert({
       where: { id: 'default' },
       update: {},
       create: { id: 'default' },
     });
-    return toSettingsResponse(settings);
+    const mapped = toSettingsResponse(settings);
+    this.cachedSettings = mapped;
+    this.cacheExpiresAt = now + 60_000; // 60-second in-memory cache
+    return mapped;
   }
 
   async update(dto: UpdateSettingsDto) {
+    this.cachedSettings = null;
+    this.cacheExpiresAt = 0;
+
     if (dto.orderTypes && dto.orderTypes.length === 0) {
       throw new BadRequestException('Enable at least one order type');
     }
@@ -57,7 +71,6 @@ export class SettingsService {
     });
 
     const orderTypes = dto.orderTypes as OrderType[] | undefined;
-    const methods = dto.paymentMethods as PaymentMethod[] | undefined;
 
     const settings = await this.prisma.settings.update({
       where: { id: current.id },

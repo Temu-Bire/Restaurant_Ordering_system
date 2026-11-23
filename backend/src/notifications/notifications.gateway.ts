@@ -16,7 +16,18 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (!origin || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        callback(null, true);
+        return;
+      }
+      const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()) || [];
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by WebSocket CORS'));
+      }
+    },
     credentials: true,
   },
   namespace: '/',

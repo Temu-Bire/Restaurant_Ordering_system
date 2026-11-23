@@ -81,7 +81,7 @@ export default function ReportsPage() {
     if (!data) return;
     let headers: string[] = [];
     let rows: (string | number)[][] = [];
-    let filename = `restaurant_report_${activeTab}_${period}.csv`;
+    const filename = `restaurant_report_${activeTab}_${period}.csv`;
 
     if (activeTab === "sales") {
       headers = ["Category", "Orders Count", "Paid Revenue (ETB)"];

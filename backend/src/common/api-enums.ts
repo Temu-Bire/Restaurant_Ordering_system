@@ -1,6 +1,5 @@
 import {
   InventoryCategory,
-  InventoryStatus,
   MovementType,
   OrderStatus,
   OrderType,

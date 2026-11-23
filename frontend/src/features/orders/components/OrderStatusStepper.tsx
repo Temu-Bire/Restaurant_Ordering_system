@@ -8,7 +8,7 @@ interface OrderStatusStepperProps {
 }
 
 export default function OrderStatusStepper({ status, type = "dine-in" }: OrderStatusStepperProps) {
-  let steps: string[] = [];
+  let steps: string[];
   let currentStepIndex = 0;
 
   if (type === "dine-in") {

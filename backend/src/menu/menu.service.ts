@@ -17,12 +17,19 @@ import { FoodWithCategory, toFoodResponse } from './food-response.js';
 @Injectable()
 export class MenuService {
   private readonly appUrl: string;
+  private cachedFoods: ReturnType<typeof toFoodResponse>[] | null = null;
+  private cacheExpiresAt = 0;
 
   constructor(
     private readonly prisma: PrismaService,
     config: ConfigService,
   ) {
     this.appUrl = config.getOrThrow<string>('APP_URL').replace(/\/$/, '');
+  }
+
+  private invalidateCache() {
+    this.cachedFoods = null;
+    this.cacheExpiresAt = 0;
   }
 
   private respond(
@@ -33,6 +40,11 @@ export class MenuService {
   }
 
   async findAll() {
+    const now = Date.now();
+    if (this.cachedFoods && this.cacheExpiresAt > now) {
+      return this.cachedFoods;
+    }
+
     const [foods, statsRaw] = await Promise.all([
       this.prisma.food.findMany({
         include: { category: true },
@@ -56,7 +68,10 @@ export class MenuService {
       ]),
     );
 
-    return foods.map((food) => this.respond(food, statsMap.get(food.id)));
+    const result = foods.map((food) => this.respond(food, statsMap.get(food.id)));
+    this.cachedFoods = result;
+    this.cacheExpiresAt = now + 30_000; // 30-second cache
+    return result;
   }
 
   async findOne(id: string) {
@@ -79,6 +94,7 @@ export class MenuService {
   }
 
   async create(dto: CreateFoodDto) {
+    this.invalidateCache();
     try {
       const food = await this.prisma.food.create({
         data: {
@@ -97,6 +113,7 @@ export class MenuService {
   }
 
   async update(id: string, dto: UpdateFoodDto) {
+    this.invalidateCache();
     try {
       const food = await this.prisma.food.update({
         where: { id },
@@ -115,6 +132,7 @@ export class MenuService {
   }
 
   async setAvailability(id: string, isAvailable: boolean) {
+    this.invalidateCache();
     try {
       const food = await this.prisma.food.update({
         where: { id },
@@ -131,6 +149,7 @@ export class MenuService {
   }
 
   async remove(id: string) {
+    this.invalidateCache();
     try {
       const food = await this.prisma.food.delete({ where: { id } });
       await this.deleteImageFile(food.imagePath);
@@ -149,6 +168,7 @@ export class MenuService {
   }
 
   async setImage(id: string, file: Express.Multer.File) {
+    this.invalidateCache();
     const imagePath = `/uploads/menu/${file.filename}`;
 
     try {

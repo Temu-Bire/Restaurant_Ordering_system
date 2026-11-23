@@ -29,6 +29,33 @@ export default function MobilePaymentModal({
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  async function handleVerify(outcome: "SUCCESS" | "FAILED" | "CANCELLED" | "EXPIRED") {
+    setProcessing(true);
+    setErrorMessage("");
+    try {
+      const res = await verifyPayment(orderId, outcome);
+      if (outcome === "SUCCESS") {
+        onSuccess(res);
+      } else if (outcome === "CANCELLED") {
+        onCancel();
+      } else {
+        onFailed(
+          outcome === "EXPIRED"
+            ? "Payment session timed out. Table hold released."
+            : "Payment verification failed. Please try again."
+        );
+      }
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : "Payment verification error");
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  function handleExpire() {
+    void handleVerify("EXPIRED");
+  }
+
   useEffect(() => {
     if (!open) return;
     const interval = setInterval(() => {
@@ -70,33 +97,6 @@ export default function MobilePaymentModal({
   };
 
   const theme = providerThemes[provider] ?? providerThemes.Telebirr;
-
-  async function handleVerify(outcome: "SUCCESS" | "FAILED" | "CANCELLED" | "EXPIRED") {
-    setProcessing(true);
-    setErrorMessage("");
-    try {
-      const res = await verifyPayment(orderId, outcome);
-      if (outcome === "SUCCESS") {
-        onSuccess(res);
-      } else if (outcome === "CANCELLED") {
-        onCancel();
-      } else {
-        onFailed(
-          outcome === "EXPIRED"
-            ? "Payment session timed out. Table hold released."
-            : "Payment verification failed. Please try again."
-        );
-      }
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : "Payment verification error");
-    } finally {
-      setProcessing(false);
-    }
-  }
-
-  function handleExpire() {
-    void handleVerify("EXPIRED");
-  }
 
   return (
     <Modal open={open} onClose={() => {}} title="Mobile Payment Gateway">

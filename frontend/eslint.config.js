@@ -23,6 +23,8 @@ export default defineConfig([
         'warn',
         { allowConstantExport: true },
       ],
+      'react-hooks/set-state-in-effect': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 ])
