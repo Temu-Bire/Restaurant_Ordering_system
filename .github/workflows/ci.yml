@@ -13,6 +13,10 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/arif_food?schema=public
+      DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/arif_food?schema=public
+      JWT_SECRET: ci_test_secret_key_minimum_32_characters_long
 
     steps:
       - name: Checkout Repository
