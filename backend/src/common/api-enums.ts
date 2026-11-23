@@ -18,14 +18,9 @@ const ORDER_TYPES: Record<string, OrderType> = {
 };
 
 const PAYMENT_METHODS: Record<string, PaymentMethod> = {
-  cash: PaymentMethod.CASH,
-  card: PaymentMethod.CARD,
   mobile: PaymentMethod.MOBILE,
-  CASH: PaymentMethod.CASH,
-  CARD: PaymentMethod.CARD,
   MOBILE: PaymentMethod.MOBILE,
 };
-
 const ORDER_STATUSES: Record<string, OrderStatus> = {
   pending: OrderStatus.PENDING,
   confirmed: OrderStatus.CONFIRMED,
