@@ -12,11 +12,12 @@ WORKDIR /app
 RUN apk add --no-cache python3 make g++
 
 # Copy dependency files
-COPY package*.json ./
+COPY package*.json .npmrc* ./
 COPY prisma ./prisma/
+COPY prisma7.config.ts* ./
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+RUN npm install
 
 # Generate Prisma Client
 RUN npx prisma generate
@@ -39,8 +40,8 @@ ENV PORT=3000
 RUN apk add --no-cache openssl
 
 # Copy package manifests and production dependencies
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+COPY package*.json .npmrc* ./
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy Prisma schema and generated client from builder
 COPY --from=builder /app/prisma ./prisma
